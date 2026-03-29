@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../services/audio_service.dart';
 
 class ScoreProvider with ChangeNotifier {
+  final AudioService _audioService = AudioService();
   int _nosotros = 0;
   int _ellos = 0;
   int _maxScore = 30;
@@ -37,6 +39,7 @@ class ScoreProvider with ChangeNotifier {
       _totalRemainingMatchsticks--;
       _lastDropOffset = dropOffset;
       _lastPointTeam = "nosotros";
+      _audioService.playStick();
       notifyListeners();
     }
   }
@@ -55,12 +58,14 @@ class ScoreProvider with ChangeNotifier {
       _totalRemainingMatchsticks--;
       _lastDropOffset = dropOffset;
       _lastPointTeam = "ellos";
+      _audioService.playStick();
       notifyListeners();
     }
   }
 
   Future<void> triggerReset() async {
     _isResetting = true;
+    _audioService.playClear();
     notifyListeners();
     // Wait for animation to finish
     await Future.delayed(const Duration(milliseconds: 600));

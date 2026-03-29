@@ -20,7 +20,7 @@ class MainScreen extends StatelessWidget {
           // 1. Realistic Wood Image Background (Local Asset)
           Positioned.fill(
             child: Image.asset(
-              'assets/background_1.jpg',
+              'assets/images/background_1.jpg',
               fit: BoxFit.cover,
             ),
           ),
