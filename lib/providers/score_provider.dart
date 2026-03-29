@@ -10,6 +10,10 @@ class ScoreProvider with ChangeNotifier {
   Offset? _lastDropOffset;
   String? _lastPointTeam;
   bool _isResetting = false;
+  bool _nosotrosResetting = false;
+  bool _ellosResetting = false;
+  bool _nosotrosWaiting = false;
+  bool _ellosWaiting = false;
 
   int get nosotros => _nosotros;
   int get ellos => _ellos;
@@ -18,12 +22,16 @@ class ScoreProvider with ChangeNotifier {
   Offset? get lastDropOffset => _lastDropOffset;
   String? get lastPointTeam => _lastPointTeam;
   bool get isResetting => _isResetting;
+  bool get nosotrosResetting => _nosotrosResetting || _isResetting;
+  bool get ellosResetting => _ellosResetting || _isResetting;
+  bool get nosotrosShowMilestone => _nosotrosWaiting || _nosotrosResetting || _isResetting;
+  bool get ellosShowMilestone => _ellosWaiting || _ellosResetting || _isResetting;
 
   bool isBuenas(int score) => score > 15;
 
   int getDisplayPoints(int score) {
-    if (score == 0) return 0;
-    if (score <= 15) return score;
+    if (score == 0 || score == 15 || score == 30) return 0;
+    if (score < 15) return score;
     return score - 15;
   }
 
@@ -33,13 +41,41 @@ class ScoreProvider with ChangeNotifier {
     return "${score - 15} Buenas";
   }
 
-  void addPointNosotros([Offset? dropOffset]) {
+  void addPointNosotros([Offset? dropOffset]) async {
     if (_nosotros < _maxScore && _totalRemainingMatchsticks > 0) {
       _nosotros++;
       _totalRemainingMatchsticks--;
       _lastDropOffset = dropOffset;
       _lastPointTeam = "nosotros";
-      _audioService.playStick();
+
+      if (_nosotros == 15) {
+        _nosotrosWaiting = true;
+        _audioService.playStick();
+        notifyListeners();
+        // Wait for landing animation (400ms)
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        _nosotrosWaiting = false;
+        _nosotrosResetting = true;
+        _audioService.playBuenas();
+        notifyListeners();
+        // Wait for clear animation (700ms)
+        await Future.delayed(const Duration(milliseconds: 700));
+        _nosotrosResetting = false;
+      } else if (_nosotros == 30) {
+        _nosotrosWaiting = true;
+        _audioService.playStick();
+        notifyListeners();
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        _nosotrosWaiting = false;
+        _nosotrosResetting = true;
+        notifyListeners();
+        await Future.delayed(const Duration(milliseconds: 700));
+        _nosotrosResetting = false;
+      } else {
+        _audioService.playStick();
+      }
       notifyListeners();
     }
   }
@@ -52,13 +88,41 @@ class ScoreProvider with ChangeNotifier {
     }
   }
 
-  void addPointEllos([Offset? dropOffset]) {
+  void addPointEllos([Offset? dropOffset]) async {
     if (_ellos < _maxScore && _totalRemainingMatchsticks > 0) {
       _ellos++;
       _totalRemainingMatchsticks--;
       _lastDropOffset = dropOffset;
       _lastPointTeam = "ellos";
-      _audioService.playStick();
+
+      if (_ellos == 15) {
+        _ellosWaiting = true;
+        _audioService.playStick();
+        notifyListeners();
+        // Wait for landing animation (400ms)
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        _ellosWaiting = false;
+        _ellosResetting = true;
+        _audioService.playBuenas();
+        notifyListeners();
+        // Wait for clear animation (700ms)
+        await Future.delayed(const Duration(milliseconds: 700));
+        _ellosResetting = false;
+      } else if (_ellos == 30) {
+        _ellosWaiting = true;
+        _audioService.playStick();
+        notifyListeners();
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        _ellosWaiting = false;
+        _ellosResetting = true;
+        notifyListeners();
+        await Future.delayed(const Duration(milliseconds: 700));
+        _ellosResetting = false;
+      } else {
+        _audioService.playStick();
+      }
       notifyListeners();
     }
   }

@@ -7,6 +7,7 @@ class AudioService {
 
   final AudioPlayer _stickPlayer = AudioPlayer();
   final AudioPlayer _clearPlayer = AudioPlayer();
+  final AudioPlayer _milestonePlayer = AudioPlayer();
 
   Future<void> playStick() async {
     await _stickPlayer.stop();
@@ -18,8 +19,14 @@ class AudioService {
     await _clearPlayer.play(AssetSource('sounds/clear.wav'));
   }
 
+  Future<void> playBuenas() async {
+    await _milestonePlayer.stop();
+    await _milestonePlayer.play(AssetSource('sounds/buenas.wav'));
+  }
+
   void dispose() {
     _stickPlayer.dispose();
     _clearPlayer.dispose();
+    _milestonePlayer.dispose();
   }
 }

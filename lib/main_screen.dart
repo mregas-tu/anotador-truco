@@ -185,33 +185,50 @@ class MainScreen extends StatelessWidget {
                         double availableWidth = constraints.maxWidth;
                         double slotSize = (availableHeight / 3).clamp(60.0, availableWidth);
 
-                        return Column(
-                          children: List.generate(3, (groupIndex) {
-                            int points = scoreProvider.getDisplayPoints(score);
-                            int pointsInThisGroup = (points - (groupIndex * 5)).clamp(0, 5);
-                            
-                            if (pointsInThisGroup == 0 && points < (groupIndex * 5)) {
-                              return const Expanded(child: SizedBox.shrink());
+                        return Consumer<ScoreProvider>(
+                          builder: (context, scoreProvider, child) {
+                            final int points = isNosotros ? scoreProvider.nosotros : scoreProvider.ellos;
+                            int totalPoints = scoreProvider.getDisplayPoints(points);
+
+                            // Milestone transition override (to show sticks during animation)
+                            final bool showMilestone = isNosotros 
+                                ? scoreProvider.nosotrosShowMilestone 
+                                : scoreProvider.ellosShowMilestone;
+
+                            if ((points == 15 || points == 30) && showMilestone) {
+                               totalPoints = 15;
                             }
 
-                            bool isLastActiveGroup = (points / 5).ceil() - 1 == groupIndex;
+                            return Column(
+                              children: List.generate(3, (groupIndex) {
+                                int pointsInThisGroup = (totalPoints - (groupIndex * 5)).clamp(0, 5);
+                                
+                                if (pointsInThisGroup == 0 && totalPoints < (groupIndex * 5)) {
+                                  return const Expanded(child: SizedBox.shrink());
+                                }
 
-                            return Expanded(
-                              child: Center(
-                                child: pointsInThisGroup > 0 
-                                  ? ScoreGroup(
-                                      key: ValueKey("group_${isNosotros ? "n" : "e"}_$groupIndex"),
-                                      points: pointsInThisGroup,
-                                      size: slotSize * 0.9,
-                                      animateLast: isLastActiveGroup &&
-                                          scoreProvider.lastPointTeam ==
-                                              (isNosotros ? "nosotros" : "ellos"),
-                                      dropOffset: scoreProvider.lastDropOffset,
-                                    )
-                                  : const SizedBox.shrink(),
-                              ),
+                                bool isLastActiveGroup = (totalPoints / 5).ceil() - 1 == groupIndex;
+
+                                return Expanded(
+                                  child: Center(
+                                    child: pointsInThisGroup > 0 
+                                      ? ScoreGroup(
+                                          key: ValueKey("group_${isNosotros ? "n" : "e"}_$groupIndex"),
+                                          points: pointsInThisGroup,
+                                          size: slotSize * 0.9,
+                                          team: isNosotros ? "nosotros" : "ellos",
+                                          groupIndex: isNosotros ? groupIndex : groupIndex + 3,
+                                          animateLast: isLastActiveGroup &&
+                                              scoreProvider.lastPointTeam ==
+                                                  (isNosotros ? "nosotros" : "ellos"),
+                                          dropOffset: scoreProvider.lastDropOffset,
+                                        )
+                                      : const SizedBox.shrink(),
+                                  ),
+                                );
+                              }),
                             );
-                          }),
+                          },
                         );
                       }
                     ),
@@ -274,7 +291,8 @@ class MainScreen extends StatelessWidget {
                   childWhenDragging: MatchstickBox(
                       count: scoreProvider.totalRemainingMatchsticks - 1),
                   child: MatchstickBox(
-                      count: scoreProvider.totalRemainingMatchsticks),
+                    count: scoreProvider.totalRemainingMatchsticks,
+                  ),
                 )
               else
                 MatchstickBox(count: 0),

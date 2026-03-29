@@ -9,11 +9,15 @@ class ScoreGroup extends StatefulWidget {
   final bool animateLast;
   final Offset? dropOffset;
   final double size;
+  final int groupIndex; 
+  final String team; // "nosotros" or "ellos"
 
   const ScoreGroup({
     super.key,
     required this.points,
     required this.size,
+    required this.team,
+    this.groupIndex = 0,
     this.animateLast = false,
     this.dropOffset,
   });
@@ -29,6 +33,7 @@ class _ScoreGroupState extends State<ScoreGroup> {
   @override
   void didUpdateWidget(ScoreGroup oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Only calculate Fly-In (Adding point)
     if (widget.animateLast && widget.dropOffset != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -50,7 +55,11 @@ class _ScoreGroupState extends State<ScoreGroup> {
     final double matchHeight = widget.size * 0.85;
     final double padding = widget.size * 0.05;
 
-    if (scoreProvider.isResetting) {
+    final bool isTeamResetting = widget.team == "nosotros" 
+        ? scoreProvider.nosotrosResetting 
+        : scoreProvider.ellosResetting;
+
+    if (isTeamResetting) {
       return Container(
         key: _key,
         width: widget.size,
@@ -62,25 +71,25 @@ class _ScoreGroupState extends State<ScoreGroup> {
                 left: padding,
                 top: padding,
                 bottom: padding,
-                child: MatchstickWidget(height: matchHeight)), // Head Top
+                child: MatchstickWidget(height: matchHeight)),
             _buildReturningStick(2,
                 left: padding,
                 right: padding,
                 top: padding,
-                child: MatchstickWidget(height: matchHeight, horizontal: true)), // Head Right
+                child: MatchstickWidget(height: matchHeight, horizontal: true)),
             _buildReturningStick(3,
                 right: padding,
                 top: padding,
                 bottom: padding,
-                child: MatchstickWidget(height: matchHeight, flipped: true)), // Head Bottom
+                child: MatchstickWidget(height: matchHeight, flipped: true)),
             _buildReturningStick(4,
                 left: padding,
                 right: padding,
                 bottom: padding,
-                child: MatchstickWidget(height: matchHeight, horizontal: true, flipped: true)), // Head Left
+                child: MatchstickWidget(height: matchHeight, horizontal: true, flipped: true)),
             _buildReturningStick(5,
                 isDiagonal: true,
-                child: MatchstickWidget(height: matchHeight, diagonal: true)), // Head Bottom-Right
+                child: MatchstickWidget(height: matchHeight, diagonal: true)),
           ],
         ),
       );
@@ -130,9 +139,8 @@ class _ScoreGroupState extends State<ScoreGroup> {
       required Widget child}) {
     if (widget.points < index) return const SizedBox();
 
-    // Box is fixed at bottom center
-    // We can't easily get the box global pos during reset here without more complexity,
-    // so we approximate a movement towards the bottom center of the screen.
+    final int baseDelay = widget.groupIndex * 20; // Very tight group stagger
+
     return _wrapPositioned(
       index,
       left,
@@ -140,11 +148,14 @@ class _ScoreGroupState extends State<ScoreGroup> {
       top,
       bottom,
       isDiagonal,
-      child.animate().move(
-            end: const Offset(0, 600), // Move down towards the box
-            duration: 500.ms,
+      child.animate(delay: (baseDelay + index * 10).ms).move(
+            end: const Offset(0, 30), 
+            duration: 350.ms,
             curve: Curves.easeInCubic,
-          ).fadeOut(),
+          ).scale(
+            end: const Offset(0.5, 0.5), 
+            duration: 350.ms,
+          ).fadeOut(duration: 350.ms),
     );
   }
 
