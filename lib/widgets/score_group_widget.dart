@@ -62,25 +62,25 @@ class _ScoreGroupState extends State<ScoreGroup> {
                 left: padding,
                 top: padding,
                 bottom: padding,
-                child: MatchstickWidget(height: matchHeight)),
+                child: MatchstickWidget(height: matchHeight)), // Head Top
             _buildReturningStick(2,
                 left: padding,
                 right: padding,
                 top: padding,
-                child: MatchstickWidget(height: matchHeight, horizontal: true)),
+                child: MatchstickWidget(height: matchHeight, horizontal: true)), // Head Right
             _buildReturningStick(3,
                 right: padding,
                 top: padding,
                 bottom: padding,
-                child: MatchstickWidget(height: matchHeight)),
+                child: MatchstickWidget(height: matchHeight, flipped: true)), // Head Bottom
             _buildReturningStick(4,
                 left: padding,
                 right: padding,
                 bottom: padding,
-                child: MatchstickWidget(height: matchHeight, horizontal: true)),
+                child: MatchstickWidget(height: matchHeight, horizontal: true, flipped: true)), // Head Left
             _buildReturningStick(5,
                 isDiagonal: true,
-                child: MatchstickWidget(height: matchHeight, diagonal: true)),
+                child: MatchstickWidget(height: matchHeight, diagonal: true)), // Head Bottom-Right
           ],
         ),
       );
@@ -97,25 +97,25 @@ class _ScoreGroupState extends State<ScoreGroup> {
               left: padding,
               top: padding,
               bottom: padding,
-              child: MatchstickWidget(height: matchHeight)),
+              child: MatchstickWidget(height: matchHeight)), // Head Top
           _buildPositionedStick(2,
               left: padding,
               right: padding,
               top: padding,
-              child: MatchstickWidget(height: matchHeight, horizontal: true)),
+              child: MatchstickWidget(height: matchHeight, horizontal: true)), // Head Right
           _buildPositionedStick(3,
               right: padding,
               top: padding,
               bottom: padding,
-              child: MatchstickWidget(height: matchHeight)),
+              child: MatchstickWidget(height: matchHeight, flipped: true)), // Head Bottom
           _buildPositionedStick(4,
               left: padding,
               right: padding,
               bottom: padding,
-              child: MatchstickWidget(height: matchHeight, horizontal: true)),
+              child: MatchstickWidget(height: matchHeight, horizontal: true, flipped: true)), // Head Left
           _buildPositionedStick(5,
               isDiagonal: true,
-              child: MatchstickWidget(height: matchHeight, diagonal: true)),
+              child: MatchstickWidget(height: matchHeight, diagonal: true)), // Head Bottom-Right
         ],
       ),
     );

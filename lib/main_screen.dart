@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,62 +15,89 @@ class MainScreen extends StatelessWidget {
     final scoreProvider = Provider.of<ScoreProvider>(context);
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF3E2723), // Dark wood
-              Color(0xFF5D4037), // Lighter wood
-            ],
+      body: Stack(
+        children: [
+          // 1. Realistic Wood Image Background (Local Asset)
+          Positioned.fill(
+            child: Image.asset(
+              'assets/background_1.jpg',
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: Row(
-                  children: [
-                    _buildTeamSection(
-                      context,
-                      "NOSOTROS",
-                      scoreProvider.nosotros,
-                      true,
-                    ),
-                    const VerticalDivider(color: Colors.white24, thickness: 1),
-                    _buildTeamSection(
-                      context,
-                      "ELLOS",
-                      scoreProvider.ellos,
-                      false,
-                    ),
+          // 2. Cinematic Vignette
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.center,
+                  radius: 1.5,
+                  colors: [
+                    Colors.black.withOpacity(0.05),
+                    Colors.black.withOpacity(0.65),
                   ],
+                  stops: const [0.0, 1.0],
                 ),
               ),
-              _buildFooter(context),
-            ],
+            ),
           ),
-        ),
+          // 3. Main Content
+          SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      _buildTeamSection(
+                        context,
+                        "NOSOTROS",
+                        scoreProvider.nosotros,
+                        true,
+                      ),
+                      _buildDivider(),
+                      _buildTeamSection(
+                        context,
+                        "ELLOS",
+                        scoreProvider.ellos,
+                        false,
+                      ),
+                    ],
+                  ),
+                ),
+                _buildFooter(context),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Text(
-        "TRUCO PRO",
-        style: GoogleFonts.oswald(
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: Colors.white70,
-          letterSpacing: 4,
+  Widget _buildDivider() {
+    return Container(
+      width: 2,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.transparent,
+            Colors.orangeAccent.withOpacity(0.3),
+            Colors.orangeAccent.withOpacity(0.3),
+            Colors.transparent,
+          ],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            blurRadius: 4,
+            offset: const Offset(2, 0),
+          ),
+        ],
       ),
     );
   }
+
 
   Widget _buildTeamSection(
     BuildContext context,
@@ -91,7 +119,7 @@ class MainScreen extends StatelessWidget {
         builder: (context, candidateData, rejectedData) {
           return Container(
             color: candidateData.isNotEmpty
-                ? Colors.white.withOpacity(0.1)
+                ? Colors.white.withOpacity(0.05)
                 : Colors.transparent,
             child: Column(
               children: [
@@ -99,26 +127,52 @@ class MainScreen extends StatelessWidget {
                 Text(
                   isNosotros ? "NOSOTROS" : "ELLOS",
                   style: GoogleFonts.oswald(
-                    fontSize: 24,
+                    fontSize: 26,
                     color: isNosotros
-                        ? Colors.orangeAccent
-                        : Colors.lightBlueAccent,
+                        ? Colors.orangeAccent.shade100
+                        : Colors.lightBlueAccent.shade100,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
                   ),
                 ),
+                const SizedBox(height: 10),
+                // Slate / Chalkboard Score Label with Frame
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: const EdgeInsets.all(4), // Frame thickness
                   decoration: BoxDecoration(
-                    color: Colors.black26,
-                    borderRadius: BorderRadius.circular(4),
+                    color: const Color(0xFF4E342E), // Frame color
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        offset: const Offset(2, 4),
+                        blurRadius: 6,
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    scoreProvider.getLabel(score).toUpperCase(),
-                    style: GoogleFonts.oswald(
-                      fontSize: 18,
-                      color: Colors.white70,
-                      letterSpacing: 1.2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF263238), // Slate base
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Stack(
+                      children: [
+                        // Chalkboard Texture
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: ChalkboardPainter(),
+                          ),
+                        ),
+                        Text(
+                          scoreProvider.getLabel(score).toUpperCase(),
+                          style: GoogleFonts.coveredByYourGrace(
+                            fontSize: 20,
+                            color: Colors.white.withOpacity(0.9),
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -148,7 +202,7 @@ class MainScreen extends StatelessWidget {
                                   ? ScoreGroup(
                                       key: ValueKey("group_${isNosotros ? "n" : "e"}_$groupIndex"),
                                       points: pointsInThisGroup,
-                                      size: slotSize * 0.9, // Leave a little breathing room
+                                      size: slotSize * 0.9,
                                       animateLast: isLastActiveGroup &&
                                           scoreProvider.lastPointTeam ==
                                               (isNosotros ? "nosotros" : "ellos"),
@@ -177,17 +231,24 @@ class MainScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        color: Colors.black.withOpacity(0.4),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          const Text(
+          Text(
             "ARRASTRÁ UN FÓSFORO PARA AGREGAR",
-            style: TextStyle(
-              color: Colors.white54,
+            style: GoogleFonts.oswald(
+              color: Colors.white38,
               fontSize: 12,
-              letterSpacing: 1.2,
+              letterSpacing: 2,
             ),
           ),
           const SizedBox(height: 15),
@@ -196,7 +257,7 @@ class MainScreen extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: () => scoreProvider.triggerReset(),
-                icon: const Icon(Icons.refresh, color: Colors.white60),
+                icon: const Icon(Icons.refresh, color: Colors.white54),
                 tooltip: "Reiniciar",
               ),
               if (scoreProvider.totalRemainingMatchsticks > 0)
@@ -218,10 +279,8 @@ class MainScreen extends StatelessWidget {
               else
                 MatchstickBox(count: 0),
               IconButton(
-                onPressed: () {
-                  // Toggle max score 15/30 logic could go here
-                },
-                icon: const Icon(Icons.settings, color: Colors.white60),
+                onPressed: () {},
+                icon: const Icon(Icons.settings, color: Colors.white54),
                 tooltip: "Ajustes",
               ),
             ],
@@ -230,5 +289,47 @@ class MainScreen extends StatelessWidget {
       ),
     );
   }
+}
 
+
+class ChalkboardPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final random = math.Random(123);
+    final paint = Paint()..color = Colors.white.withOpacity(0.05);
+
+    // Draw chalk dust / streaks
+    for (int i = 0; i < 15; i++) {
+      final path = Path();
+      double x = random.nextDouble() * size.width;
+      path.moveTo(x, 0);
+      path.quadraticBezierTo(
+        x + (random.nextDouble() - 0.5) * 20, 
+        size.height / 2, 
+        x + (random.nextDouble() - 0.5) * 10, 
+        size.height
+      );
+      
+      canvas.drawPath(
+        path, 
+        Paint()
+          ..color = Colors.white.withOpacity(0.03)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0 + random.nextDouble() * 5.0
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3)
+      );
+    }
+
+    // Tiny chalk specks
+    for (int i = 0; i < 50; i++) {
+      canvas.drawCircle(
+        Offset(random.nextDouble() * size.width, random.nextDouble() * size.height),
+        random.nextDouble() * 1.5,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
