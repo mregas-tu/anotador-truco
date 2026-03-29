@@ -124,35 +124,42 @@ class MainScreen extends StatelessWidget {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                            (scoreProvider.getDisplayPoints(score) / 5).ceil(),
-                            (index) {
-                          int pointsInThisGroup =
-                              (scoreProvider.getDisplayPoints(score) -
-                                      (index * 5))
-                                  .clamp(
-                            1,
-                            5,
-                          );
-                          bool isLastGroup = index ==
-                              (scoreProvider.getDisplayPoints(score) / 5)
-                                      .ceil() -
-                                  1;
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        double availableHeight = constraints.maxHeight;
+                        double availableWidth = constraints.maxWidth;
+                        double slotSize = (availableHeight / 3).clamp(60.0, availableWidth);
 
-                          return ScoreGroup(
-                            key: ValueKey("group_${isNosotros ? "n" : "e"}_$index"),
-                            points: pointsInThisGroup,
-                            animateLast: isLastGroup &&
-                                scoreProvider.lastPointTeam ==
-                                    (isNosotros ? "nosotros" : "ellos"),
-                            dropOffset: scoreProvider.lastDropOffset,
-                          );
-                        }),
-                      ),
+                        return Column(
+                          children: List.generate(3, (groupIndex) {
+                            int points = scoreProvider.getDisplayPoints(score);
+                            int pointsInThisGroup = (points - (groupIndex * 5)).clamp(0, 5);
+                            
+                            if (pointsInThisGroup == 0 && points < (groupIndex * 5)) {
+                              return const Expanded(child: SizedBox.shrink());
+                            }
+
+                            bool isLastActiveGroup = (points / 5).ceil() - 1 == groupIndex;
+
+                            return Expanded(
+                              child: Center(
+                                child: pointsInThisGroup > 0 
+                                  ? ScoreGroup(
+                                      key: ValueKey("group_${isNosotros ? "n" : "e"}_$groupIndex"),
+                                      points: pointsInThisGroup,
+                                      size: slotSize * 0.9, // Leave a little breathing room
+                                      animateLast: isLastActiveGroup &&
+                                          scoreProvider.lastPointTeam ==
+                                              (isNosotros ? "nosotros" : "ellos"),
+                                      dropOffset: scoreProvider.lastDropOffset,
+                                    )
+                                  : const SizedBox.shrink(),
+                              ),
+                            );
+                          }),
+                        );
+                      }
                     ),
                   ),
                 ),

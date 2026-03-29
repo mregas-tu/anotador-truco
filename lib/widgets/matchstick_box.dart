@@ -28,10 +28,7 @@ class MatchstickBox extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF4E342E), // Deep box interior
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: Colors.black.withOpacity(0.4),
-            width: 2,
-          ),
+          border: Border.all(color: Colors.black.withOpacity(0.4), width: 2),
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -65,7 +62,8 @@ class MatchstickBox extends StatelessWidget {
               ...List.generate(math.max(0, count), (index) {
                 // Use a seeded random so the sticks don't jump every rebuild
                 final random = math.Random(index * 1337);
-                final angle = (random.nextDouble() - 0.5) * 1.5; // Random rotation
+                final angle =
+                    (random.nextDouble() - 0.5) * 1.5; // Random rotation
                 final offsetX = (random.nextDouble() - 0.5) * 90;
                 final offsetY = (random.nextDouble() - 0.5) * 45;
 

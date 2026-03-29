@@ -8,10 +8,12 @@ class ScoreGroup extends StatefulWidget {
   final int points;
   final bool animateLast;
   final Offset? dropOffset;
+  final double size;
 
   const ScoreGroup({
     super.key,
     required this.points,
+    required this.size,
     this.animateLast = false,
     this.dropOffset,
   });
@@ -45,39 +47,40 @@ class _ScoreGroupState extends State<ScoreGroup> {
   @override
   Widget build(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context);
+    final double matchHeight = widget.size * 0.85;
+    final double padding = widget.size * 0.05;
 
     if (scoreProvider.isResetting) {
-      // Calculate return animation
       return Container(
         key: _key,
-        width: 80,
-        height: 80,
+        width: widget.size,
+        height: widget.size,
         margin: const EdgeInsets.all(4),
         child: Stack(
           children: [
             _buildReturningStick(1,
-                left: 5,
-                top: 5,
-                bottom: 5,
-                child: const MatchstickWidget(height: 70)),
+                left: padding,
+                top: padding,
+                bottom: padding,
+                child: MatchstickWidget(height: matchHeight)),
             _buildReturningStick(2,
-                left: 5,
-                right: 5,
-                top: 5,
-                child: const MatchstickWidget(height: 70, horizontal: true)),
+                left: padding,
+                right: padding,
+                top: padding,
+                child: MatchstickWidget(height: matchHeight, horizontal: true)),
             _buildReturningStick(3,
-                right: 5,
-                top: 5,
-                bottom: 5,
-                child: const MatchstickWidget(height: 70)),
+                right: padding,
+                top: padding,
+                bottom: padding,
+                child: MatchstickWidget(height: matchHeight)),
             _buildReturningStick(4,
-                left: 5,
-                right: 5,
-                bottom: 5,
-                child: const MatchstickWidget(height: 70, horizontal: true)),
+                left: padding,
+                right: padding,
+                bottom: padding,
+                child: MatchstickWidget(height: matchHeight, horizontal: true)),
             _buildReturningStick(5,
                 isDiagonal: true,
-                child: const MatchstickWidget(height: 70, diagonal: true)),
+                child: MatchstickWidget(height: matchHeight, diagonal: true)),
           ],
         ),
       );
@@ -85,34 +88,34 @@ class _ScoreGroupState extends State<ScoreGroup> {
 
     return Container(
       key: _key,
-      width: 80,
-      height: 80,
+      width: widget.size,
+      height: widget.size,
       margin: const EdgeInsets.all(4),
       child: Stack(
         children: [
           _buildPositionedStick(1,
-              left: 5,
-              top: 5,
-              bottom: 5,
-              child: const MatchstickWidget(height: 70)),
+              left: padding,
+              top: padding,
+              bottom: padding,
+              child: MatchstickWidget(height: matchHeight)),
           _buildPositionedStick(2,
-              left: 5,
-              right: 5,
-              top: 5,
-              child: const MatchstickWidget(height: 70, horizontal: true)),
+              left: padding,
+              right: padding,
+              top: padding,
+              child: MatchstickWidget(height: matchHeight, horizontal: true)),
           _buildPositionedStick(3,
-              right: 5,
-              top: 5,
-              bottom: 5,
-              child: const MatchstickWidget(height: 70)),
+              right: padding,
+              top: padding,
+              bottom: padding,
+              child: MatchstickWidget(height: matchHeight)),
           _buildPositionedStick(4,
-              left: 5,
-              right: 5,
-              bottom: 5,
-              child: const MatchstickWidget(height: 70, horizontal: true)),
+              left: padding,
+              right: padding,
+              bottom: padding,
+              child: MatchstickWidget(height: matchHeight, horizontal: true)),
           _buildPositionedStick(5,
               isDiagonal: true,
-              child: const MatchstickWidget(height: 70, diagonal: true)),
+              child: MatchstickWidget(height: matchHeight, diagonal: true)),
         ],
       ),
     );
