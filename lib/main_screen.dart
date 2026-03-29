@@ -192,21 +192,24 @@ class MainScreen extends StatelessWidget {
                 icon: const Icon(Icons.refresh, color: Colors.white60),
                 tooltip: "Reiniciar",
               ),
-              Draggable<int>(
-                data: 1,
-                dragAnchorStrategy: pointerDragAnchorStrategy,
-                feedback: Transform.rotate(
-                  angle: 0.1,
-                  child: Transform.translate(
-                    offset: const Offset(-5, -50),
-                    child: const MatchstickWidget(height: 100),
+              if (scoreProvider.totalRemainingMatchsticks > 0)
+                Draggable<int>(
+                  data: 1,
+                  dragAnchorStrategy: pointerDragAnchorStrategy,
+                  feedback: Transform.rotate(
+                    angle: 0.1,
+                    child: Transform.translate(
+                      offset: const Offset(-5, -50),
+                      child: const MatchstickWidget(height: 100),
+                    ),
                   ),
-                ),
-                childWhenDragging:
-                    MatchstickBox(count: scoreProvider.totalRemainingMatchsticks - 1),
-                child: MatchstickBox(
-                    count: scoreProvider.totalRemainingMatchsticks),
-              ),
+                  childWhenDragging: MatchstickBox(
+                      count: scoreProvider.totalRemainingMatchsticks - 1),
+                  child: MatchstickBox(
+                      count: scoreProvider.totalRemainingMatchsticks),
+                )
+              else
+                MatchstickBox(count: 0),
               IconButton(
                 onPressed: () {
                   // Toggle max score 15/30 logic could go here
