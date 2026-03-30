@@ -10,6 +10,7 @@ class ScoreGroup extends StatefulWidget {
   final Offset? dropOffset;
   final double size;
   final int groupIndex; 
+  final bool isDragging;
   final String team; // "nosotros" or "ellos"
 
   const ScoreGroup({
@@ -17,6 +18,7 @@ class ScoreGroup extends StatefulWidget {
     required this.points,
     required this.size,
     required this.team,
+    this.isDragging = false,
     this.groupIndex = 0,
     this.animateLast = false,
     this.dropOffset,
@@ -33,19 +35,56 @@ class _ScoreGroupState extends State<ScoreGroup> {
   @override
   void didUpdateWidget(ScoreGroup oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Only calculate Fly-In (Adding point)
+    
+    // 1. Calculate Fly-In position for adding point
     if (widget.animateLast && widget.dropOffset != null) {
+      _schedulePositionUpdate(widget.dropOffset!);
+    }
+    
+    // 2. Report global position of the last stick for potential drag-back
+    if (widget.points > 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        final RenderBox? renderBox =
-            _key.currentContext?.findRenderObject() as RenderBox?;
+        final RenderBox? renderBox = _key.currentContext?.findRenderObject() as RenderBox?;
         if (renderBox != null) {
-          final Offset groupGlobalPos = renderBox.localToGlobal(Offset.zero);
-          setState(() {
-            _currentFlyInBegin = widget.dropOffset! - groupGlobalPos;
-          });
+          final Offset localPos = _getStickLocalOffset(widget.points);
+          final Offset globalPos = renderBox.localToGlobal(localPos);
+          final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
+          
+          // Only update if this is indeed the last stick for the whole team
+          final int teamPoints = widget.team == "nosotros" ? scoreProvider.nosotros : scoreProvider.ellos;
+          final int groupBase = (widget.groupIndex % 3) * 5;
+          if (teamPoints == groupBase + widget.points) {
+            scoreProvider.updateLastStickPos(widget.team, globalPos);
+          }
         }
       });
+    }
+  }
+
+  void _schedulePositionUpdate(Offset dropOffset) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final RenderBox? renderBox = _key.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        final Offset groupGlobalPos = renderBox.localToGlobal(Offset.zero);
+        setState(() {
+          _currentFlyInBegin = dropOffset - groupGlobalPos;
+        });
+      }
+    });
+  }
+
+  Offset _getStickLocalOffset(int index) {
+    final double padding = widget.size * 0.05;
+    final double thickness = widget.size * 0.1; // estimate visual thickness
+    switch (index) {
+      case 1: return Offset(padding + thickness/2, widget.size * 0.5); // Center left
+      case 2: return Offset(widget.size * 0.5, padding + thickness/2); // Center top
+      case 3: return Offset(widget.size - padding - thickness/2, widget.size * 0.5); // Center right
+      case 4: return Offset(widget.size * 0.5, widget.size - padding - thickness/2); // Center bottom
+      case 5: return Offset(widget.size * 0.5, widget.size * 0.5); // Center center
+      default: return Offset.zero;
     }
   }
 
@@ -95,6 +134,12 @@ class _ScoreGroupState extends State<ScoreGroup> {
       );
     }
 
+    final bool isTeamDraggingBack = widget.isDragging;
+    
+    final int teamPoints = widget.team == "nosotros" ? scoreProvider.nosotros : scoreProvider.ellos;
+    final int groupBase = (widget.groupIndex % 3) * 5;
+    final bool isLastGroup = (teamPoints / 5).ceil() - 1 == (widget.groupIndex % 3);
+
     return Container(
       key: _key,
       width: widget.size,
@@ -103,28 +148,38 @@ class _ScoreGroupState extends State<ScoreGroup> {
       child: Stack(
         children: [
           _buildPositionedStick(1,
+              isTeamDraggingBack: isTeamDraggingBack,
+              isLastStick: isLastGroup && teamPoints == groupBase + 1,
               left: padding,
               top: padding,
               bottom: padding,
-              child: MatchstickWidget(height: matchHeight)), // Head Top
+              child: MatchstickWidget(height: matchHeight)),
           _buildPositionedStick(2,
+              isTeamDraggingBack: isTeamDraggingBack,
+              isLastStick: isLastGroup && teamPoints == groupBase + 2,
               left: padding,
               right: padding,
               top: padding,
-              child: MatchstickWidget(height: matchHeight, horizontal: true)), // Head Right
+              child: MatchstickWidget(height: matchHeight, horizontal: true)),
           _buildPositionedStick(3,
+              isTeamDraggingBack: isTeamDraggingBack,
+              isLastStick: isLastGroup && teamPoints == groupBase + 3,
               right: padding,
               top: padding,
               bottom: padding,
-              child: MatchstickWidget(height: matchHeight, flipped: true)), // Head Bottom
+              child: MatchstickWidget(height: matchHeight, flipped: true)),
           _buildPositionedStick(4,
+              isTeamDraggingBack: isTeamDraggingBack,
+              isLastStick: isLastGroup && teamPoints == groupBase + 4,
               left: padding,
               right: padding,
               bottom: padding,
-              child: MatchstickWidget(height: matchHeight, horizontal: true, flipped: true)), // Head Left
+              child: MatchstickWidget(height: matchHeight, horizontal: true, flipped: true)),
           _buildPositionedStick(5,
+              isTeamDraggingBack: isTeamDraggingBack,
+              isLastStick: isLastGroup && teamPoints == groupBase + 5,
               isDiagonal: true,
-              child: MatchstickWidget(height: matchHeight, diagonal: true)), // Head Bottom-Right
+              child: MatchstickWidget(height: matchHeight, diagonal: true)),
         ],
       ),
     );
@@ -160,7 +215,9 @@ class _ScoreGroupState extends State<ScoreGroup> {
   }
 
   Widget _buildPositionedStick(int index,
-      {double? left,
+      {required bool isTeamDraggingBack,
+      required bool isLastStick,
+      double? left,
       double? right,
       double? top,
       double? bottom,
@@ -168,8 +225,36 @@ class _ScoreGroupState extends State<ScoreGroup> {
       required Widget child}) {
     if (widget.points < index) return const SizedBox();
 
+    // Hide the stick if it's currently being dragged back by the user
+    if (isTeamDraggingBack && isLastStick) {
+      return const SizedBox();
+    }
+
+    final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
+    final bool isThisReverting = scoreProvider.isReverting && 
+                                scoreProvider.revertTeam == widget.team &&
+                                isLastStick;
+
     final bool isNew = widget.animateLast && widget.points == index;
     final bool hasValidBegin = _currentFlyInBegin != Offset.zero;
+
+    // Calculate revert offset if needed
+    Offset revertBegin = Offset.zero;
+    if (isThisReverting && scoreProvider.revertOffset != null) {
+      final RenderBox? renderBox = _key.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        final Offset groupGlobalPos = renderBox.localToGlobal(Offset.zero);
+        final Offset localPos = _getStickLocalOffset(index);
+        final Offset globalStickCenter = groupGlobalPos + localPos;
+        
+        // feedback is dragged by top-left by default, but we used pointerDragAnchorStrategy
+        // which centers it on the pointer. revertedOffset is the top-left of the widget!
+        // We need the center of the dropped widget.
+        final Offset droppedWidgetCenter = scoreProvider.revertOffset! + const Offset(10, 50); 
+        
+        revertBegin = droppedWidgetCenter - globalStickCenter;
+      }
+    }
 
     return _wrapPositioned(
       index,
@@ -180,11 +265,11 @@ class _ScoreGroupState extends State<ScoreGroup> {
       isDiagonal,
       child.animate(target: 1.0)
           .move(
-            begin: (isNew && hasValidBegin) ? _currentFlyInBegin : Offset.zero,
-            duration: (isNew && hasValidBegin) ? 400.ms : 0.ms,
+            begin: isThisReverting ? revertBegin : (isNew && hasValidBegin) ? _currentFlyInBegin : Offset.zero,
+            duration: (isThisReverting || (isNew && hasValidBegin)) ? 400.ms : 0.ms,
             curve: Curves.easeOutCubic,
           )
-          .fadeIn(duration: isNew ? 400.ms : 0.ms),
+          .fadeIn(duration: (isThisReverting || isNew) ? 400.ms : 0.ms),
     );
   }
 
