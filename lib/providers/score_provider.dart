@@ -30,15 +30,15 @@ class ScoreProvider with ChangeNotifier {
   bool isBuenas(int score) => score > 15;
 
   int getDisplayPoints(int score) {
-    if (score == 0 || score == 15 || score == 30) return 0;
-    if (score < 15) return score;
+    if (score == 0) return 0;
+    if (score <= 15) return score;
+    if (score == 30) return 15;
     return score - 15;
   }
 
   String getLabel(int score) {
-    if (score == 0) return "0 Malas";
-    if (score <= 15) return "$score Malas";
-    return "${score - 15} Buenas";
+    if (score <= 15) return "MALAS";
+    return "BUENAS";
   }
 
   void addPointNosotros([Offset? dropOffset]) async {

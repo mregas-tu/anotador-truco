@@ -149,7 +149,7 @@ class MatchstickPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
 class MatchstickWidget extends StatelessWidget {

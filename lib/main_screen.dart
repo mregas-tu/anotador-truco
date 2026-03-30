@@ -1,7 +1,6 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'providers/score_provider.dart';
 import 'widgets/score_group_widget.dart';
 import 'widgets/matchstick_widget.dart';
@@ -15,55 +14,82 @@ class MainScreen extends StatelessWidget {
     final scoreProvider = Provider.of<ScoreProvider>(context);
 
     return Scaffold(
+      backgroundColor: const Color(0xFF161931),
       body: Stack(
         children: [
-          // 1. Realistic Wood Image Background (Local Asset)
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/background_1.jpg',
-              fit: BoxFit.cover,
-            ),
-          ),
-          // 2. Cinematic Vignette
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.5,
-                  colors: [
-                    Colors.black.withOpacity(0.05),
-                    Colors.black.withOpacity(0.65),
-                  ],
-                  stops: const [0.0, 1.0],
-                ),
+          // 1. Header Ornament
+          Positioned(
+            top: 40,
+            left: 0,
+            right: 0,
+            child: SvgPicture.asset(
+              'assets/images/header.svg',
+              height: 45,
+              colorFilter: ColorFilter.mode(
+                Colors.white.withOpacity(0.8),
+                BlendMode.srcIn,
               ),
             ),
           ),
+          
+          // 2. Settings Icon
+          Positioned(
+            top: 45,
+            right: 20,
+            child: IconButton(
+              icon: const Icon(Icons.settings, color: Colors.white70, size: 20),
+              onPressed: () {},
+            ),
+          ),
+
           // 3. Main Content
           SafeArea(
             child: Column(
               children: [
+                const SizedBox(height: 60),
                 Expanded(
-                  child: Row(
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
                     children: [
-                      _buildTeamSection(
-                        context,
-                        "NOSOTROS",
-                        scoreProvider.nosotros,
-                        true,
+                      Row(
+                        children: [
+                          _buildTeamSection(
+                            context,
+                            "NOSOTROS",
+                            scoreProvider.nosotros,
+                            true,
+                          ),
+                          _buildDivider(),
+                          _buildTeamSection(
+                            context,
+                            "ELLOS",
+                            scoreProvider.ellos,
+                            false,
+                          ),
+                        ],
                       ),
-                      _buildDivider(),
-                      _buildTeamSection(
-                        context,
-                        "ELLOS",
-                        scoreProvider.ellos,
-                        false,
+                      
+                      // Footer Ornament (Integrated into Stack for larger DragTarget area)
+                      IgnorePointer(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: SvgPicture.asset(
+                            'assets/images/footer.svg',
+                            height: 45,
+                            colorFilter: ColorFilter.mode(
+                              Colors.white.withOpacity(0.8),
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
+                
+                const SizedBox(height: 10),
                 _buildFooter(context),
+                const SizedBox(height: 15),
               ],
             ),
           ),
@@ -74,30 +100,12 @@ class MainScreen extends StatelessWidget {
 
   Widget _buildDivider() {
     return Container(
-      width: 2,
+      width: 1,
       height: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Colors.orangeAccent.withOpacity(0.3),
-            Colors.orangeAccent.withOpacity(0.3),
-            Colors.transparent,
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 4,
-            offset: const Offset(2, 0),
-          ),
-        ],
-      ),
+      color: Colors.white10,
+      margin: const EdgeInsets.symmetric(vertical: 60),
     );
   }
-
 
   Widget _buildTeamSection(
     BuildContext context,
@@ -117,6 +125,8 @@ class MainScreen extends StatelessWidget {
           }
         },
         builder: (context, candidateData, rejectedData) {
+          final bool isBuenas = scoreProvider.isBuenas(score);
+          
           return Container(
             color: candidateData.isNotEmpty
                 ? Colors.white.withOpacity(0.05)
@@ -125,57 +135,38 @@ class MainScreen extends StatelessWidget {
               children: [
                 const SizedBox(height: 20),
                 Text(
-                  isNosotros ? "NOSOTROS" : "ELLOS",
-                  style: GoogleFonts.oswald(
-                    fontSize: 26,
-                    color: isNosotros
-                        ? Colors.orangeAccent.shade100
-                        : Colors.lightBlueAccent.shade100,
-                    fontWeight: FontWeight.bold,
+                  name,
+                  style: const TextStyle(
+                    fontFamily: 'Oswald',
+                    fontSize: 20,
+                    color: Color(0xFF718C9C),
                     letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 10),
-                // Slate / Chalkboard Score Label with Frame
-                Container(
-                  padding: const EdgeInsets.all(4), // Frame thickness
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4E342E), // Frame color
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
-                        offset: const Offset(2, 4),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF263238), // Slate base
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Stack(
-                      children: [
-                        // Chalkboard Texture
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: ChalkboardPainter(),
-                          ),
-                        ),
-                        Text(
-                          scoreProvider.getLabel(score).toUpperCase(),
-                          style: GoogleFonts.coveredByYourGrace(
-                            fontSize: 20,
-                            color: Colors.white.withOpacity(0.9),
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
+                const SizedBox(height: 8),
+                
+                // Stylized Score Number
+                Text(
+                  scoreProvider.getDisplayPoints(score).toString().padLeft(2, '0'),
+                  style: const TextStyle(
+                    fontFamily: 'CaminitoBase',
+                    fontSize: 32,
+                    color: Color(0xFFEFEBE2),
                   ),
                 ),
+                
+                // Status Label (Buenas/Malas)
+                Text(
+                  scoreProvider.getLabel(score),
+                  style: TextStyle(
+                    fontFamily: 'Oswald',
+                    fontSize: 16,
+                    color: isBuenas ? const Color(0xFF888D71) : const Color(0xFFF47580),
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
@@ -190,7 +181,7 @@ class MainScreen extends StatelessWidget {
                             final int points = isNosotros ? scoreProvider.nosotros : scoreProvider.ellos;
                             int totalPoints = scoreProvider.getDisplayPoints(points);
 
-                            // Milestone transition override (to show sticks during animation)
+                            // Milestone transition override
                             final bool showMilestone = isNosotros 
                                 ? scoreProvider.nosotrosShowMilestone 
                                 : scoreProvider.ellosShowMilestone;
@@ -200,7 +191,7 @@ class MainScreen extends StatelessWidget {
                             }
 
                             return Column(
-                              children: List.generate(3, (groupIndex) {
+                               children: List.generate(3, (groupIndex) {
                                 int pointsInThisGroup = (totalPoints - (groupIndex * 5)).clamp(0, 5);
                                 
                                 if (pointsInThisGroup == 0 && totalPoints < (groupIndex * 5)) {
@@ -234,6 +225,7 @@ class MainScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 30), // Padding for the footer ornament
               ],
             ),
           );
@@ -245,109 +237,51 @@ class MainScreen extends StatelessWidget {
   Widget _buildFooter(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.4),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            "ARRASTRÁ UN FÓSFORO PARA AGREGAR",
-            style: GoogleFonts.oswald(
-              color: Colors.white38,
-              fontSize: 12,
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              IconButton(
-                onPressed: () => scoreProvider.triggerReset(),
-                icon: const Icon(Icons.refresh, color: Colors.white54),
-                tooltip: "Reiniciar",
+    return Column(
+      children: [
+        if (scoreProvider.totalRemainingMatchsticks > 0)
+          Draggable<int>(
+            data: 1,
+            dragAnchorStrategy: pointerDragAnchorStrategy,
+            feedback: Transform.rotate(
+              angle: 0.1,
+              child: Transform.translate(
+                offset: const Offset(-5, -50),
+                child: const MatchstickWidget(height: 100),
               ),
-              if (scoreProvider.totalRemainingMatchsticks > 0)
-                Draggable<int>(
-                  data: 1,
-                  dragAnchorStrategy: pointerDragAnchorStrategy,
-                  feedback: Transform.rotate(
-                    angle: 0.1,
-                    child: Transform.translate(
-                      offset: const Offset(-5, -50),
-                      child: const MatchstickWidget(height: 100),
-                    ),
-                  ),
-                  childWhenDragging: MatchstickBox(
-                      count: scoreProvider.totalRemainingMatchsticks - 1),
-                  child: MatchstickBox(
-                    count: scoreProvider.totalRemainingMatchsticks,
-                  ),
-                )
-              else
-                MatchstickBox(count: 0),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.settings, color: Colors.white54),
-                tooltip: "Ajustes",
+            ),
+            childWhenDragging: MatchstickBox(
+                count: scoreProvider.totalRemainingMatchsticks - 1),
+            child: MatchstickBox(
+              count: scoreProvider.totalRemainingMatchsticks,
+            ),
+          )
+        else
+          MatchstickBox(count: 0),
+        
+        const SizedBox(height: 30),
+        
+        // REINICIAR Button
+        InkWell(
+          onTap: () => scoreProvider.triggerReset(),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.refresh, color: Colors.white70, size: 20),
+              SizedBox(width: 8),
+              Text(
+                "REINICIAR",
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                  letterSpacing: 2,
+                  fontFamily: 'Oswald',
+                ),
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
-}
-
-
-class ChalkboardPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final random = math.Random(123);
-    final paint = Paint()..color = Colors.white.withOpacity(0.05);
-
-    // Draw chalk dust / streaks
-    for (int i = 0; i < 15; i++) {
-      final path = Path();
-      double x = random.nextDouble() * size.width;
-      path.moveTo(x, 0);
-      path.quadraticBezierTo(
-        x + (random.nextDouble() - 0.5) * 20, 
-        size.height / 2, 
-        x + (random.nextDouble() - 0.5) * 10, 
-        size.height
-      );
-      
-      canvas.drawPath(
-        path, 
-        Paint()
-          ..color = Colors.white.withOpacity(0.03)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.0 + random.nextDouble() * 5.0
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3)
-      );
-    }
-
-    // Tiny chalk specks
-    for (int i = 0; i < 50; i++) {
-      canvas.drawCircle(
-        Offset(random.nextDouble() * size.width, random.nextDouble() * size.height),
-        random.nextDouble() * 1.5,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
