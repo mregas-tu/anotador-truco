@@ -69,6 +69,7 @@ flutter:
     - assets/images/footer.svg
     - assets/images/restart.svg
     - assets/images/settings.svg
+    - assets/images/sun.svg
     - assets/sounds/stick.wav
     - assets/sounds/clear.wav
     - assets/sounds/buenas.wav

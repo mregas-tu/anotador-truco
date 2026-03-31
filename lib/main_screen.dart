@@ -130,38 +130,58 @@ class _MainScreenState extends State<MainScreen> {
                       
                       // Floating Score Circle (Top overlap)
                       Padding(
-                        padding: const EdgeInsets.only(top: 10), // Small margin from the ornament
-                        child: Container(
-                          width: 56,
-                          height: 56,
+                        padding: EdgeInsets.only(top: scoreProvider.appTheme.centerSectionOffset),
+                        child: Stack(
                           alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: scoreProvider.appTheme.navy,
-                            border: Border.all(
-                              color: scoreProvider.appTheme.accentColor.withOpacity(0.5),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: scoreProvider.appTheme.accentColor.withOpacity(0.35),
-                                blurRadius: 4,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 5),
-                            child: Text(
-                              "${scoreProvider.currentGameMode.totalPoints}",
-                              style: TextStyle(
-                                fontFamily: AppFonts.caminito,
-                                fontSize: 26,
-                                color: scoreProvider.appTheme.dividerColor,
-                                fontWeight: FontWeight.bold,
+                          children: [
+                            // 1. Solid background (hides the line)
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: scoreProvider.appTheme.navy,
+                                border: scoreProvider.appTheme.hideCenterCircleBorder 
+                                  ? null 
+                                  : Border.all(
+                                      color: scoreProvider.appTheme.accentColor.withOpacity(0.5),
+                                      width: 1.5,
+                                    ),
+                                boxShadow: !scoreProvider.appTheme.hideCenterCircleBorder ? [
+                                  BoxShadow(
+                                    color: scoreProvider.appTheme.accentColor.withOpacity(0.35),
+                                    blurRadius: 4,
+                                    spreadRadius: 1,
+                                  ),
+                                ] : null,
                               ),
                             ),
-                          ),
+                            
+                            // 2. The ornament (Sun)
+                            if (scoreProvider.appTheme.centerOrnamentAsset != null)
+                              Transform.scale(
+                                scale: scoreProvider.appTheme.centerOrnamentScale,
+                                child: SvgPicture.asset(
+                                  scoreProvider.appTheme.centerOrnamentAsset!,
+                                  width: 56,
+                                  height: 56,
+                                ),
+                              ),
+                              
+                            // 3. The Number
+                            Padding(
+                              padding: EdgeInsets.only(top: scoreProvider.appTheme.scoreVerticalOffset),
+                              child: Text(
+                                "${scoreProvider.currentGameMode.totalPoints}",
+                                style: TextStyle(
+                                  fontFamily: AppFonts.caminito,
+                                  fontSize: scoreProvider.appTheme.scoreFontSize,
+                                  color: scoreProvider.appTheme.dividerColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
