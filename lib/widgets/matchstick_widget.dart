@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/score_provider.dart';
+import '../theme/app_theme.dart';
 
 class MatchstickPainter extends CustomPainter {
   final bool horizontal;
   final bool diagonal;
   final bool flipped;
   final List<Color> headColors;
+  final Color woodLight;
+  final Color woodMedium;
+  final Color woodDark;
 
   MatchstickPainter({
     this.horizontal = false,
     this.diagonal = false,
     this.flipped = false,
     required this.headColors,
+    required this.woodLight,
+    required this.woodMedium,
+    required this.woodDark,
   });
 
   @override
@@ -27,22 +34,17 @@ class MatchstickPainter extends CustomPainter {
   }
 
   void _drawVertical(Canvas canvas, Size size) {
-    // Increased thickness
     final rect = Rect.fromLTWH(size.width / 2 - 3.5, 0, 7, size.height);
     
-    // Wood body with gradient
     final bodyPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFFE6D2B5), Color(0xFFD2B48C), Color(0xFFB89B74)],
-        stops: [0.0, 0.5, 1.0],
+      ..shader = LinearGradient(
+        colors: [woodLight, woodMedium, woodDark],
+        stops: const [0.0, 0.5, 1.0],
       ).createShader(rect);
 
-    // Elongated and larger head
-    // Flipped: if true, head is at bottom, else at top
     final double headY = flipped ? size.height - 12 : -4;
     final headRect = Rect.fromLTWH(size.width / 2 - 4.5, headY, 9, 15);
     
-    // Specular highlight in the head
     final headPaint = Paint()
       ..shader = RadialGradient(
         colors: headColors,
@@ -57,7 +59,6 @@ class MatchstickPainter extends CustomPainter {
     canvas.drawRRect(RRect.fromRectAndRadius(rect.shift(const Offset(2, 2)), const Radius.circular(1.5)), shadowPaint);
     canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(1.5)), bodyPaint);
     
-    // Draw subtle grain lines on the stick (wider)
     final grainPaint = Paint()
       ..color = Colors.black.withOpacity(0.08)
       ..style = PaintingStyle.stroke
@@ -69,22 +70,18 @@ class MatchstickPainter extends CustomPainter {
   }
 
   void _drawHorizontal(Canvas canvas, Size size) {
-    // Increased thickness
     final rect = Rect.fromLTWH(0, size.height / 2 - 3.5, size.width, 7);
 
     final bodyPaint = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFFE6D2B5), Color(0xFFD2B48C), Color(0xFFB89B74)],
+        colors: [woodLight, woodMedium, woodDark],
       ).createShader(rect);
 
-    // Elongated and larger head
-    // Flipped: if true, head is at left, else at right
     final double headX = flipped ? -4 : size.width - 12;
     final headRect = Rect.fromLTWH(headX, size.height / 2 - 5, 16, 9);
     
-    // Specular highlight in the head
     final headPaint = Paint()
       ..shader = RadialGradient(
         colors: headColors,
@@ -99,7 +96,6 @@ class MatchstickPainter extends CustomPainter {
     canvas.drawRRect(RRect.fromRectAndRadius(rect.shift(const Offset(2, 2)), const Radius.circular(1.5)), shadowPaint);
     canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(1.5)), bodyPaint);
     
-    // Grain (wider)
     final grainPaint = Paint()
       ..color = Colors.black.withOpacity(0.08)
       ..style = PaintingStyle.stroke
@@ -112,27 +108,23 @@ class MatchstickPainter extends CustomPainter {
 
   void _drawDiagonal(Canvas canvas, Size size) {
     final side = size.width > size.height ? size.width : size.height;
-    final diagonalLength = 1.35 * side; // Slightly longer coverage
+    final diagonalLength = 1.35 * side;
 
     canvas.save();
     canvas.translate(size.width / 2, size.height / 2);
     canvas.rotate(0.785); // 45 degrees
     
-    // Increased thickness from 4 to 7
     final rect = Rect.fromLTWH(-diagonalLength / 2, -3.5, diagonalLength, 7);
     final bodyPaint = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFFE6D2B5), Color(0xFFD2B48C), Color(0xFFB89B74)],
+        colors: [woodLight, woodMedium, woodDark],
       ).createShader(rect);
 
-    // Elongated and larger head
-    // Flipped: if true, head is at top-left, else at bottom-right
     final double headX = flipped ? -diagonalLength / 2 - 4 : diagonalLength / 2 - 12;
     final headRect = Rect.fromLTWH(headX, -4.5, 15, 9);
     
-    // Specular highlight in the head
     final headPaint = Paint()
       ..shader = RadialGradient(
         colors: headColors,
@@ -155,6 +147,9 @@ class MatchstickPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant MatchstickPainter oldDelegate) {
     return oldDelegate.headColors != headColors ||
+        oldDelegate.woodLight != woodLight ||
+        oldDelegate.woodMedium != woodMedium ||
+        oldDelegate.woodDark != woodDark ||
         oldDelegate.horizontal != horizontal ||
         oldDelegate.diagonal != diagonal ||
         oldDelegate.flipped != flipped;
@@ -201,6 +196,9 @@ class MatchstickWidget extends StatelessWidget {
               diagonal: diagonal,
               flipped: flipped,
               headColors: scoreProvider.currentPalette.headColors,
+              woodLight: TrucoTheme.woodLight,
+              woodMedium: TrucoTheme.woodMedium,
+              woodDark: TrucoTheme.woodDark,
             ),
           ),
         );

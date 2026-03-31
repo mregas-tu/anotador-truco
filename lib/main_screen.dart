@@ -9,6 +9,7 @@ import 'providers/score_provider.dart';
 import 'widgets/score_group_widget.dart';
 import 'widgets/matchstick_widget.dart';
 import 'widgets/matchstick_box.dart';
+import 'theme/app_theme.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -50,7 +51,7 @@ class _MainScreenState extends State<MainScreen> {
         }
 
         return Scaffold(
-          backgroundColor: const Color(0xFF161931),
+          backgroundColor: scoreProvider.appTheme.navy,
           body: SafeArea(
             child: Column(
               children: [
@@ -61,7 +62,7 @@ class _MainScreenState extends State<MainScreen> {
                   alignment: Alignment.center,
                   children: [
                     SvgPicture.asset(
-                      'assets/images/header.svg',
+                      scoreProvider.appTheme.headerAsset,
                       height: 45,
                       colorFilter: ColorFilter.mode(
                         Colors.white.withOpacity(0.8),
@@ -117,7 +118,7 @@ class _MainScreenState extends State<MainScreen> {
                             scoreProvider.nosotros,
                             true,
                           ),
-                          _buildVerticalDivider(),
+                          _buildVerticalDivider(scoreProvider),
                           _buildTeamSection(
                             context,
                             scoreProvider.ellosName,
@@ -136,14 +137,14 @@ class _MainScreenState extends State<MainScreen> {
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFF161931), // Match background color for cleanup
+                            color: scoreProvider.appTheme.navy,
                             border: Border.all(
-                              color: const Color(0xFFEFEBE2).withOpacity(0.2),
-                              width: 1,
+                              color: scoreProvider.appTheme.accentColor.withOpacity(0.5),
+                              width: 1.5,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
+                                color: scoreProvider.appTheme.accentColor.withOpacity(0.35),
                                 blurRadius: 4,
                                 spreadRadius: 1,
                               ),
@@ -154,9 +155,9 @@ class _MainScreenState extends State<MainScreen> {
                             child: Text(
                               "${scoreProvider.currentGameMode.totalPoints}",
                               style: TextStyle(
-                                fontFamily: 'CaminitoBase',
+                                fontFamily: AppFonts.caminito,
                                 fontSize: 26,
-                                color: const Color(0xFFEFEBE2).withOpacity(0.8),
+                                color: scoreProvider.appTheme.dividerColor,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -171,7 +172,7 @@ class _MainScreenState extends State<MainScreen> {
 
                 // 4. Footer Ornament
                 SvgPicture.asset(
-                  'assets/images/footer.svg',
+                  scoreProvider.appTheme.footerAsset,
                   height: 45,
                   colorFilter: ColorFilter.mode(
                     Colors.white.withOpacity(0.8),
@@ -182,7 +183,7 @@ class _MainScreenState extends State<MainScreen> {
                 const SizedBox(height: 20),
 
                 // 5. Matchstick Box
-                _buildFooter(context),
+                _buildFooter(context, scoreProvider),
 
                 const SizedBox(height: 20),
               ],
@@ -193,11 +194,11 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildVerticalDivider() {
+  Widget _buildVerticalDivider(ScoreProvider scoreProvider) {
     return Container(
       width: 1,
       height: double.infinity,
-      color: const Color(0xFFEFEBE2).withOpacity(0.15),
+      color: scoreProvider.appTheme.dividerColor.withOpacity(0.15),
       margin: EdgeInsets.zero,
     );
   }
@@ -312,7 +313,7 @@ class _MainScreenState extends State<MainScreen> {
                     child: child,
                   );
                 },
-                child: const MatchstickWidget(height: 100),
+                child: MatchstickWidget(height: 100),
               ),
               childWhenDragging: _buildTeamColumnContent(name, totalPoints, isBuenas, isNosotros, scoreProvider, true),
               child: _buildTeamColumnContent(name, totalPoints, isBuenas, isNosotros, scoreProvider, false, 
@@ -332,32 +333,32 @@ class _MainScreenState extends State<MainScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1C203E),
+          backgroundColor: scoreProvider.appTheme.navyLight,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           title: Text(
             "CAMBIAR NOMBRE",
             style: TextStyle(
-              fontFamily: 'Oswald',
-              color: Colors.white.withOpacity(0.9),
+              fontFamily: AppFonts.oswald,
+              color: scoreProvider.appTheme.white.withOpacity(0.9),
               letterSpacing: 2,
             ),
           ),
           content: TextField(
             controller: controller,
             autofocus: true,
-            style: const TextStyle(
-              color: Color(0xFFEFEBE2),
-              fontFamily: 'CaminitoBase',
+            style: TextStyle(
+              color: scoreProvider.appTheme.cream,
+              fontFamily: AppFonts.caminito,
               fontSize: 24,
             ),
             decoration: InputDecoration(
               hintText: "Ej: LOS CRACKS",
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-              enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF718C9C)),
+              hintStyle: TextStyle(color: scoreProvider.appTheme.white.withOpacity(0.3)),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: scoreProvider.appTheme.slate),
               ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF888D71)),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: scoreProvider.appTheme.buenas),
               ),
             ),
             textCapitalization: TextCapitalization.characters,
@@ -368,8 +369,8 @@ class _MainScreenState extends State<MainScreen> {
               child: Text(
                 "CANCELAR",
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
-                  fontFamily: 'Oswald',
+                  color: scoreProvider.appTheme.white.withOpacity(0.5),
+                  fontFamily: AppFonts.oswald,
                 ),
               ),
             ),
@@ -380,11 +381,11 @@ class _MainScreenState extends State<MainScreen> {
                 }
                 Navigator.pop(context);
               },
-              child: const Text(
+              child: Text(
                 "GUARDAR",
                 style: TextStyle(
-                  color: Color(0xFF888D71),
-                  fontFamily: 'Oswald',
+                  color: scoreProvider.appTheme.buenas,
+                  fontFamily: AppFonts.oswald,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -409,19 +410,19 @@ class _MainScreenState extends State<MainScreen> {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF161931),
+          backgroundColor: scoreProvider.appTheme.navy,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
-            side: const BorderSide(color: Color(0xFF718C9C), width: 1),
+            side: BorderSide(color: scoreProvider.appTheme.slate, width: 1),
           ),
-          title: const Center(
+          title: Center(
             child: Text(
               "¡Partida finalizada!",
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontFamily: 'Oswald',
+                fontFamily: AppFonts.oswald,
                 fontSize: 20,
-                color: Color(0xFFEFEBE2),
+                color: scoreProvider.appTheme.cream,
               ),
             ),
           ),
@@ -429,22 +430,22 @@ class _MainScreenState extends State<MainScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 "GANADOR",
                 style: TextStyle(
-                  fontFamily: 'Oswald',
+                  fontFamily: AppFonts.oswald,
                   fontSize: 16,
-                  color: Colors.white,
+                  color: scoreProvider.appTheme.white,
                   letterSpacing: 2.5,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 winnerName.toUpperCase(),
-                style: const TextStyle(
-                  fontFamily: 'Oswald',
+                style: TextStyle(
+                  fontFamily: AppFonts.oswald,
                   fontSize: 38,
-                  color: Color(0xFF718C9C),
+                  color: scoreProvider.appTheme.slate,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2,
                 ),
@@ -452,10 +453,10 @@ class _MainScreenState extends State<MainScreen> {
               const SizedBox(height: 20),
               Text(
                 "${scoreProvider.nosotros.toString().padLeft(2, '0')}  —  ${scoreProvider.ellos.toString().padLeft(2, '0')}",
-                style: const TextStyle(
-                  fontFamily: 'CaminitoBase',
+                style: TextStyle(
+                  fontFamily: AppFonts.caminito,
                   fontSize: 52,
-                  color: Color(0xFFEFEBE2),
+                  color: scoreProvider.appTheme.cream,
                 ),
               ),
               const SizedBox(height: 32),
@@ -470,8 +471,8 @@ class _MainScreenState extends State<MainScreen> {
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF718C9C),
-                    foregroundColor: const Color(0xFFEFEBE2),
+                    backgroundColor: scoreProvider.appTheme.slate,
+                    foregroundColor: scoreProvider.appTheme.cream,
                     padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     elevation: 0,
@@ -479,7 +480,7 @@ class _MainScreenState extends State<MainScreen> {
                   child: const Text(
                     "VOLVER A JUGAR",
                     style: TextStyle(
-                      fontFamily: 'Oswald', 
+                      fontFamily: AppFonts.oswald, 
                       fontSize: 16, 
                       fontWeight: FontWeight.w600, // SemiBold
                       letterSpacing: 1,
@@ -504,8 +505,8 @@ class _MainScreenState extends State<MainScreen> {
                         Navigator.pop(context);
                       },
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFF47580), width: 1.5),
-                        foregroundColor: const Color(0xFFF47580),
+                        side: BorderSide(color: scoreProvider.appTheme.malas, width: 1.5),
+                        foregroundColor: scoreProvider.appTheme.malas,
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
@@ -524,15 +525,15 @@ class _MainScreenState extends State<MainScreen> {
                         Share.share(message);
                       },
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFEFEBE2), width: 1.5),
-                        foregroundColor: const Color(0xFFEFEBE2),
+                        side: BorderSide(color: scoreProvider.appTheme.cream, width: 1.5),
+                        foregroundColor: scoreProvider.appTheme.cream,
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       icon: const Icon(Icons.share_outlined, size: 18),
                       label: const Text(
                         "Compartir",
-                        style: TextStyle(fontFamily: 'Oswald', fontSize: 14),
+                        style: TextStyle(fontFamily: AppFonts.oswald, fontSize: 14),
                       ),
                     ),
                   ),
@@ -559,10 +560,10 @@ class _MainScreenState extends State<MainScreen> {
               color: Colors.transparent, // Expand hit area
               child: Text(
                 name,
-                style: const TextStyle(
-                  fontFamily: 'Oswald',
+                style: TextStyle(
+                  fontFamily: AppFonts.oswald,
                   fontSize: 20,
-                  color: Color(0xFF718C9C),
+                  color: scoreProvider.appTheme.slate,
                   letterSpacing: 2,
                   fontWeight: FontWeight.bold,
                 ),
@@ -570,13 +571,12 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
           
-          // Stylized Score Number
           Text(
             totalPoints.toString().padLeft(2, '0'),
-            style: const TextStyle(
-              fontFamily: 'CaminitoBase',
+            style: TextStyle(
+              fontFamily: AppFonts.caminito,
               fontSize: 32,
-              color: Color(0xFFEFEBE2),
+              color: scoreProvider.appTheme.dividerColor,
             ),
           ),
           
@@ -584,9 +584,9 @@ class _MainScreenState extends State<MainScreen> {
           Text(
             scoreProvider.getLabel(teamKey),
             style: TextStyle(
-              fontFamily: 'Oswald',
+              fontFamily: AppFonts.oswald,
               fontSize: 16,
-              color: isBuenas ? const Color(0xFF888D71) : const Color(0xFFF47580),
+              color: isBuenas ? scoreProvider.appTheme.buenas : scoreProvider.appTheme.malas,
               letterSpacing: 1.2,
             ),
           ),
@@ -661,8 +661,7 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildFooter(BuildContext context) {
-    final scoreProvider = Provider.of<ScoreProvider>(context);
+  Widget _buildFooter(BuildContext context, ScoreProvider scoreProvider) {
 
     return DragTarget<String>(
       onAccept: (team) {
@@ -683,7 +682,7 @@ class _MainScreenState extends State<MainScreen> {
                       angle: 0.1,
                       child: Transform.translate(
                         offset: const Offset(-5, -50),
-                        child: const MatchstickWidget(height: 100),
+                        child: MatchstickWidget(height: 100),
                       ),
                     ),
                     childWhenDragging: MatchstickBox(
@@ -717,15 +716,15 @@ class _SettingsDialogContent extends StatelessWidget {
     return StatefulBuilder(
       builder: (context, setDialogState) {
         String title = "AJUSTES";
-        if (currentPane == 1) title = "DISEÑO Y TEMAS";
+        if (currentPane == 1) title = "DISEÑO (FÓSFOROS)";
         if (currentPane == 2) title = "MODO DE JUEGO";
 
         return Dialog(
-          backgroundColor: const Color(0xFF161931),
+          backgroundColor: scoreProvider.appTheme.navy,
           insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
-            side: const BorderSide(color: Color(0xFF718C9C), width: 1),
+            side: BorderSide(color: scoreProvider.appTheme.slate, width: 1),
           ),
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -742,7 +741,7 @@ class _SettingsDialogContent extends StatelessWidget {
                         left: 0,
                         child: IconButton(
                           onPressed: () => setDialogState(() => currentPane = 0),
-                          icon: const Icon(Icons.arrow_back, color: Color(0xFFEFEBE2)),
+                          icon: Icon(Icons.arrow_back, color: scoreProvider.appTheme.cream),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
@@ -750,10 +749,10 @@ class _SettingsDialogContent extends StatelessWidget {
                     Text(
                       title,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontFamily: 'Oswald',
+                      style: TextStyle(
+                        fontFamily: AppFonts.oswald,
                         fontSize: 20,
-                        color: Color(0xFFEFEBE2),
+                        color: scoreProvider.appTheme.cream,
                         letterSpacing: 2,
                       ),
                     ),
@@ -761,7 +760,7 @@ class _SettingsDialogContent extends StatelessWidget {
                       right: 0,
                       child: IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close, color: Color(0xFFEFEBE2)),
+                        icon: Icon(Icons.close, color: scoreProvider.appTheme.cream),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -774,6 +773,7 @@ class _SettingsDialogContent extends StatelessWidget {
                   // --- PANE 0: MAIN SETTINGS ---
                   _buildMenuActionItem(
                     label: "SONIDO",
+                    scoreProvider: scoreProvider,
                     trailing: Switch(
                       value: !scoreProvider.isMuted,
                       onChanged: (val) {
@@ -781,18 +781,19 @@ class _SettingsDialogContent extends StatelessWidget {
                         setDialogState(() {});
                       },
                       activeColor: Colors.white,
-                      activeTrackColor: const Color(0xFF718C9C),
+                      activeTrackColor: scoreProvider.appTheme.slate,
                       inactiveThumbColor: Colors.white70,
                       inactiveTrackColor: Colors.white12,
                     ),
                   ),
-                  const Divider(color: Color(0xFF718C9C), height: 1),
+                  Divider(color: scoreProvider.appTheme.slate, height: 1),
                   _buildMenuActionItem(
                     label: "MODO DE CONTROL",
+                    scoreProvider: scoreProvider,
                     trailing: TextButton(
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        backgroundColor: const Color(0xFF718C9C).withOpacity(0.1),
+                        backgroundColor: scoreProvider.appTheme.slate.withOpacity(0.1),
                       ),
                       onPressed: () {
                         scoreProvider.setScoringMode(
@@ -804,26 +805,28 @@ class _SettingsDialogContent extends StatelessWidget {
                       },
                       child: Text(
                         scoreProvider.scoringMode == ScoringMode.drag ? "ARRASTRAR" : "TOQUE",
-                        style: const TextStyle(
-                          fontFamily: 'Oswald',
+                        style: TextStyle(
+                          fontFamily: AppFonts.oswald,
                           fontSize: 14,
-                          color: Color(0xFFEFEBE2),
+                          color: scoreProvider.appTheme.cream,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
-                  const Divider(color: Color(0xFF718C9C), height: 1),
+                  Divider(color: scoreProvider.appTheme.slate, height: 1),
                   _buildMenuNavigationItem(
                     label: "MODO DE JUEGO",
                     onTap: () => setDialogState(() => currentPane = 2),
+                    scoreProvider: scoreProvider,
                   ),
-                  const Divider(color: Color(0xFF718C9C), height: 1),
+                  Divider(color: scoreProvider.appTheme.slate, height: 1),
                   _buildMenuNavigationItem(
-                    label: "DISEÑO Y TEMAS",
+                    label: "DISEÑO (FÓSFOROS)",
                     onTap: () => setDialogState(() => currentPane = 1),
+                    scoreProvider: scoreProvider,
                   ),
-                  const Divider(color: Color(0xFF718C9C), height: 1),
+                  Divider(color: scoreProvider.appTheme.slate, height: 1),
                   
                   const SizedBox(height: 24),
                   
@@ -838,52 +841,71 @@ class _SettingsDialogContent extends StatelessWidget {
                       style: TextStyle(fontFamily: 'Oswald', fontSize: 16, letterSpacing: 0.5),
                     ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFEFEBE2),
-                      side: const BorderSide(color: Color(0xFFEFEBE2)),
+                      foregroundColor: scoreProvider.appTheme.cream,
+                      side: BorderSide(color: scoreProvider.appTheme.cream),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ] else if (currentPane == 1) ...[
-                  // --- PANE 1: CUSTOMIZATION ---
+                  // --- PANE 1: DESIGN (THEMES & PALETTES) ---
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 300),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: availablePalettes.length,
-                      separatorBuilder: (context, index) => const Divider(color: Colors.white12, height: 1),
-                      itemBuilder: (context, index) {
-                        final palette = availablePalettes[index];
-                        final isSelected = scoreProvider.currentPalette.name == palette.name;
-                        
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                          leading: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(colors: palette.headColors),
-                              border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
-                            ),
+                    constraints: const BoxConstraints(maxHeight: 250),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text("TEMA DE LA APP", style: TextStyle(fontFamily: AppFonts.oswald, fontSize: 14, color: scoreProvider.appTheme.slate, letterSpacing: 1)),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: TrucoTheme.allThemes.length,
+                            itemBuilder: (context, index) {
+                              final theme = TrucoTheme.allThemes[index];
+                              final isSelected = scoreProvider.appTheme.name == theme.name;
+                              return ListTile(
+                                visualDensity: VisualDensity.compact,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 0),
+                                leading: Container(width: 20, height: 20, decoration: BoxDecoration(color: theme.navy, shape: BoxShape.circle, border: Border.all(color: theme.dividerColor, width: 2))),
+                                title: Text(theme.name, style: TextStyle(fontFamily: AppFonts.oswald, fontSize: 16, color: isSelected ? scoreProvider.appTheme.cream : Colors.white70)),
+                                trailing: isSelected ? Icon(Icons.check, color: scoreProvider.appTheme.cream, size: 18) : null,
+                                onTap: () {
+                                  scoreProvider.setAppTheme(theme);
+                                  setDialogState(() {});
+                                },
+                              );
+                            },
                           ),
-                          title: Text(
-                            palette.name,
-                            style: TextStyle(
-                              fontFamily: 'Oswald',
-                              fontSize: 16,
-                              color: isSelected ? const Color(0xFFEFEBE2) : Colors.white70,
-                            ),
+                        ),
+                        const Divider(color: Colors.white12, height: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text("DISEÑO DE FÓSFOROS", style: TextStyle(fontFamily: AppFonts.oswald, fontSize: 14, color: scoreProvider.appTheme.slate, letterSpacing: 1)),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: availablePalettes.length,
+                            itemBuilder: (context, index) {
+                              final palette = availablePalettes[index];
+                              final isSelected = scoreProvider.currentPalette.name == palette.name;
+                              return ListTile(
+                                visualDensity: VisualDensity.compact,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 0),
+                                leading: Container(width: 20, height: 20, decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: palette.headColors), border: isSelected ? Border.all(color: Colors.white, width: 2) : null)),
+                                title: Text(palette.name, style: TextStyle(fontFamily: AppFonts.oswald, fontSize: 16, color: isSelected ? scoreProvider.appTheme.cream : Colors.white70)),
+                                trailing: isSelected ? Icon(Icons.radio_button_checked, color: scoreProvider.appTheme.cream, size: 18) : Icon(Icons.radio_button_off, color: scoreProvider.appTheme.white.withOpacity(0.2), size: 18),
+                                onTap: () {
+                                  scoreProvider.setPalette(palette);
+                                  setDialogState(() {});
+                                },
+                              );
+                            },
                           ),
-                          trailing: isSelected 
-                            ? const Icon(Icons.radio_button_checked, color: Color(0xFFEFEBE2), size: 20)
-                            : Icon(Icons.radio_button_off, color: Colors.white.withOpacity(0.2), size: 20),
-                          onTap: () {
-                            scoreProvider.setPalette(palette);
-                            setDialogState(() {});
-                          },
-                        );
-                      },
+                        ),
+                      ],
                     ),
                   ),
                 ] else if (currentPane == 2) ...[
@@ -903,14 +925,14 @@ class _SettingsDialogContent extends StatelessWidget {
                           title: Text(
                             mode.label,
                             style: TextStyle(
-                              fontFamily: 'Oswald',
+                              fontFamily: AppFonts.oswald,
                               fontSize: 16,
-                              color: isSelected ? const Color(0xFFEFEBE2) : Colors.white70,
+                              color: isSelected ? scoreProvider.appTheme.cream : Colors.white70,
                             ),
                           ),
                           trailing: isSelected 
-                            ? const Icon(Icons.radio_button_checked, color: Color(0xFFEFEBE2), size: 20)
-                            : Icon(Icons.radio_button_off, color: Colors.white.withOpacity(0.2), size: 20),
+                            ? Icon(Icons.radio_button_checked, color: scoreProvider.appTheme.cream, size: 20)
+                            : Icon(Icons.radio_button_off, color: scoreProvider.appTheme.white.withOpacity(0.2), size: 20),
                           onTap: () {
                             scoreProvider.setGameMode(mode);
                             setDialogState(() {});
@@ -928,7 +950,11 @@ class _SettingsDialogContent extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuNavigationItem({required String label, required VoidCallback onTap}) {
+  Widget _buildMenuNavigationItem({
+    required String label,
+    required VoidCallback onTap,
+    required ScoreProvider scoreProvider,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -938,21 +964,25 @@ class _SettingsDialogContent extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
-                  fontFamily: 'Oswald',
+                style: TextStyle(
+                  fontFamily: AppFonts.oswald,
                   fontSize: 16,
-                  color: Colors.white,
+                  color: scoreProvider.appTheme.white,
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFFEFEBE2), size: 24),
+            Icon(Icons.chevron_right, color: scoreProvider.appTheme.cream, size: 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMenuActionItem({required String label, required Widget trailing}) {
+  Widget _buildMenuActionItem({
+    required String label,
+    required Widget trailing,
+    required ScoreProvider scoreProvider,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: Row(
@@ -960,10 +990,10 @@ class _SettingsDialogContent extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                fontFamily: 'Oswald',
+              style: TextStyle(
+                fontFamily: AppFonts.oswald,
                 fontSize: 16,
-                color: Colors.white,
+                color: scoreProvider.appTheme.white,
               ),
             ),
           ),

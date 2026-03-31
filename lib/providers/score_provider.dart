@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/audio_service.dart';
+import '../theme/app_theme.dart';
 
 class GameMode {
   final String label;
@@ -61,6 +62,7 @@ class ScoreProvider with ChangeNotifier {
   GameMode _currentGameMode = availableModes[4]; // Default to 30 pts (15/15)
   MatchstickPalette _currentPalette = availablePalettes[1]; // Default to BORDÓ
   ScoringMode _scoringMode = ScoringMode.drag;
+  TrucoTheme _appTheme = TrucoTheme.navyTheme;
   bool _isMuted = false;
   int _nosotros = 0;
   int _ellos = 0;
@@ -98,6 +100,7 @@ class ScoreProvider with ChangeNotifier {
   int get ellos => _ellos;
   String get nosotrosName => _nosotrosName;
   String get ellosName => _ellosName;
+  TrucoTheme get appTheme => _appTheme;
   int get maxScore => _currentGameMode.totalPoints;
   String? get winner => _winner;
   int get totalRemainingMatchsticks => _totalRemainingMatchsticks;
@@ -314,6 +317,11 @@ class ScoreProvider with ChangeNotifier {
 
   void setMuted(bool muted) {
     _isMuted = muted;
+    notifyListeners();
+  }
+
+  void setAppTheme(TrucoTheme theme) {
+    _appTheme = theme;
     notifyListeners();
   }
 
