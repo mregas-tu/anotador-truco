@@ -634,150 +634,120 @@ class _SettingsDialogContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context);
-
-    bool showingCustomization = false;
+    int currentPane = 0; // 0: Main, 1: Customization, 2: Game Mode
 
     return StatefulBuilder(
       builder: (context, setDialogState) {
+        String title = "AJUSTES";
+        if (currentPane == 1) title = "DISEÑO Y TEMAS";
+        if (currentPane == 2) title = "MODO DE JUEGO";
+
         return Dialog(
           backgroundColor: const Color(0xFF161931),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+            side: BorderSide(color: Colors.white.withOpacity(0.1), width: 1),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  showingCustomization ? "PERSONALIZAR" : "AJUSTES",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: 'Oswald',
-                    fontSize: 24,
-                    color: Color(0xFFEFEBE2),
-                    letterSpacing: 2,
-                    fontWeight: FontWeight.bold,
-                  ),
+                // Header Row (Back icon, Title, Close icon)
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (currentPane != 0)
+                      Positioned(
+                        left: 0,
+                        child: IconButton(
+                          onPressed: () => setDialogState(() => currentPane = 0),
+                          icon: const Icon(Icons.arrow_back, color: Color(0xFFEFEBE2)),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Oswald',
+                        fontSize: 22,
+                        color: Color(0xFFEFEBE2),
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      child: IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: Color(0xFFEFEBE2)),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 
-                if (!showingCustomization) ...[
-                  // --- MAIN SETTINGS ---
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      scoreProvider.isMuted ? Icons.volume_off : Icons.volume_up,
-                      color: const Color(0xFF718C9C),
-                    ),
-                    title: const Text(
-                      "SONIDOS",
-                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), fontSize: 18),
-                    ),
+                if (currentPane == 0) ...[
+                  // --- PANE 0: MAIN SETTINGS ---
+                  _buildMenuActionItem(
+                    label: "SONIDO",
                     trailing: Switch(
                       value: !scoreProvider.isMuted,
                       onChanged: (val) {
                         scoreProvider.setMuted(!val);
                         setDialogState(() {});
                       },
-                      activeColor: const Color(0xFF888D71),
+                      activeColor: Colors.white,
+                      activeTrackColor: const Color(0xFF718C9C).withOpacity(0.5),
+                      inactiveThumbColor: Colors.white70,
+                      inactiveTrackColor: Colors.black26,
                     ),
                   ),
-                  
-                  const Divider(color: Colors.white12),
-                  
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      "MODO DE JUEGO",
-                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFF718C9C), fontSize: 14, letterSpacing: 1.5),
-                    ),
+                  const Divider(color: Colors.white12, height: 1),
+                  _buildMenuNavigationItem(
+                    label: "MODO DE JUEGO",
+                    onTap: () => setDialogState(() => currentPane = 2),
                   ),
-                  
-                  SizedBox(
-                    height: 180,
-                    child: ListView.builder(
-                      itemCount: availableModes.length,
-                      itemBuilder: (context, index) {
-                        final mode = availableModes[index];
-                        final isSelected = scoreProvider.currentGameMode.label == mode.label;
-                        
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                          title: Text(
-                            mode.label,
-                            style: TextStyle(
-                              fontFamily: 'Oswald',
-                              fontSize: 14,
-                              color: isSelected ? const Color(0xFFEFEBE2) : const Color(0xFF718C9C),
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                          trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF888D71), size: 18) : null,
-                          onTap: () {
-                            scoreProvider.setGameMode(mode);
-                            setDialogState(() {});
-                            Navigator.pop(context);
-                          },
-                        );
-                      },
-                    ),
+                  const Divider(color: Colors.white12, height: 1),
+                  _buildMenuNavigationItem(
+                    label: "DISEÑO Y TEMAS",
+                    onTap: () => setDialogState(() => currentPane = 1),
                   ),
+                  const Divider(color: Colors.white12, height: 1),
                   
-                  const Divider(color: Colors.white12),
-
-                  // Customization Trigger
-                  ListTile(
-                    onTap: () {
-                      setDialogState(() {
-                        showingCustomization = true;
-                      });
-                    },
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.palette_outlined, color: Color(0xFF718C9C)),
-                    title: const Text(
-                      "DISEÑO Y TEMAS",
-                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), fontSize: 18),
-                    ),
-                    trailing: const Icon(Icons.chevron_right, color: Color(0xFF718C9C)),
-                  ),
-
-                  const Divider(color: Colors.white12),
+                  const SizedBox(height: 24),
                   
-                  TextButton.icon(
+                  // Share Button
+                  OutlinedButton.icon(
                     onPressed: () {
                       Share.share("¡Mirá este anotador de Truco premium! Bajalo acá: [LINK]");
                     },
-                    icon: const Icon(Icons.share, color: Color(0xFF718C9C)),
+                    icon: const Icon(Icons.share_outlined, size: 20),
                     label: const Text(
-                      "COMPARTIR APP",
-                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), letterSpacing: 1),
+                      "Compartir app",
+                      style: TextStyle(fontFamily: 'Oswald', fontSize: 16, letterSpacing: 0.5),
                     ),
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEFEBE2).withOpacity(0.1),
+                    style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFEFEBE2),
+                      side: const BorderSide(color: Color(0xFFEFEBE2)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text("CERRAR"),
                   ),
-                ] else ...[
-                  // --- CUSTOMIZATION VIEW ---
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      "COLOR DE FÓSFOROS",
-                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFF718C9C), fontSize: 14, letterSpacing: 1.5),
-                    ),
-                  ),
-
-                  SizedBox(
-                    height: 250,
-                    child: ListView.builder(
+                ] else if (currentPane == 1) ...[
+                  // --- PANE 1: CUSTOMIZATION ---
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 300),
+                    child: ListView.separated(
+                      shrinkWrap: true,
                       itemCount: availablePalettes.length,
+                      separatorBuilder: (context, index) => const Divider(color: Colors.white12, height: 1),
                       itemBuilder: (context, index) {
                         final palette = availablePalettes[index];
                         final isSelected = scoreProvider.currentPalette.name == palette.name;
@@ -789,9 +759,7 @@ class _SettingsDialogContent extends StatelessWidget {
                             height: 24,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: palette.headColors,
-                              ),
+                              gradient: RadialGradient(colors: palette.headColors),
                               border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
                             ),
                           ),
@@ -799,11 +767,13 @@ class _SettingsDialogContent extends StatelessWidget {
                             palette.name,
                             style: TextStyle(
                               fontFamily: 'Oswald',
+                              fontSize: 16,
                               color: isSelected ? const Color(0xFFEFEBE2) : const Color(0xFF718C9C),
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
-                          trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF888D71)) : null,
+                          trailing: isSelected 
+                            ? const Icon(Icons.radio_button_checked, color: Color(0xFFEFEBE2), size: 20)
+                            : Icon(Icons.radio_button_off, color: Colors.white.withOpacity(0.2), size: 20),
                           onTap: () {
                             scoreProvider.setPalette(palette);
                             setDialogState(() {});
@@ -812,20 +782,37 @@ class _SettingsDialogContent extends StatelessWidget {
                       },
                     ),
                   ),
-
-                  const SizedBox(height: 16),
-                  const Divider(color: Colors.white12),
-                  
-                  TextButton.icon(
-                    onPressed: () {
-                      setDialogState(() {
-                        showingCustomization = false;
-                      });
-                    },
-                    icon: const Icon(Icons.arrow_back, color: Color(0xFF718C9C)),
-                    label: const Text(
-                      "VOLVER",
-                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), letterSpacing: 1),
+                ] else if (currentPane == 2) ...[
+                  // --- PANE 2: GAME MODE ---
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 300),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: availableModes.length,
+                      separatorBuilder: (context, index) => const Divider(color: Colors.white12, height: 1),
+                      itemBuilder: (context, index) {
+                        final mode = availableModes[index];
+                        final isSelected = scoreProvider.currentGameMode.label == mode.label;
+                        
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                          title: Text(
+                            mode.label,
+                            style: TextStyle(
+                              fontFamily: 'Oswald',
+                              fontSize: 16,
+                              color: isSelected ? const Color(0xFFEFEBE2) : const Color(0xFF718C9C),
+                            ),
+                          ),
+                          trailing: isSelected 
+                            ? const Icon(Icons.radio_button_checked, color: Color(0xFFEFEBE2), size: 20)
+                            : Icon(Icons.radio_button_off, color: Colors.white.withOpacity(0.2), size: 20),
+                          onTap: () {
+                            scoreProvider.setGameMode(mode);
+                            setDialogState(() {});
+                          },
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -834,6 +821,53 @@ class _SettingsDialogContent extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMenuNavigationItem({required String label, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontFamily: 'Oswald',
+                  fontSize: 18,
+                  color: Color(0xFFEFEBE2),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Color(0xFFEFEBE2), size: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuActionItem({required String label, required Widget trailing}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Oswald',
+                fontSize: 18,
+                color: Color(0xFFEFEBE2),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          trailing,
+        ],
+      ),
     );
   }
 }

@@ -46,20 +46,17 @@ const List<MatchstickPalette> availablePalettes = [
 ];
 
 const List<GameMode> availableModes = [
-  GameMode(label: "12 puntos (12 malas)", totalPoints: 12, hasBuenas: false),
-  GameMode(label: "15 puntos (15 malas)", totalPoints: 15, hasBuenas: false),
-  GameMode(label: "18 puntos (18 malas)", totalPoints: 18, hasBuenas: false),
-  GameMode(label: "20 puntos (20 malas)", totalPoints: 20, hasBuenas: false),
-  GameMode(label: "18 puntos (9 malas + 9 buenas)", totalPoints: 18, hasBuenas: true),
-  GameMode(label: "20 puntos (10 malas + 10 buenas)", totalPoints: 20, hasBuenas: true),
-  GameMode(label: "24 puntos (12 malas + 12 buenas)", totalPoints: 24, hasBuenas: true),
-  GameMode(label: "30 puntos (15 malas + 15 buenas)", totalPoints: 30, hasBuenas: true),
-  GameMode(label: "40 puntos (20 malas + 20 buenas)", totalPoints: 40, hasBuenas: true),
+  GameMode(label: "12 puntos - 12 malas", totalPoints: 12, hasBuenas: false),
+  GameMode(label: "15 puntos - 15 malas", totalPoints: 15, hasBuenas: false),
+  GameMode(label: "20 puntos - 20 malas", totalPoints: 20, hasBuenas: false),
+  GameMode(label: "24 puntos - 12/12", totalPoints: 24, hasBuenas: true),
+  GameMode(label: "30 puntos - 15/15", totalPoints: 30, hasBuenas: true),
+  GameMode(label: "40 puntos - 20/20", totalPoints: 40, hasBuenas: true),
 ];
 
 class ScoreProvider with ChangeNotifier {
   final AudioService _audioService = AudioService();
-  GameMode _currentGameMode = availableModes[7]; // Default to 30 pts (15+15)
+  GameMode _currentGameMode = availableModes[4]; // Default to 30 pts (15/15)
   MatchstickPalette _currentPalette = availablePalettes[1]; // Default to BORDÓ
   bool _isMuted = false;
   int _nosotros = 0;
