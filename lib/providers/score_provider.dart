@@ -15,6 +15,36 @@ class GameMode {
   int get milestone => hasBuenas ? (totalPoints / 2).floor() : totalPoints;
 }
 
+class MatchstickPalette {
+  final String name;
+  final List<Color> headColors;
+
+  const MatchstickPalette({required this.name, required this.headColors});
+}
+
+const List<MatchstickPalette> availablePalettes = [
+  MatchstickPalette(
+    name: "ROJO CLÁSICO",
+    headColors: [Color(0xFFFF5252), Color(0xFFD32F2F), Color(0xFF8B0000)],
+  ),
+  MatchstickPalette(
+    name: "BORDÓ",
+    headColors: [Color(0xFFB03A2E), Color(0xFF7B241C), Color(0xFF4D1111)],
+  ),
+  MatchstickPalette(
+    name: "AZUL NOCHE",
+    headColors: [Color(0xFF2E86C1), Color(0xFF1B4F72), Color(0xFF0E2F44)],
+  ),
+  MatchstickPalette(
+    name: "BOSQUE",
+    headColors: [Color(0xFF229954), Color(0xFF186A3B), Color(0xFF0B3B17)],
+  ),
+  MatchstickPalette(
+    name: "ORO",
+    headColors: [Color(0xFFD4AC0D), Color(0xFF9A7D0A), Color(0xFF7D6608)],
+  ),
+];
+
 const List<GameMode> availableModes = [
   GameMode(label: "12 puntos (12 malas)", totalPoints: 12, hasBuenas: false),
   GameMode(label: "15 puntos (15 malas)", totalPoints: 15, hasBuenas: false),
@@ -30,6 +60,7 @@ const List<GameMode> availableModes = [
 class ScoreProvider with ChangeNotifier {
   final AudioService _audioService = AudioService();
   GameMode _currentGameMode = availableModes[7]; // Default to 30 pts (15+15)
+  MatchstickPalette _currentPalette = availablePalettes[1]; // Default to BORDÓ
   bool _isMuted = false;
   int _nosotros = 0;
   int _ellos = 0;
@@ -60,6 +91,7 @@ class ScoreProvider with ChangeNotifier {
   bool _isReverting = false;
 
   GameMode get currentGameMode => _currentGameMode;
+  MatchstickPalette get currentPalette => _currentPalette;
   bool get isMuted => _isMuted;
   int get nosotros => _nosotros;
   int get ellos => _ellos;
@@ -271,6 +303,11 @@ class ScoreProvider with ChangeNotifier {
 
   void setMuted(bool muted) {
     _isMuted = muted;
+    notifyListeners();
+  }
+
+  void setPalette(MatchstickPalette palette) {
+    _currentPalette = palette;
     notifyListeners();
   }
 

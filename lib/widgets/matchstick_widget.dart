@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/score_provider.dart';
 
 class MatchstickPainter extends CustomPainter {
   final bool horizontal;
   final bool diagonal;
   final bool flipped;
+  final List<Color> headColors;
 
   MatchstickPainter({
     this.horizontal = false,
     this.diagonal = false,
     this.flipped = false,
+    required this.headColors,
   });
 
   @override
@@ -41,7 +45,7 @@ class MatchstickPainter extends CustomPainter {
     // Specular highlight in the head
     final headPaint = Paint()
       ..shader = RadialGradient(
-        colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F), const Color(0xFF8B0000)],
+        colors: headColors,
         stops: const [0.0, 0.4, 1.0],
         center: flipped ? const Alignment(-0.4, 0.4) : const Alignment(-0.4, -0.4),
       ).createShader(headRect);
@@ -83,7 +87,7 @@ class MatchstickPainter extends CustomPainter {
     // Specular highlight in the head
     final headPaint = Paint()
       ..shader = RadialGradient(
-        colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F), const Color(0xFF8B0000)],
+        colors: headColors,
         stops: const [0.0, 0.4, 1.0],
         center: flipped ? const Alignment(0.4, -0.4) : const Alignment(-0.4, -0.4),
       ).createShader(headRect);
@@ -131,7 +135,7 @@ class MatchstickPainter extends CustomPainter {
     // Specular highlight in the head
     final headPaint = Paint()
       ..shader = RadialGradient(
-        colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F), const Color(0xFF8B0000)],
+        colors: headColors,
         stops: const [0.0, 0.4, 1.0],
         center: flipped ? const Alignment(0.4, -0.4) : const Alignment(-0.4, -0.4),
       ).createShader(headRect);
@@ -149,7 +153,12 @@ class MatchstickPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant MatchstickPainter oldDelegate) {
+    return oldDelegate.headColors != headColors ||
+        oldDelegate.horizontal != horizontal ||
+        oldDelegate.diagonal != diagonal ||
+        oldDelegate.flipped != flipped;
+  }
 }
 
 class MatchstickWidget extends StatelessWidget {
@@ -181,16 +190,21 @@ class MatchstickWidget extends StatelessWidget {
       boxHeight = width;
     }
 
-    return SizedBox(
-      width: boxWidth,
-      height: boxHeight,
-      child: CustomPaint(
-        painter: MatchstickPainter(
-          horizontal: horizontal,
-          diagonal: diagonal,
-          flipped: flipped,
-        ),
-      ),
+    return Consumer<ScoreProvider>(
+      builder: (context, scoreProvider, child) {
+        return SizedBox(
+          width: boxWidth,
+          height: boxHeight,
+          child: CustomPaint(
+            painter: MatchstickPainter(
+              horizontal: horizontal,
+              diagonal: diagonal,
+              flipped: flipped,
+              headColors: scoreProvider.currentPalette.headColors,
+            ),
+          ),
+        );
+      },
     );
   }
 }

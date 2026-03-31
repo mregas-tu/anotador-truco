@@ -110,7 +110,7 @@ class _MainScreenState extends State<MainScreen> {
                         scoreProvider.nosotros,
                         true,
                       ),
-                      _buildDivider(),
+                      _buildCenterDivider(scoreProvider),
                       _buildTeamSection(
                         context,
                         scoreProvider.ellosName,
@@ -147,12 +147,27 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildDivider() {
-    return Container(
-      width: 1,
-      height: double.infinity,
-      color: const Color(0xFFEFEBE2).withOpacity(0.15),
-      margin: EdgeInsets.zero,
+  Widget _buildCenterDivider(ScoreProvider scoreProvider) {
+    return Column(
+      children: [
+        const SizedBox(height: 10),
+        Text(
+          "${scoreProvider.currentGameMode.totalPoints}",
+          style: TextStyle(
+            fontFamily: 'CaminitoBase',
+            fontSize: 40,
+            color: const Color(0xFFEFEBE2).withOpacity(0.6),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: Container(
+            width: 1,
+            color: const Color(0xFFEFEBE2).withOpacity(0.15),
+          ),
+        ),
+      ],
     );
   }
 
@@ -592,6 +607,8 @@ class _SettingsDialogContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context);
 
+    bool showingCustomization = false;
+
     return StatefulBuilder(
       builder: (context, setDialogState) {
         return Dialog(
@@ -603,10 +620,10 @@ class _SettingsDialogContent extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  "AJUSTES",
+                Text(
+                  showingCustomization ? "PERSONALIZAR" : "AJUSTES",
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'Oswald',
                     fontSize: 24,
                     color: Color(0xFFEFEBE2),
@@ -616,92 +633,174 @@ class _SettingsDialogContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 
-                // Sound Toggle
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    scoreProvider.isMuted ? Icons.volume_off : Icons.volume_up,
-                    color: const Color(0xFF718C9C),
+                if (!showingCustomization) ...[
+                  // --- MAIN SETTINGS ---
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      scoreProvider.isMuted ? Icons.volume_off : Icons.volume_up,
+                      color: const Color(0xFF718C9C),
+                    ),
+                    title: const Text(
+                      "SONIDOS",
+                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), fontSize: 18),
+                    ),
+                    trailing: Switch(
+                      value: !scoreProvider.isMuted,
+                      onChanged: (val) {
+                        scoreProvider.setMuted(!val);
+                        setDialogState(() {});
+                      },
+                      activeColor: const Color(0xFF888D71),
+                    ),
                   ),
-                  title: const Text(
-                    "SONIDOS",
-                    style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), fontSize: 18),
+                  
+                  const Divider(color: Colors.white12),
+                  
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      "MODO DE JUEGO",
+                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFF718C9C), fontSize: 14, letterSpacing: 1.5),
+                    ),
                   ),
-                  trailing: Switch(
-                    value: !scoreProvider.isMuted,
-                    onChanged: (val) {
-                      scoreProvider.setMuted(!val);
-                      setDialogState(() {});
-                    },
-                    activeColor: const Color(0xFF888D71),
-                  ),
-                ),
-                
-                const Divider(color: Colors.white12),
-                
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    "MODO DE JUEGO",
-                    style: TextStyle(fontFamily: 'Oswald', color: Color(0xFF718C9C), fontSize: 14, letterSpacing: 1.5),
-                  ),
-                ),
-                
-                // Game Modes List
-                SizedBox(
-                  height: 250,
-                  child: ListView.builder(
-                    itemCount: availableModes.length,
-                    itemBuilder: (context, index) {
-                      final mode = availableModes[index];
-                      final isSelected = scoreProvider.currentGameMode.label == mode.label;
-                      
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                        title: Text(
-                          mode.label,
-                          style: TextStyle(
-                            fontFamily: 'Oswald',
-                            color: isSelected ? const Color(0xFFEFEBE2) : const Color(0xFF718C9C),
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  
+                  SizedBox(
+                    height: 180,
+                    child: ListView.builder(
+                      itemCount: availableModes.length,
+                      itemBuilder: (context, index) {
+                        final mode = availableModes[index];
+                        final isSelected = scoreProvider.currentGameMode.label == mode.label;
+                        
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                          title: Text(
+                            mode.label,
+                            style: TextStyle(
+                              fontFamily: 'Oswald',
+                              fontSize: 14,
+                              color: isSelected ? const Color(0xFFEFEBE2) : const Color(0xFF718C9C),
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
                           ),
-                        ),
-                        trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF888D71)) : null,
-                        onTap: () {
-                          scoreProvider.setGameMode(mode);
-                          setDialogState(() {});
-                          Navigator.pop(context);
-                        },
-                      );
+                          trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF888D71), size: 18) : null,
+                          onTap: () {
+                            scoreProvider.setGameMode(mode);
+                            setDialogState(() {});
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  
+                  const Divider(color: Colors.white12),
+
+                  // Customization Trigger
+                  ListTile(
+                    onTap: () {
+                      setDialogState(() {
+                        showingCustomization = true;
+                      });
                     },
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.palette_outlined, color: Color(0xFF718C9C)),
+                    title: const Text(
+                      "DISEÑO Y TEMAS",
+                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), fontSize: 18),
+                    ),
+                    trailing: const Icon(Icons.chevron_right, color: Color(0xFF718C9C)),
                   ),
-                ),
-                
-                const SizedBox(height: 16),
-                const Divider(color: Colors.white12),
-                
-                // Share App
-                TextButton.icon(
-                  onPressed: () {
-                    Share.share("¡Mirá este anotador de Truco premium! Bajalo acá: [LINK]");
-                  },
-                  icon: const Icon(Icons.share, color: Color(0xFF718C9C)),
-                  label: const Text(
-                    "COMPARTIR APP",
-                    style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), letterSpacing: 1),
+
+                  const Divider(color: Colors.white12),
+                  
+                  TextButton.icon(
+                    onPressed: () {
+                      Share.share("¡Mirá este anotador de Truco premium! Bajalo acá: [LINK]");
+                    },
+                    icon: const Icon(Icons.share, color: Color(0xFF718C9C)),
+                    label: const Text(
+                      "COMPARTIR APP",
+                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), letterSpacing: 1),
+                    ),
                   ),
-                ),
-                
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEFEBE2).withOpacity(0.1),
-                    foregroundColor: const Color(0xFFEFEBE2),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEFEBE2).withOpacity(0.1),
+                      foregroundColor: const Color(0xFFEFEBE2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("CERRAR"),
                   ),
-                  child: const Text("CERRAR"),
-                ),
+                ] else ...[
+                  // --- CUSTOMIZATION VIEW ---
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      "COLOR DE FÓSFOROS",
+                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFF718C9C), fontSize: 14, letterSpacing: 1.5),
+                    ),
+                  ),
+
+                  SizedBox(
+                    height: 250,
+                    child: ListView.builder(
+                      itemCount: availablePalettes.length,
+                      itemBuilder: (context, index) {
+                        final palette = availablePalettes[index];
+                        final isSelected = scoreProvider.currentPalette.name == palette.name;
+                        
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                          leading: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: palette.headColors,
+                              ),
+                              border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
+                            ),
+                          ),
+                          title: Text(
+                            palette.name,
+                            style: TextStyle(
+                              fontFamily: 'Oswald',
+                              color: isSelected ? const Color(0xFFEFEBE2) : const Color(0xFF718C9C),
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF888D71)) : null,
+                          onTap: () {
+                            scoreProvider.setPalette(palette);
+                            setDialogState(() {});
+                          },
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Divider(color: Colors.white12),
+                  
+                  TextButton.icon(
+                    onPressed: () {
+                      setDialogState(() {
+                        showingCustomization = false;
+                      });
+                    },
+                    icon: const Icon(Icons.arrow_back, color: Color(0xFF718C9C)),
+                    label: const Text(
+                      "VOLVER",
+                      style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), letterSpacing: 1),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
