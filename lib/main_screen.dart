@@ -102,20 +102,63 @@ class _MainScreenState extends State<MainScreen> {
 
                 // 2. Main Scoring Table
                 Expanded(
-                  child: Row(
+                  child: Stack(
+                    alignment: Alignment.topCenter,
                     children: [
-                      _buildTeamSection(
-                        context,
-                        scoreProvider.nosotrosName,
-                        scoreProvider.nosotros,
-                        true,
+                      // Scoring Table (Background)
+                      Row(
+                        children: [
+                          _buildTeamSection(
+                            context,
+                            scoreProvider.nosotrosName,
+                            scoreProvider.nosotros,
+                            true,
+                          ),
+                          _buildVerticalDivider(),
+                          _buildTeamSection(
+                            context,
+                            scoreProvider.ellosName,
+                            scoreProvider.ellos,
+                            false,
+                          ),
+                        ],
                       ),
-                      _buildCenterDivider(scoreProvider),
-                      _buildTeamSection(
-                        context,
-                        scoreProvider.ellosName,
-                        scoreProvider.ellos,
-                        false,
+                      
+                      // Floating Score Circle (Top overlap)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10), // Small margin from the ornament
+                        child: Container(
+                          width: 56,
+                          height: 56,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF161931), // Match background color for cleanup
+                            border: Border.all(
+                              color: const Color(0xFFEFEBE2).withOpacity(0.2),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 5),
+                            child: Text(
+                              "${scoreProvider.currentGameMode.totalPoints}",
+                              style: TextStyle(
+                                fontFamily: 'CaminitoBase',
+                                fontSize: 26,
+                                color: const Color(0xFFEFEBE2).withOpacity(0.8),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -147,27 +190,12 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildCenterDivider(ScoreProvider scoreProvider) {
-    return Column(
-      children: [
-        const SizedBox(height: 10),
-        Text(
-          "${scoreProvider.currentGameMode.totalPoints}",
-          style: TextStyle(
-            fontFamily: 'CaminitoBase',
-            fontSize: 40,
-            color: const Color(0xFFEFEBE2).withOpacity(0.6),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Expanded(
-          child: Container(
-            width: 1,
-            color: const Color(0xFFEFEBE2).withOpacity(0.15),
-          ),
-        ),
-      ],
+  Widget _buildVerticalDivider() {
+    return Container(
+      width: 1,
+      height: double.infinity,
+      color: const Color(0xFFEFEBE2).withOpacity(0.15),
+      margin: EdgeInsets.zero,
     );
   }
 
