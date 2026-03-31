@@ -1,13 +1,40 @@
 import 'package:flutter/material.dart';
 import '../services/audio_service.dart';
 
+class GameMode {
+  final String label;
+  final int totalPoints;
+  final bool hasBuenas;
+
+  const GameMode({
+    required this.label,
+    required this.totalPoints,
+    required this.hasBuenas,
+  });
+
+  int get milestone => hasBuenas ? (totalPoints / 2).floor() : totalPoints;
+}
+
+const List<GameMode> availableModes = [
+  GameMode(label: "12 puntos (12 malas)", totalPoints: 12, hasBuenas: false),
+  GameMode(label: "15 puntos (15 malas)", totalPoints: 15, hasBuenas: false),
+  GameMode(label: "18 puntos (18 malas)", totalPoints: 18, hasBuenas: false),
+  GameMode(label: "20 puntos (20 malas)", totalPoints: 20, hasBuenas: false),
+  GameMode(label: "18 puntos (9 malas + 9 buenas)", totalPoints: 18, hasBuenas: true),
+  GameMode(label: "20 puntos (10 malas + 10 buenas)", totalPoints: 20, hasBuenas: true),
+  GameMode(label: "24 puntos (12 malas + 12 buenas)", totalPoints: 24, hasBuenas: true),
+  GameMode(label: "30 puntos (15 malas + 15 buenas)", totalPoints: 30, hasBuenas: true),
+  GameMode(label: "40 puntos (20 malas + 20 buenas)", totalPoints: 40, hasBuenas: true),
+];
+
 class ScoreProvider with ChangeNotifier {
   final AudioService _audioService = AudioService();
+  GameMode _currentGameMode = availableModes[7]; // Default to 30 pts (15+15)
+  bool _isMuted = false;
   int _nosotros = 0;
   int _ellos = 0;
   String _nosotrosName = "NOSOTROS";
   String _ellosName = "ELLOS";
-  int _maxScore = 30;
   int _totalRemainingMatchsticks = 60;
   Offset? _lastDropOffset;
   String? _lastPointTeam;
@@ -32,11 +59,13 @@ class ScoreProvider with ChangeNotifier {
   String? _revertTeam;
   bool _isReverting = false;
 
+  GameMode get currentGameMode => _currentGameMode;
+  bool get isMuted => _isMuted;
   int get nosotros => _nosotros;
   int get ellos => _ellos;
   String get nosotrosName => _nosotrosName;
   String get ellosName => _ellosName;
-  int get maxScore => _maxScore;
+  int get maxScore => _currentGameMode.totalPoints;
   String? get winner => _winner;
   int get totalRemainingMatchsticks => _totalRemainingMatchsticks;
   Offset? get lastDropOffset => _lastDropOffset;
@@ -73,7 +102,7 @@ class ScoreProvider with ChangeNotifier {
       _isDraggingBackEllos = isDragging;
     }
     if (isDragging) {
-      _audioService.playStick(); // Play lift sound
+      if (!_isMuted) _audioService.playStick(); // Play lift sound
     }
     notifyListeners();
   }
@@ -103,8 +132,10 @@ class ScoreProvider with ChangeNotifier {
   }
 
   bool isBuenas(String team) {
-    if (team == "nosotros") return _nosotros > 15 || (_nosotros == 15 && _nosotrosFinishedMalas);
-    return _ellos > 15 || (_ellos == 15 && _ellosFinishedMalas);
+    if (!_currentGameMode.hasBuenas) return false;
+    final int score = team == "nosotros" ? _nosotros : _ellos;
+    final bool finishedMalas = team == "nosotros" ? _nosotrosFinishedMalas : _ellosFinishedMalas;
+    return score > _currentGameMode.milestone || (score == _currentGameMode.milestone && finishedMalas);
   }
 
   int getDisplayPoints(String team) {
@@ -112,10 +143,14 @@ class ScoreProvider with ChangeNotifier {
     final bool finishedMalas = team == "nosotros" ? _nosotrosFinishedMalas : _ellosFinishedMalas;
     
     if (score == 0) return 0;
-    if (score < 15) return score;
-    if (score == 15) return finishedMalas ? 0 : 15;
-    if (score == 30) return 15;
-    return score - 15;
+    
+    if (!_currentGameMode.hasBuenas) return score;
+
+    final int milestone = _currentGameMode.milestone;
+    if (score < milestone) return score;
+    if (score == milestone) return finishedMalas ? 0 : milestone;
+    if (score == _currentGameMode.totalPoints) return milestone;
+    return score - milestone;
   }
 
   String getLabel(String team) {
@@ -123,33 +158,32 @@ class ScoreProvider with ChangeNotifier {
   }
 
   void addPointNosotros([Offset? dropOffset]) async {
-    if (_nosotros < _maxScore && _winner == null && _totalRemainingMatchsticks > 0) {
+    if (_nosotros < _currentGameMode.totalPoints && _winner == null && _totalRemainingMatchsticks > 0) {
       _nosotros++;
       _totalRemainingMatchsticks--;
       _lastDropOffset = dropOffset;
       _lastPointTeam = "nosotros";
 
-      if (_nosotros == 15) {
+      if (_currentGameMode.hasBuenas && _nosotros == _currentGameMode.milestone) {
         _nosotrosWaiting = true;
-        _audioService.playStick();
+        if (!_isMuted) _audioService.playStick();
         notifyListeners();
         // Wait for landing animation
         await Future.delayed(const Duration(milliseconds: 500));
         
         _nosotrosWaiting = false;
         _nosotrosResetting = true;
-        _audioService.playBuenas();
+        if (!_isMuted) _audioService.playBuenas();
         notifyListeners();
         // Wait for clear animation
         await Future.delayed(const Duration(milliseconds: 700));
         _nosotrosResetting = false;
         _nosotrosFinishedMalas = true;
-      } else if (_nosotros == 30) {
+      } else if (_nosotros == _currentGameMode.totalPoints) {
         _winner = "nosotros";
-        _audioService.playStick();
-        // No clear animation at 30 anymore, handled by popup
+        if (!_isMuted) _audioService.playStick();
       } else {
-        _audioService.playStick();
+        if (!_isMuted) _audioService.playStick();
       }
       notifyListeners();
     }
@@ -157,7 +191,7 @@ class ScoreProvider with ChangeNotifier {
 
   void removePointNosotros() {
     if (_nosotros > 0) {
-      if (_nosotros == 15) {
+      if (_currentGameMode.hasBuenas && _nosotros == _currentGameMode.milestone) {
         _nosotrosFinishedMalas = false;
       }
       _nosotros--;
@@ -168,33 +202,32 @@ class ScoreProvider with ChangeNotifier {
   }
 
   void addPointEllos([Offset? dropOffset]) async {
-    if (_ellos < _maxScore && _winner == null && _totalRemainingMatchsticks > 0) {
+    if (_ellos < _currentGameMode.totalPoints && _winner == null && _totalRemainingMatchsticks > 0) {
       _ellos++;
       _totalRemainingMatchsticks--;
       _lastDropOffset = dropOffset;
       _lastPointTeam = "ellos";
 
-      if (_ellos == 15) {
+      if (_currentGameMode.hasBuenas && _ellos == _currentGameMode.milestone) {
         _ellosWaiting = true;
-        _audioService.playStick();
+        if (!_isMuted) _audioService.playStick();
         notifyListeners();
         // Wait for landing animation
         await Future.delayed(const Duration(milliseconds: 500));
 
         _ellosWaiting = false;
         _ellosResetting = true;
-        _audioService.playBuenas();
+        if (!_isMuted) _audioService.playBuenas();
         notifyListeners();
         // Wait for clear animation
         await Future.delayed(const Duration(milliseconds: 700));
         _ellosResetting = false;
         _ellosFinishedMalas = true;
-      } else if (_ellos == 30) {
+      } else if (_ellos == _currentGameMode.totalPoints) {
         _winner = "ellos";
-        _audioService.playStick();
-        // No clear animation at 30 anymore, handled by popup
+        if (!_isMuted) _audioService.playStick();
       } else {
-        _audioService.playStick();
+        if (!_isMuted) _audioService.playStick();
       }
       notifyListeners();
     }
@@ -209,29 +242,41 @@ class ScoreProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> triggerReset() async {
+  Future<void> triggerReset({bool keepNames = true}) async {
     _isResetting = true;
-    _audioService.playClear();
+    if (!_isMuted) _audioService.playClear();
     notifyListeners();
     // Wait for animation to finish
     await Future.delayed(const Duration(milliseconds: 600));
     _nosotros = 0;
     _ellos = 0;
     _winner = null;
-    _nosotrosName = "NOSOTROS";
-    _ellosName = "ELLOS";
+    if (!keepNames) {
+      _nosotrosName = "NOSOTROS";
+      _ellosName = "ELLOS";
+    }
     _nosotrosFinishedMalas = false;
     _ellosFinishedMalas = false;
-    _totalRemainingMatchsticks = 60;
+    _totalRemainingMatchsticks = _currentGameMode.totalPoints * 2;
     _lastDropOffset = null;
     _lastPointTeam = null;
     _isResetting = false;
     notifyListeners();
   }
 
+  void setGameMode(GameMode mode) {
+    _currentGameMode = mode;
+    triggerReset(keepNames: true);
+  }
+
+  void setMuted(bool muted) {
+    _isMuted = muted;
+    notifyListeners();
+  }
+
   void removePointEllos() {
     if (_ellos > 0) {
-      if (_ellos == 15) {
+      if (_currentGameMode.hasBuenas && _ellos == _currentGameMode.milestone) {
         _ellosFinishedMalas = false;
       }
       _ellos--;
@@ -247,8 +292,5 @@ class ScoreProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void setMaxScore(int score) {
-    _maxScore = score;
-    notifyListeners();
-  }
+  // Eliminated setMaxScore - handled by setGameMode
 }

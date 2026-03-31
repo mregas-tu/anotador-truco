@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'services/ad_service.dart';
 import 'providers/score_provider.dart';
 import 'widgets/score_group_widget.dart';
 import 'widgets/matchstick_widget.dart';
@@ -17,6 +19,16 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   Offset _lastPointerDownPos = Offset.zero;
   String? _lastWinnerShown; // Track to show dialog only once
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +90,7 @@ class _MainScreenState extends State<MainScreen> {
                                 BlendMode.srcIn,
                               ),
                             ),
-                            onPressed: () {},
+                            onPressed: () => _showSettingsDialog(context, scoreProvider),
                           ),
                         ],
                       ),
@@ -295,6 +307,11 @@ class _MainScreenState extends State<MainScreen> {
     final String winnerKey = scoreProvider.winner!;
     final String winnerName = winnerKey == "nosotros" ? scoreProvider.nosotrosName : scoreProvider.ellosName;
 
+    // Show Interstitial on victory as requested
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AdService.showInterstitial();
+    });
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -468,10 +485,11 @@ class _MainScreenState extends State<MainScreen> {
                 builder: (context, constraints) {
                   double availableHeight = constraints.maxHeight;
                   double availableWidth = constraints.maxWidth;
-                  double slotSize = (availableHeight / 3).clamp(60.0, availableWidth);
+                  final int numGroups = (scoreProvider.currentGameMode.milestone / 5).ceil();
+                  double slotSize = (availableHeight / numGroups).clamp(60.0, availableWidth);
 
                   return Column(
-                    children: List.generate(3, (groupIndex) {
+                    children: List.generate(numGroups, (groupIndex) {
                       int pointsInThisGroup = (totalPoints - (groupIndex * 5)).clamp(0, 5);
                       
                       if (pointsInThisGroup == 0 && totalPoints < (groupIndex * 5)) {
@@ -508,6 +526,28 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  void _showSettingsDialog(BuildContext context, ScoreProvider scoreProvider) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Material(
+          color: Colors.transparent,
+          child: Stack(
+            children: [
+              const Center(child: _SettingsDialogContent()),
+              const Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: _BannerAdWidget(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildFooter(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context);
 
@@ -541,6 +581,192 @@ class _MainScreenState extends State<MainScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+class _SettingsDialogContent extends StatelessWidget {
+  const _SettingsDialogContent();
+
+  @override
+  Widget build(BuildContext context) {
+    final scoreProvider = Provider.of<ScoreProvider>(context);
+
+    return StatefulBuilder(
+      builder: (context, setDialogState) {
+        return Dialog(
+          backgroundColor: const Color(0xFF161931),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  "AJUSTES",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Oswald',
+                    fontSize: 24,
+                    color: Color(0xFFEFEBE2),
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Sound Toggle
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    scoreProvider.isMuted ? Icons.volume_off : Icons.volume_up,
+                    color: const Color(0xFF718C9C),
+                  ),
+                  title: const Text(
+                    "SONIDOS",
+                    style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), fontSize: 18),
+                  ),
+                  trailing: Switch(
+                    value: !scoreProvider.isMuted,
+                    onChanged: (val) {
+                      scoreProvider.setMuted(!val);
+                      setDialogState(() {});
+                    },
+                    activeColor: const Color(0xFF888D71),
+                  ),
+                ),
+                
+                const Divider(color: Colors.white12),
+                
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    "MODO DE JUEGO",
+                    style: TextStyle(fontFamily: 'Oswald', color: Color(0xFF718C9C), fontSize: 14, letterSpacing: 1.5),
+                  ),
+                ),
+                
+                // Game Modes List
+                SizedBox(
+                  height: 250,
+                  child: ListView.builder(
+                    itemCount: availableModes.length,
+                    itemBuilder: (context, index) {
+                      final mode = availableModes[index];
+                      final isSelected = scoreProvider.currentGameMode.label == mode.label;
+                      
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                        title: Text(
+                          mode.label,
+                          style: TextStyle(
+                            fontFamily: 'Oswald',
+                            color: isSelected ? const Color(0xFFEFEBE2) : const Color(0xFF718C9C),
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF888D71)) : null,
+                        onTap: () {
+                          scoreProvider.setGameMode(mode);
+                          setDialogState(() {});
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
+                ),
+                
+                const SizedBox(height: 16),
+                const Divider(color: Colors.white12),
+                
+                // Share App
+                TextButton.icon(
+                  onPressed: () {
+                    Share.share("¡Mirá este anotador de Truco premium! Bajalo acá: [LINK]");
+                  },
+                  icon: const Icon(Icons.share, color: Color(0xFF718C9C)),
+                  label: const Text(
+                    "COMPARTIR APP",
+                    style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFEFEBE2), letterSpacing: 1),
+                  ),
+                ),
+                
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEFEBE2).withOpacity(0.1),
+                    foregroundColor: const Color(0xFFEFEBE2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text("CERRAR"),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BannerAdWidget extends StatefulWidget {
+  const _BannerAdWidget();
+
+  @override
+  State<_BannerAdWidget> createState() => _BannerAdWidgetState();
+}
+
+class _BannerAdWidgetState extends State<_BannerAdWidget> {
+  BannerAd? _bannerAd;
+  bool _isBannerLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBanner();
+  }
+
+  void _loadBanner() {
+    _bannerAd = BannerAd(
+      adUnitId: AdService.bannerAdUnitId,
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          if (mounted) {
+            setState(() {
+              _isBannerLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          debugPrint('Banner failed to load: $error');
+        },
+      ),
+    )..load();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isBannerLoaded || _bannerAd == null) return const SizedBox.shrink();
+
+    return Center(
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        width: _bannerAd!.size.width.toDouble(),
+        height: _bannerAd!.size.height.toDouble() + 8,
+        child: AdWidget(ad: _bannerAd!),
+      ),
     );
   }
 }
