@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -17,6 +18,8 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  final GlobalKey _boxKey = GlobalKey();
+  final Map<String, Timer?> _longPressTimers = {};
   Offset _lastPointerDownPos = Offset.zero;
   String? _lastWinnerShown; // Track to show dialog only once
 
@@ -200,6 +203,14 @@ class _MainScreenState extends State<MainScreen> {
   }
 
 
+  Offset _getBoxOffset() {
+    final RenderBox? box = _boxKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box != null) {
+      return box.localToGlobal(box.size.center(Offset.zero));
+    }
+    return Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 100);
+  }
+
   Widget _buildTeamSection(
     BuildContext context,
     String name,
@@ -207,6 +218,44 @@ class _MainScreenState extends State<MainScreen> {
     bool isNosotros,
   ) {
     final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
+    final String teamKey = isNosotros ? "nosotros" : "ellos";
+    final bool isTapMode = scoreProvider.scoringMode == ScoringMode.tap;
+
+    if (isTapMode) {
+      final bool isBuenas = scoreProvider.isBuenas(teamKey);
+      int totalPoints = scoreProvider.getDisplayPoints(teamKey);
+
+      return Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (_) {
+            _longPressTimers[teamKey]?.cancel();
+            _longPressTimers[teamKey] = Timer(const Duration(milliseconds: 200), () {
+              final boxOffset = _getBoxOffset();
+              scoreProvider.triggerFlyOut(teamKey, boxOffset);
+              _longPressTimers[teamKey] = null;
+            });
+          },
+          onTapUp: (_) {
+            if (_longPressTimers[teamKey] != null) {
+              _longPressTimers[teamKey]!.cancel();
+              _longPressTimers[teamKey] = null;
+              final boxOffset = _getBoxOffset();
+              if (isNosotros) {
+                scoreProvider.addPointNosotros(boxOffset);
+              } else {
+                scoreProvider.addPointEllos(boxOffset);
+              }
+            }
+          },
+          onTapCancel: () {
+            _longPressTimers[teamKey]?.cancel();
+            _longPressTimers[teamKey] = null;
+          },
+          child: _buildTeamColumnContent(name, totalPoints, isBuenas, isNosotros, scoreProvider, false),
+        ),
+      );
+    }
 
     return Expanded(
       child: DragTarget<int>(
@@ -360,116 +409,137 @@ class _MainScreenState extends State<MainScreen> {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1C203E),
+          backgroundColor: const Color(0xFF161931),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
             side: const BorderSide(color: Color(0xFF718C9C), width: 1),
           ),
-          title: Center(
+          title: const Center(
             child: Text(
-              "$winnerName GANÓ!",
+              "¡Partida finalizada!",
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Oswald',
-                fontSize: 32,
+                fontSize: 20,
                 color: Color(0xFFEFEBE2),
-                letterSpacing: 2,
-                fontWeight: FontWeight.bold,
               ),
             ),
           ),
+          contentPadding: const EdgeInsets.all(24),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                "${scoreProvider.nosotros} - ${scoreProvider.ellos}",
-                style: const TextStyle(
-                  fontFamily: 'CaminitoBase',
-                  fontSize: 48,
-                  color: Color(0xFF888D71),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                "¡Partida finalizada!",
+              const Text(
+                "GANADOR",
                 style: TextStyle(
                   fontFamily: 'Oswald',
-                  color: Colors.white.withOpacity(0.5),
-                  letterSpacing: 1.2,
+                  fontSize: 16,
+                  color: Colors.white,
+                  letterSpacing: 2.5,
                 ),
               ),
-            ],
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actionsOverflowButtonSpacing: 10,
-          actions: [
-            Column(
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      scoreProvider.triggerReset();
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF888D71),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text(
-                      "VOLVER A JUGAR",
-                      style: TextStyle(fontFamily: 'Oswald', fontWeight: FontWeight.bold, color: Colors.white),
+              const SizedBox(height: 4),
+              Text(
+                winnerName.toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: 'Oswald',
+                  fontSize: 38,
+                  color: Color(0xFF718C9C),
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "${scoreProvider.nosotros.toString().padLeft(2, '0')}  —  ${scoreProvider.ellos.toString().padLeft(2, '0')}",
+                style: const TextStyle(
+                  fontFamily: 'CaminitoBase',
+                  fontSize: 52,
+                  color: Color(0xFFEFEBE2),
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              // Main Action
+              SizedBox(
+                width: double.infinity,
+                height: 40,
+                child: ElevatedButton(
+                  onPressed: () {
+                    scoreProvider.triggerReset();
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF718C9C),
+                    foregroundColor: const Color(0xFFEFEBE2),
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    "VOLVER A JUGAR",
+                    style: TextStyle(
+                      fontFamily: 'Oswald', 
+                      fontSize: 16, 
+                      fontWeight: FontWeight.w600, // SemiBold
+                      letterSpacing: 1,
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          if (winnerKey == "nosotros") {
-                            scoreProvider.removePointNosotros();
-                          } else {
-                            scoreProvider.removePointEllos();
-                          }
-                          Navigator.pop(context);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFF47580)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Text(
-                          "DESHACER",
-                          style: TextStyle(fontFamily: 'Oswald', color: Color(0xFFF47580)),
-                        ),
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // Secondary Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        if (winnerKey == "nosotros") {
+                          scoreProvider.removePointNosotros();
+                        } else {
+                          scoreProvider.removePointEllos();
+                        }
+                        Navigator.pop(context);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFF47580), width: 1.5),
+                        foregroundColor: const Color(0xFFF47580),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.undo_outlined, size: 18),
+                      label: const Text(
+                        "Deshacer",
+                        style: TextStyle(fontFamily: 'Oswald', fontSize: 14),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          final message = "¡Gané al Truco! $winnerName venció ${scoreProvider.nosotros} a ${scoreProvider.ellos}. #AnatadorDeTruco";
-                          Share.share(message);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF718C9C)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Text(
-                          "COMPARTIR",
-                          style: TextStyle(fontFamily: 'Oswald', color: Color(0xFF718C9C)),
-                        ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        final message = "¡Gané al Truco! $winnerName venció ${scoreProvider.nosotros} a ${scoreProvider.ellos}. #AnatadorDeTruco";
+                        Share.share(message);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFEFEBE2), width: 1.5),
+                        foregroundColor: const Color(0xFFEFEBE2),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.share_outlined, size: 18),
+                      label: const Text(
+                        "Compartir",
+                        style: TextStyle(fontFamily: 'Oswald', fontSize: 14),
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
@@ -600,27 +670,35 @@ class _MainScreenState extends State<MainScreen> {
         if (team == "ellos") scoreProvider.removePointEllos();
       },
       builder: (context, candidateData, rejectedData) {
+        final bool isDragMode = scoreProvider.scoringMode == ScoringMode.drag;
+
         return Column(
           children: [
             if (scoreProvider.totalRemainingMatchsticks > 0)
-              Draggable<int>(
-                data: 1,
-                dragAnchorStrategy: pointerDragAnchorStrategy,
-                feedback: Transform.rotate(
-                  angle: 0.1,
-                  child: Transform.translate(
-                    offset: const Offset(-5, -50),
-                    child: const MatchstickWidget(height: 100),
-                  ),
-                ),
-                childWhenDragging: MatchstickBox(
-                    count: scoreProvider.totalRemainingMatchsticks - 1),
-                child: MatchstickBox(
-                  count: scoreProvider.totalRemainingMatchsticks,
-                ),
-              )
+              isDragMode 
+                ? Draggable<int>(
+                    data: 1,
+                    dragAnchorStrategy: pointerDragAnchorStrategy,
+                    feedback: Transform.rotate(
+                      angle: 0.1,
+                      child: Transform.translate(
+                        offset: const Offset(-5, -50),
+                        child: const MatchstickWidget(height: 100),
+                      ),
+                    ),
+                    childWhenDragging: MatchstickBox(
+                        count: scoreProvider.totalRemainingMatchsticks - 1),
+                    child: MatchstickBox(
+                      key: _boxKey,
+                      count: scoreProvider.totalRemainingMatchsticks,
+                    ),
+                  )
+                : MatchstickBox(
+                    key: _boxKey,
+                    count: scoreProvider.totalRemainingMatchsticks,
+                  )
             else
-              MatchstickBox(count: 0),
+              MatchstickBox(key: _boxKey, count: 0),
           ],
         );
       },
@@ -647,10 +725,10 @@ class _SettingsDialogContent extends StatelessWidget {
           insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
-            side: BorderSide(color: Colors.white.withOpacity(0.1), width: 1),
+            side: const BorderSide(color: Color(0xFF718C9C), width: 1),
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -674,10 +752,9 @@ class _SettingsDialogContent extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontFamily: 'Oswald',
-                        fontSize: 22,
+                        fontSize: 20,
                         color: Color(0xFFEFEBE2),
                         letterSpacing: 2,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     Positioned(
@@ -704,22 +781,49 @@ class _SettingsDialogContent extends StatelessWidget {
                         setDialogState(() {});
                       },
                       activeColor: Colors.white,
-                      activeTrackColor: const Color(0xFF718C9C).withOpacity(0.5),
+                      activeTrackColor: const Color(0xFF718C9C),
                       inactiveThumbColor: Colors.white70,
-                      inactiveTrackColor: Colors.black26,
+                      inactiveTrackColor: Colors.white12,
                     ),
                   ),
-                  const Divider(color: Colors.white12, height: 1),
+                  const Divider(color: Color(0xFF718C9C), height: 1),
+                  _buildMenuActionItem(
+                    label: "MODO DE CONTROL",
+                    trailing: TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        backgroundColor: const Color(0xFF718C9C).withOpacity(0.1),
+                      ),
+                      onPressed: () {
+                        scoreProvider.setScoringMode(
+                          scoreProvider.scoringMode == ScoringMode.drag 
+                            ? ScoringMode.tap 
+                            : ScoringMode.drag
+                        );
+                        setDialogState(() {});
+                      },
+                      child: Text(
+                        scoreProvider.scoringMode == ScoringMode.drag ? "ARRASTRAR" : "TOQUE",
+                        style: const TextStyle(
+                          fontFamily: 'Oswald',
+                          fontSize: 14,
+                          color: Color(0xFFEFEBE2),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Divider(color: Color(0xFF718C9C), height: 1),
                   _buildMenuNavigationItem(
                     label: "MODO DE JUEGO",
                     onTap: () => setDialogState(() => currentPane = 2),
                   ),
-                  const Divider(color: Colors.white12, height: 1),
+                  const Divider(color: Color(0xFF718C9C), height: 1),
                   _buildMenuNavigationItem(
                     label: "DISEÑO Y TEMAS",
                     onTap: () => setDialogState(() => currentPane = 1),
                   ),
-                  const Divider(color: Colors.white12, height: 1),
+                  const Divider(color: Color(0xFF718C9C), height: 1),
                   
                   const SizedBox(height: 24),
                   
@@ -768,7 +872,7 @@ class _SettingsDialogContent extends StatelessWidget {
                             style: TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 16,
-                              color: isSelected ? const Color(0xFFEFEBE2) : const Color(0xFF718C9C),
+                              color: isSelected ? const Color(0xFFEFEBE2) : Colors.white70,
                             ),
                           ),
                           trailing: isSelected 
@@ -801,7 +905,7 @@ class _SettingsDialogContent extends StatelessWidget {
                             style: TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 16,
-                              color: isSelected ? const Color(0xFFEFEBE2) : const Color(0xFF718C9C),
+                              color: isSelected ? const Color(0xFFEFEBE2) : Colors.white70,
                             ),
                           ),
                           trailing: isSelected 
@@ -836,9 +940,8 @@ class _SettingsDialogContent extends StatelessWidget {
                 label,
                 style: const TextStyle(
                   fontFamily: 'Oswald',
-                  fontSize: 18,
-                  color: Color(0xFFEFEBE2),
-                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -859,9 +962,8 @@ class _SettingsDialogContent extends StatelessWidget {
               label,
               style: const TextStyle(
                 fontFamily: 'Oswald',
-                fontSize: 18,
-                color: Color(0xFFEFEBE2),
-                fontWeight: FontWeight.w500,
+                fontSize: 16,
+                color: Colors.white,
               ),
             ),
           ),

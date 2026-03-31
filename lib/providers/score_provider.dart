@@ -54,24 +54,22 @@ const List<GameMode> availableModes = [
   GameMode(label: "40 puntos - 20/20", totalPoints: 40, hasBuenas: true),
 ];
 
+enum ScoringMode { drag, tap }
+
 class ScoreProvider with ChangeNotifier {
   final AudioService _audioService = AudioService();
   GameMode _currentGameMode = availableModes[4]; // Default to 30 pts (15/15)
   MatchstickPalette _currentPalette = availablePalettes[1]; // Default to BORDÓ
+  ScoringMode _scoringMode = ScoringMode.drag;
   bool _isMuted = false;
   int _nosotros = 0;
   int _ellos = 0;
   String _nosotrosName = "NOSOTROS";
   String _ellosName = "ELLOS";
-  int _totalRemainingMatchsticks = 60;
+  int _totalRemainingMatchsticks = 59;
   Offset? _lastDropOffset;
   String? _lastPointTeam;
   bool _isResetting = false;
-  bool _nosotrosResetting = false;
-  bool _ellosResetting = false;
-  bool _nosotrosWaiting = false;
-  bool _ellosWaiting = false;
-  
   bool _nosotrosFinishedMalas = false;
   bool _ellosFinishedMalas = false;
 
@@ -87,8 +85,14 @@ class ScoreProvider with ChangeNotifier {
   String? _revertTeam;
   bool _isReverting = false;
 
+  // Fly-out animation state (Fly to box)
+  Offset? _flyOutTarget;
+  String? _flyOutTeam;
+  bool _isFlyingOut = false;
+
   GameMode get currentGameMode => _currentGameMode;
   MatchstickPalette get currentPalette => _currentPalette;
+  ScoringMode get scoringMode => _scoringMode;
   bool get isMuted => _isMuted;
   int get nosotros => _nosotros;
   int get ellos => _ellos;
@@ -100,10 +104,8 @@ class ScoreProvider with ChangeNotifier {
   Offset? get lastDropOffset => _lastDropOffset;
   String? get lastPointTeam => _lastPointTeam;
   bool get isResetting => _isResetting;
-  bool get nosotrosResetting => _nosotrosResetting || _isResetting;
-  bool get ellosResetting => _ellosResetting || _isResetting;
-  bool get nosotrosShowMilestone => _nosotrosWaiting || _nosotrosResetting || _isResetting;
-  bool get ellosShowMilestone => _ellosWaiting || _ellosResetting || _isResetting;
+  bool get nosotrosShowMilestone => _isResetting;
+  bool get ellosShowMilestone => _isResetting;
   
   Offset? get lastStickPosNosotros => _lastStickPosNosotros;
   Offset? get lastStickPosEllos => _lastStickPosEllos;
@@ -112,6 +114,10 @@ class ScoreProvider with ChangeNotifier {
   Offset? get revertOffset => _revertOffset;
   String? get revertTeam => _revertTeam;
   bool get isReverting => _isReverting;
+
+  Offset? get flyOutTarget => _flyOutTarget;
+  String? get flyOutTeam => _flyOutTeam;
+  bool get isFlyingOut => _isFlyingOut;
 
   void updateLastStickPos(String team, Offset pos) {
     if (team == "nosotros") {
@@ -194,19 +200,7 @@ class ScoreProvider with ChangeNotifier {
       _lastPointTeam = "nosotros";
 
       if (_currentGameMode.hasBuenas && _nosotros == _currentGameMode.milestone) {
-        _nosotrosWaiting = true;
-        if (!_isMuted) _audioService.playStick();
-        notifyListeners();
-        // Wait for landing animation
-        await Future.delayed(const Duration(milliseconds: 500));
-        
-        _nosotrosWaiting = false;
-        _nosotrosResetting = true;
         if (!_isMuted) _audioService.playBuenas();
-        notifyListeners();
-        // Wait for clear animation
-        await Future.delayed(const Duration(milliseconds: 700));
-        _nosotrosResetting = false;
         _nosotrosFinishedMalas = true;
       } else if (_nosotros == _currentGameMode.totalPoints) {
         _winner = "nosotros";
@@ -238,19 +232,7 @@ class ScoreProvider with ChangeNotifier {
       _lastPointTeam = "ellos";
 
       if (_currentGameMode.hasBuenas && _ellos == _currentGameMode.milestone) {
-        _ellosWaiting = true;
-        if (!_isMuted) _audioService.playStick();
-        notifyListeners();
-        // Wait for landing animation
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        _ellosWaiting = false;
-        _ellosResetting = true;
         if (!_isMuted) _audioService.playBuenas();
-        notifyListeners();
-        // Wait for clear animation
-        await Future.delayed(const Duration(milliseconds: 700));
-        _ellosResetting = false;
         _ellosFinishedMalas = true;
       } else if (_ellos == _currentGameMode.totalPoints) {
         _winner = "ellos";
@@ -286,10 +268,42 @@ class ScoreProvider with ChangeNotifier {
     }
     _nosotrosFinishedMalas = false;
     _ellosFinishedMalas = false;
-    _totalRemainingMatchsticks = _currentGameMode.totalPoints * 2;
+    _totalRemainingMatchsticks = (_currentGameMode.totalPoints * 2) - 1;
     _lastDropOffset = null;
     _lastPointTeam = null;
     _isResetting = false;
+    notifyListeners();
+  }
+
+  Future<void> triggerFlyOut(String team, Offset targetOffset) async {
+    _flyOutTeam = team;
+    _flyOutTarget = targetOffset;
+    _isFlyingOut = true;
+    
+    notifyListeners();
+    
+    // Wait for fly-out animation (400ms) only in drag mode
+    if (_scoringMode == ScoringMode.drag) {
+      await Future.delayed(const Duration(milliseconds: 400));
+    }
+    
+    _isFlyingOut = false;
+    _flyOutTeam = null;
+    _flyOutTarget = null;
+    
+    // Actually remove the point after animation
+    if (team == "nosotros") {
+      removePointNosotros();
+    } else {
+      removePointEllos();
+    }
+    
+    if (!_isMuted) _audioService.playStick();
+    notifyListeners();
+  }
+
+  void setScoringMode(ScoringMode mode) {
+    _scoringMode = mode;
     notifyListeners();
   }
 

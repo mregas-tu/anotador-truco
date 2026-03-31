@@ -94,9 +94,7 @@ class _ScoreGroupState extends State<ScoreGroup> {
     final double matchHeight = widget.size * 0.85;
     final double padding = widget.size * 0.05;
 
-    final bool isTeamResetting = widget.team == "nosotros" 
-        ? scoreProvider.nosotrosResetting 
-        : scoreProvider.ellosResetting;
+    final bool isTeamResetting = scoreProvider.isResetting;
 
     if (isTeamResetting) {
       return Container(
@@ -235,12 +233,30 @@ class _ScoreGroupState extends State<ScoreGroup> {
                                 scoreProvider.revertTeam == widget.team &&
                                 isLastStick;
 
-    final bool isNew = widget.animateLast && widget.points == index;
+    final bool isThisFlyingOut = scoreProvider.scoringMode == ScoringMode.drag &&
+                                scoreProvider.isFlyingOut && 
+                                scoreProvider.flyOutTeam == widget.team &&
+                                isLastStick;
+
+    final bool isNew = scoreProvider.scoringMode == ScoringMode.drag &&
+                      widget.animateLast && widget.points == index;
     final bool hasValidBegin = _currentFlyInBegin != Offset.zero;
 
-    // Calculate revert offset if needed
-    Offset revertBegin = Offset.zero;
-    if (isThisReverting && scoreProvider.revertOffset != null) {
+    // Apply animation wrapper only if needed
+    Widget animatedChild = child;
+    if (isThisFlyingOut && scoreProvider.flyOutTarget != null) {
+      final RenderBox? renderBox = _key.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        final Offset groupGlobalPos = renderBox.localToGlobal(Offset.zero);
+        final Offset localPos = _getStickLocalOffset(index);
+        final Offset boxRelGroup = scoreProvider.flyOutTarget! - groupGlobalPos;
+        final Offset flyOutEnd = boxRelGroup - localPos;
+        
+        animatedChild = animatedChild.animate(target: 1.0)
+            .move(begin: Offset.zero, end: flyOutEnd, duration: 400.ms, curve: Curves.easeInCubic)
+            .fadeOut(duration: 400.ms);
+      }
+    } else if (isThisReverting && scoreProvider.revertOffset != null) {
       final RenderBox? renderBox = _key.currentContext?.findRenderObject() as RenderBox?;
       if (renderBox != null) {
         final Offset groupGlobalPos = renderBox.localToGlobal(Offset.zero);
@@ -251,9 +267,16 @@ class _ScoreGroupState extends State<ScoreGroup> {
         // which centers it on the pointer. revertedOffset is the top-left of the widget!
         // We need the center of the dropped widget.
         final Offset droppedWidgetCenter = scoreProvider.revertOffset! + const Offset(10, 50); 
-        
-        revertBegin = droppedWidgetCenter - globalStickCenter;
+        final Offset revertBegin = droppedWidgetCenter - globalStickCenter;
+
+        animatedChild = animatedChild.animate()
+            .move(begin: revertBegin, duration: 400.ms, curve: Curves.easeOutCubic)
+            .fadeIn(duration: 400.ms);
       }
+    } else if (isNew && hasValidBegin) {
+      animatedChild = animatedChild.animate()
+          .move(begin: _currentFlyInBegin, duration: 400.ms, curve: Curves.easeOutCubic)
+          .fadeIn(duration: 400.ms);
     }
 
     return _wrapPositioned(
@@ -263,13 +286,7 @@ class _ScoreGroupState extends State<ScoreGroup> {
       top,
       bottom,
       isDiagonal,
-      child.animate(target: 1.0)
-          .move(
-            begin: isThisReverting ? revertBegin : (isNew && hasValidBegin) ? _currentFlyInBegin : Offset.zero,
-            duration: (isThisReverting || (isNew && hasValidBegin)) ? 400.ms : 0.ms,
-            curve: Curves.easeOutCubic,
-          )
-          .fadeIn(duration: (isThisReverting || isNew) ? 400.ms : 0.ms),
+      animatedChild,
     );
   }
 
