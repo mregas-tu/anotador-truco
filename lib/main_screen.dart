@@ -297,11 +297,11 @@ class _MainScreenState extends State<MainScreen> {
               ? scoreProvider.nosotrosShowMilestone 
               : scoreProvider.ellosShowMilestone;
 
-          if ((isNosotros ? scoreProvider.nosotros : scoreProvider.ellos) == 15 && showMilestone) {
-             totalPoints = 15;
+          if ((isNosotros ? scoreProvider.nosotros : scoreProvider.ellos) == scoreProvider.currentGameMode.milestone && showMilestone) {
+             totalPoints = scoreProvider.currentGameMode.milestone;
           }
-          if ((isNosotros ? (scoreProvider.nosotros == 30) : (scoreProvider.ellos == 30)) && showMilestone) {
-             totalPoints = 15;
+          if ((isNosotros ? (scoreProvider.nosotros == scoreProvider.currentGameMode.totalPoints) : (scoreProvider.ellos == scoreProvider.currentGameMode.totalPoints)) && showMilestone) {
+             totalPoints = scoreProvider.currentGameMode.milestone;
           }
           
           return Listener(
@@ -309,7 +309,7 @@ class _MainScreenState extends State<MainScreen> {
             child: Draggable<String>(
               data: isNosotros ? "nosotros" : "ellos",
               dragAnchorStrategy: pointerDragAnchorStrategy,
-              maxSimultaneousDrags: totalPoints > 0 ? 1 : 0,
+              maxSimultaneousDrags: (isNosotros ? scoreProvider.nosotros : scoreProvider.ellos) > 0 ? 1 : 0,
               onDragStarted: () => scoreProvider.setDraggingBack(isNosotros ? "nosotros" : "ellos", true),
               onDraggableCanceled: (velocity, offset) {
                 scoreProvider.triggerRevert(isNosotros ? "nosotros" : "ellos", offset);
@@ -629,18 +629,22 @@ class _MainScreenState extends State<MainScreen> {
                         return const Expanded(child: SizedBox.shrink());
                       }
 
-                      bool isLastActiveGroup = (totalPoints / 5).ceil() - 1 == groupIndex;
+                      final int absoluteGroupIndex = isBuenas 
+                        ? groupIndex + (scoreProvider.currentGameMode.milestone ~/ 5) 
+                        : groupIndex;
+
+                      final bool isLastActiveGroup = (totalPoints / 5).ceil() - 1 == groupIndex;
 
                       return Expanded(
                         child: Center(
                           child: pointsInThisGroup > 0 
                             ? ScoreGroup(
-                                key: ValueKey("group_${isNosotros ? "n" : "e"}_$groupIndex"),
+                                key: ValueKey("group_${isNosotros ? "n" : "e"}_$absoluteGroupIndex"),
                                 points: pointsInThisGroup,
                                 size: slotSize * 0.9,
                                 team: teamKey,
                                 isDragging: isDraggingBack,
-                                groupIndex: isNosotros ? groupIndex : groupIndex + 3,
+                                groupIndex: absoluteGroupIndex,
                                 animateLast: !isDraggingBack && isLastActiveGroup &&
                                     scoreProvider.lastPointTeam == teamKey,
                                 dropOffset: scoreProvider.lastDropOffset,
@@ -696,6 +700,7 @@ class _MainScreenState extends State<MainScreen> {
             if (scoreProvider.totalRemainingMatchsticks > 0)
               isDragMode 
                 ? Draggable<int>(
+                    key: const ValueKey("box_draggable"),
                     data: 1,
                     dragAnchorStrategy: pointerDragAnchorStrategy,
                     feedback: Transform.rotate(

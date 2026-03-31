@@ -68,7 +68,7 @@ class ScoreProvider with ChangeNotifier {
   int _ellos = 0;
   String _nosotrosName = "NOSOTROS";
   String _ellosName = "ELLOS";
-  int _totalRemainingMatchsticks = 59;
+  int _totalRemainingMatchsticks = 60; // Initial for 30pts
   Offset? _lastDropOffset;
   String? _lastPointTeam;
   bool _isResetting = false;
@@ -271,7 +271,7 @@ class ScoreProvider with ChangeNotifier {
     }
     _nosotrosFinishedMalas = false;
     _ellosFinishedMalas = false;
-    _totalRemainingMatchsticks = (_currentGameMode.totalPoints * 2) - 1;
+    _totalRemainingMatchsticks = (_currentGameMode.totalPoints * 2);
     _lastDropOffset = null;
     _lastPointTeam = null;
     _isResetting = false;

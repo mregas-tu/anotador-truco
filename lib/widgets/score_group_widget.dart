@@ -53,7 +53,7 @@ class _ScoreGroupState extends State<ScoreGroup> {
           
           // Only update if this is indeed the last stick for the whole team
           final int teamPoints = widget.team == "nosotros" ? scoreProvider.nosotros : scoreProvider.ellos;
-          final int groupBase = (widget.groupIndex % 3) * 5;
+          final int groupBase = widget.groupIndex * 5;
           if (teamPoints == groupBase + widget.points) {
             scoreProvider.updateLastStickPos(widget.team, globalPos);
           }
@@ -135,8 +135,8 @@ class _ScoreGroupState extends State<ScoreGroup> {
     final bool isTeamDraggingBack = widget.isDragging;
     
     final int teamPoints = widget.team == "nosotros" ? scoreProvider.nosotros : scoreProvider.ellos;
-    final int groupBase = (widget.groupIndex % 3) * 5;
-    final bool isLastGroup = (teamPoints / 5).ceil() - 1 == (widget.groupIndex % 3);
+    final int groupBase = widget.groupIndex * 5;
+    final bool isLastGroup = (teamPoints / 5).ceil() - 1 == widget.groupIndex;
 
     return Container(
       key: _key,
