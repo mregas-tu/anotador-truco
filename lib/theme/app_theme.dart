@@ -10,6 +10,8 @@ class TrucoTheme {
   final Color navyAccent;
   final Color buenas;
   final Color malas;
+  final Color
+  centerCircleColor; // NEW: Specific color for the center ornament background
 
   // FIXED WOOD COLORS (Independent of theme)
   static const Color woodLight = Color(0xFFE6D2B5);
@@ -17,8 +19,8 @@ class TrucoTheme {
   static const Color woodDark = Color(0xFFB89B74);
 
   // ASSETS AND SPECIFIC COLORS
-  final String headerAsset;
-  final String footerAsset;
+  final String? headerAsset;
+  final String? footerAsset;
   final Color dividerColor;
   final Color accentColor;
   final String? backgroundAsset;
@@ -44,8 +46,9 @@ class TrucoTheme {
     required this.navyAccent,
     required this.buenas,
     required this.malas,
-    required this.headerAsset,
-    required this.footerAsset,
+    required this.centerCircleColor,
+    this.headerAsset,
+    this.footerAsset,
     required this.dividerColor,
     required this.accentColor,
     this.backgroundAsset,
@@ -68,6 +71,7 @@ class TrucoTheme {
     navyAccent: Color(0xFF252A50),
     buenas: Color(0xFF888D71),
     malas: Color(0xFFF47580),
+    centerCircleColor: Color(0xFF161931), // Same as navy
     headerAsset: 'assets/images/header.svg',
     footerAsset: 'assets/images/footer.svg',
     dividerColor: Color(0xFFEFEBE2),
@@ -90,6 +94,7 @@ class TrucoTheme {
     navyAccent: Color(0xFF5A91C5),
     buenas: Color(0xFFF6B000),
     malas: Colors.white,
+    centerCircleColor: Color(0xFF74ACDF), // Same as navy
     headerAsset: 'assets/images/header.svg',
     footerAsset: 'assets/images/footer.svg',
     dividerColor: Colors.white,
@@ -100,10 +105,38 @@ class TrucoTheme {
     centerOrnamentScale: 1.7,
     scoreFontSize: 18,
     scoreVerticalOffset: 2.0,
-    centerSectionOffset: 35.0, // Move down significantly for Sun clarity
+    centerSectionOffset: 35.0,
   );
 
-  static const List<TrucoTheme> allThemes = [navyTheme, argentinaTheme];
+  static const TrucoTheme soccerTheme = TrucoTheme(
+    name: "LA CANCHA",
+    navy: Color(0xFF1B5E20), // Solid green background
+    navyLight: Color(0xFF388E3C),
+    slate: Colors.white,
+    cream: Colors.white,
+    white: Colors.white,
+    navyAccent: Color(0xFF388E3C),
+    buenas: Color(0xFFFFD600),
+    malas: Color(0xFFFF5252),
+    centerCircleColor: Colors.transparent, // No circle background
+    headerAsset: null,
+    footerAsset: null,
+    dividerColor: Colors.white,
+    accentColor: Color(0xFFFFD600),
+    backgroundAsset: 'assets/images/background_2.jpg',
+    centerOrnamentAsset: 'assets/images/afa.svg',
+    hideCenterCircleBorder: true,
+    centerOrnamentScale: 2.2,
+    scoreFontSize: 28,
+    scoreVerticalOffset: 40.0,
+    centerSectionOffset: 0.0,
+  );
+
+  static const List<TrucoTheme> allThemes = [
+    navyTheme,
+    argentinaTheme,
+    soccerTheme,
+  ];
 }
 
 class AppFonts {

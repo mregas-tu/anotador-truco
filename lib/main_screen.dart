@@ -52,162 +52,196 @@ class _MainScreenState extends State<MainScreen> {
 
         return Scaffold(
           backgroundColor: scoreProvider.appTheme.navy,
-          body: SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-
-                // 1. Header (Buttons & Ornament Aligned)
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SvgPicture.asset(
-                      scoreProvider.appTheme.headerAsset,
-                      height: 45,
-                      colorFilter: ColorFilter.mode(
-                        Colors.white.withOpacity(0.8),
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          IconButton(
-                            icon: SvgPicture.asset(
-                              'assets/images/restart.svg',
-                              height: 24,
-                              colorFilter: ColorFilter.mode(
-                                Colors.white.withOpacity(0.7),
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                            onPressed: () => scoreProvider.triggerReset(),
-                          ),
-                          IconButton(
-                            icon: SvgPicture.asset(
-                              'assets/images/settings.svg',
-                              height: 24,
-                              colorFilter: ColorFilter.mode(
-                                Colors.white.withOpacity(0.7),
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                            onPressed: () => _showSettingsDialog(context, scoreProvider),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+          body: Stack(
+            children: [
+              // 0. Global Background Image
+              if (scoreProvider.appTheme.backgroundAsset != null)
+                Positioned.fill(
+                  child: Image.asset(
+                    scoreProvider.appTheme.backgroundAsset!,
+                    fit: BoxFit.cover,
+                  ),
                 ),
 
-                const SizedBox(height: 10),
+              SafeArea(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
 
-                // 2. Main Scoring Table
-                Expanded(
-                  child: Stack(
-                    alignment: Alignment.topCenter,
-                    children: [
-                      // Scoring Table (Background)
-                      Row(
-                        children: [
-                          _buildTeamSection(
-                            context,
-                            scoreProvider.nosotrosName,
-                            scoreProvider.nosotros,
-                            true,
-                          ),
-                          _buildVerticalDivider(scoreProvider),
-                          _buildTeamSection(
-                            context,
-                            scoreProvider.ellosName,
-                            scoreProvider.ellos,
-                            false,
-                          ),
-                        ],
-                      ),
-                      
-                      // Floating Score Circle (Top overlap)
-                      Padding(
-                        padding: EdgeInsets.only(top: scoreProvider.appTheme.centerSectionOffset),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // 1. Solid background (hides the line)
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: scoreProvider.appTheme.navy,
-                                border: scoreProvider.appTheme.hideCenterCircleBorder 
-                                  ? null 
-                                  : Border.all(
-                                      color: scoreProvider.appTheme.accentColor.withOpacity(0.5),
-                                      width: 1.5,
-                                    ),
-                                boxShadow: !scoreProvider.appTheme.hideCenterCircleBorder ? [
-                                  BoxShadow(
-                                    color: scoreProvider.appTheme.accentColor.withOpacity(0.35),
-                                    blurRadius: 4,
-                                    spreadRadius: 1,
-                                  ),
-                                ] : null,
-                              ),
+                    // 1. Header (Buttons & Ornament Aligned)
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        if (scoreProvider.appTheme.headerAsset != null)
+                          SvgPicture.asset(
+                            scoreProvider.appTheme.headerAsset!,
+                            height: 45,
+                            colorFilter: ColorFilter.mode(
+                              Colors.white.withOpacity(0.8),
+                              BlendMode.srcIn,
                             ),
-                            
-                            // 2. The ornament (Sun)
-                            if (scoreProvider.appTheme.centerOrnamentAsset != null)
-                              Transform.scale(
-                                scale: scoreProvider.appTheme.centerOrnamentScale,
-                                child: SvgPicture.asset(
-                                  scoreProvider.appTheme.centerOrnamentAsset!,
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                icon: SvgPicture.asset(
+                                  'assets/images/restart.svg',
+                                  height: 24,
+                                  colorFilter: ColorFilter.mode(
+                                    Colors.white.withOpacity(0.7),
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                                onPressed: () => scoreProvider.triggerReset(),
+                              ),
+                              IconButton(
+                                icon: SvgPicture.asset(
+                                  'assets/images/settings.svg',
+                                  height: 24,
+                                  colorFilter: ColorFilter.mode(
+                                    Colors.white.withOpacity(0.7),
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                                onPressed: () =>
+                                    _showSettingsDialog(context, scoreProvider),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // 2. Main Scoring Table
+                    Expanded(
+                      child: Stack(
+                        alignment: Alignment.topCenter,
+                        children: [
+                          // Scoring Table (Background)
+                          Row(
+                            children: [
+                              _buildTeamSection(
+                                context,
+                                scoreProvider.nosotrosName,
+                                scoreProvider.nosotros,
+                                true,
+                              ),
+                              _buildVerticalDivider(scoreProvider),
+                              _buildTeamSection(
+                                context,
+                                scoreProvider.ellosName,
+                                scoreProvider.ellos,
+                                false,
+                              ),
+                            ],
+                          ),
+
+                          // Floating Score Circle (Top overlap)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: scoreProvider.appTheme.centerSectionOffset,
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // 1. Solid background (hides the line)
+                                Container(
                                   width: 56,
                                   height: 56,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: scoreProvider.appTheme.centerCircleColor,
+                                    border: scoreProvider
+                                            .appTheme.hideCenterCircleBorder
+                                        ? null
+                                        : Border.all(
+                                            color: scoreProvider
+                                                .appTheme.accentColor
+                                                .withOpacity(0.5),
+                                            width: 1.5,
+                                          ),
+                                    boxShadow: !scoreProvider
+                                            .appTheme.hideCenterCircleBorder
+                                        ? [
+                                            BoxShadow(
+                                              color: scoreProvider
+                                                  .appTheme.accentColor
+                                                  .withOpacity(0.35),
+                                              blurRadius: 4,
+                                              spreadRadius: 1,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
                                 ),
-                              ),
-                              
-                            // 3. The Number
-                            Padding(
-                              padding: EdgeInsets.only(top: scoreProvider.appTheme.scoreVerticalOffset),
-                              child: Text(
-                                "${scoreProvider.currentGameMode.totalPoints}",
-                                style: TextStyle(
-                                  fontFamily: AppFonts.caminito,
-                                  fontSize: scoreProvider.appTheme.scoreFontSize,
-                                  color: scoreProvider.appTheme.dividerColor,
-                                  fontWeight: FontWeight.bold,
+
+                                // 2. The ornament (Sun/AFA)
+                                if (scoreProvider.appTheme.centerOrnamentAsset !=
+                                    null)
+                                  Transform.scale(
+                                    scale: scoreProvider
+                                        .appTheme.centerOrnamentScale,
+                                    child: SvgPicture.asset(
+                                      scoreProvider
+                                          .appTheme.centerOrnamentAsset!,
+                                      width: 56,
+                                      height: 56,
+                                    ),
+                                  ),
+
+                                // 3. The Number
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: scoreProvider
+                                        .appTheme.scoreVerticalOffset,
+                                  ),
+                                  child: Text(
+                                    "${scoreProvider.currentGameMode.totalPoints}",
+                                    style: TextStyle(
+                                      fontFamily: AppFonts.caminito,
+                                      fontSize:
+                                          scoreProvider.appTheme.scoreFontSize,
+                                      color:
+                                          scoreProvider.appTheme.dividerColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // 4. Footer Ornament
+                    if (scoreProvider.appTheme.footerAsset != null)
+                      SvgPicture.asset(
+                        scoreProvider.appTheme.footerAsset!,
+                        height: 45,
+                        colorFilter: ColorFilter.mode(
+                          Colors.white.withOpacity(0.8),
+                          BlendMode.srcIn,
                         ),
                       ),
-                    ],
-                  ),
+
+                    const SizedBox(height: 20),
+
+                    // 5. Matchstick Box
+                    _buildFooter(context, scoreProvider),
+
+                    const SizedBox(height: 20),
+                  ],
                 ),
-
-                const SizedBox(height: 10),
-
-                // 4. Footer Ornament
-                SvgPicture.asset(
-                  scoreProvider.appTheme.footerAsset,
-                  height: 45,
-                  colorFilter: ColorFilter.mode(
-                    Colors.white.withOpacity(0.8),
-                    BlendMode.srcIn,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // 5. Matchstick Box
-                _buildFooter(context, scoreProvider),
-
-                const SizedBox(height: 20),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
