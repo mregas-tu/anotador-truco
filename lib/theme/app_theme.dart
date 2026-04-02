@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+enum MatchstickBoxType { classic, soccer, wood }
+
 class TrucoTheme {
   final String name;
   final Color navy;
@@ -21,6 +23,9 @@ class TrucoTheme {
   // ASSETS AND SPECIFIC COLORS
   final String? headerAsset;
   final String? footerAsset;
+  final double footerHeight;
+  final Color scoreColor;
+  final Color teamScoreColor;
   final Color dividerColor;
   final Color accentColor;
   final String? backgroundAsset;
@@ -36,6 +41,8 @@ class TrucoTheme {
   final double
   centerSectionOffset; // NEW: Vertical position of the whole center stack
 
+  final MatchstickBoxType matchstickBoxType;
+
   const TrucoTheme({
     required this.name,
     required this.navy,
@@ -49,6 +56,9 @@ class TrucoTheme {
     required this.centerCircleColor,
     this.headerAsset,
     this.footerAsset,
+    this.footerHeight = 45,
+    required this.scoreColor,
+    required this.teamScoreColor,
     required this.dividerColor,
     required this.accentColor,
     this.backgroundAsset,
@@ -58,6 +68,7 @@ class TrucoTheme {
     required this.scoreFontSize,
     required this.scoreVerticalOffset,
     required this.centerSectionOffset,
+    required this.matchstickBoxType,
   });
 
   // PRESETS
@@ -75,6 +86,8 @@ class TrucoTheme {
     headerAsset: 'assets/images/header.svg',
     footerAsset: 'assets/images/footer.svg',
     dividerColor: Color(0xFFEFEBE2),
+    scoreColor: Color(0xFFEFEBE2),
+    teamScoreColor: Color(0xFFEFEBE2),
     accentColor: Color(0xFF718C9C),
     backgroundAsset: null,
     centerOrnamentAsset: null,
@@ -82,6 +95,7 @@ class TrucoTheme {
     scoreFontSize: 26,
     scoreVerticalOffset: 5.0,
     centerSectionOffset: 10.0,
+    matchstickBoxType: MatchstickBoxType.classic,
   );
 
   static const TrucoTheme argentinaTheme = TrucoTheme(
@@ -98,6 +112,8 @@ class TrucoTheme {
     headerAsset: 'assets/images/header.svg',
     footerAsset: 'assets/images/footer.svg',
     dividerColor: Colors.white,
+    scoreColor: Colors.white,
+    teamScoreColor: Colors.white,
     accentColor: Color(0xFFF6B000),
     backgroundAsset: null,
     centerOrnamentAsset: 'assets/images/sun.svg',
@@ -106,6 +122,7 @@ class TrucoTheme {
     scoreFontSize: 18,
     scoreVerticalOffset: 2.0,
     centerSectionOffset: 35.0,
+    matchstickBoxType: MatchstickBoxType.classic,
   );
 
   static const TrucoTheme soccerTheme = TrucoTheme(
@@ -120,9 +137,12 @@ class TrucoTheme {
     malas: Color(0xFFFF5252),
     centerCircleColor: Colors.transparent, // No circle background
     headerAsset: null,
-    footerAsset: null,
-    dividerColor: Colors.white,
-    accentColor: Color(0xFFFFD600),
+    footerAsset: 'assets/images/dibu.svg',
+    footerHeight: 75,
+    dividerColor: Colors.transparent,
+    scoreColor: Color(0xFF2E4393),
+    teamScoreColor: Colors.white,
+    accentColor: Color(0xFF2E4393),
     backgroundAsset: 'assets/images/background_2.jpg',
     centerOrnamentAsset: 'assets/images/afa.svg',
     hideCenterCircleBorder: true,
@@ -130,12 +150,40 @@ class TrucoTheme {
     scoreFontSize: 28,
     scoreVerticalOffset: 40.0,
     centerSectionOffset: 0.0,
+    matchstickBoxType: MatchstickBoxType.soccer,
+  );
+
+  static const TrucoTheme woodTheme = TrucoTheme(
+    name: "MESA DE MADERA",
+    navy: Color(0xFF3E2723), // Marrón oscuro
+    navyLight: Color(0xFF5D4037),
+    slate: Color(0xFFD7CCC8),
+    cream: Color(0xFFFFF3E0),
+    white: Colors.white,
+    navyAccent: Color(0xFF4E342E),
+    buenas: Color(0xFF8D6E63),
+    malas: Color(0xFFBCAAA4),
+    centerCircleColor: Colors.transparent,
+    headerAsset: null,
+    footerAsset: null,
+    dividerColor: Colors.transparent,
+    scoreColor: Color(0xFFFFF3E0),
+    teamScoreColor: Color(0xFFE0E0E0),
+    accentColor: Color(0xFFD7CCC8),
+    backgroundAsset: 'assets/images/background_1.jpg',
+    centerOrnamentAsset: null,
+    hideCenterCircleBorder: true,
+    scoreFontSize: 26,
+    scoreVerticalOffset: 5.0,
+    centerSectionOffset: 10.0,
+    matchstickBoxType: MatchstickBoxType.wood,
   );
 
   static const List<TrucoTheme> allThemes = [
     navyTheme,
     argentinaTheme,
     soccerTheme,
+    woodTheme,
   ];
 }
 

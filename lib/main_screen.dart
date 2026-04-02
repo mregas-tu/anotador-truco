@@ -141,6 +141,7 @@ class _MainScreenState extends State<MainScreen> {
                             ],
                           ),
 
+
                           // Floating Score Circle (Top overlap)
                           Padding(
                             padding: EdgeInsets.only(
@@ -207,7 +208,7 @@ class _MainScreenState extends State<MainScreen> {
                                       fontSize:
                                           scoreProvider.appTheme.scoreFontSize,
                                       color:
-                                          scoreProvider.appTheme.dividerColor,
+                                          scoreProvider.appTheme.scoreColor,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -225,11 +226,14 @@ class _MainScreenState extends State<MainScreen> {
                     if (scoreProvider.appTheme.footerAsset != null)
                       SvgPicture.asset(
                         scoreProvider.appTheme.footerAsset!,
-                        height: 45,
-                        colorFilter: ColorFilter.mode(
-                          Colors.white.withOpacity(0.8),
-                          BlendMode.srcIn,
-                        ),
+                        height: scoreProvider.appTheme.footerHeight,
+                        colorFilter: scoreProvider.appTheme.footerAsset!
+                                .contains('dibu')
+                            ? null
+                            : ColorFilter.mode(
+                                Colors.white.withOpacity(0.8),
+                                BlendMode.srcIn,
+                              ),
                       ),
 
                     const SizedBox(height: 20),
@@ -630,7 +634,7 @@ class _MainScreenState extends State<MainScreen> {
             style: TextStyle(
               fontFamily: AppFonts.caminito,
               fontSize: 32,
-              color: scoreProvider.appTheme.dividerColor,
+              color: scoreProvider.appTheme.teamScoreColor,
             ),
           ),
           

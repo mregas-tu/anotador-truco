@@ -7,7 +7,7 @@ import 'main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();
+  await MobileAds.instance.initialize();
   AdService.loadInterstitial();
   
   runApp(

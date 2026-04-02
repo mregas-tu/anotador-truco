@@ -66,6 +66,7 @@ flutter:
   assets:
     - assets/images/background_1.jpg
     - assets/images/background_2.jpg
+    - assets/images/matchbox_wood.svg
     - assets/images/header.svg
     - assets/images/footer.svg
     - assets/images/restart.svg
@@ -73,6 +74,7 @@ flutter:
     - assets/images/sun.svg
     - assets/images/worldcup.svg
     - assets/images/afa.svg
+    - assets/images/dibu.svg
     - assets/sounds/stick.wav
     - assets/sounds/clear.wav
     - assets/sounds/buenas.wav
