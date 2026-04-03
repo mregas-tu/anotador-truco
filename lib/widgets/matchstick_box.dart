@@ -110,6 +110,40 @@ class _MatchstickBoxSoccer extends StatelessWidget {
   }
 }
 
+class _MatchstickContainerWood extends StatelessWidget {
+  final int count;
+
+  const _MatchstickContainerWood({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        ...List.generate(math.max(0, count), (index) {
+          final random = math.Random(index * 1337);
+          final angle = (random.nextDouble() - 0.5) * 0.4;
+          // Fósforos largos (180px) con cola oculta a la izquierda
+          final offsetX = -5 + (random.nextDouble() - 0.5) * 15;
+          final offsetY = (random.nextDouble() - 0.5) * 75;
+
+          return Transform.translate(
+            offset: Offset(offsetX, offsetY),
+            child: Transform.rotate(
+              angle: angle,
+              child: const MatchstickWidget(
+                height: 180, 
+                width: 6,
+                horizontal: true,
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
 class _MatchstickContainer extends StatelessWidget {
   final int count;
   final bool showHexNet;
@@ -119,13 +153,12 @@ class _MatchstickContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Provider.of<ScoreProvider>(context, listen: false).appTheme;
-    final isWood = theme.matchstickBoxType == MatchstickBoxType.wood;
     
     return Container(
       width: 200,
       height: 120,
       decoration: BoxDecoration(
-        color: (showHexNet || isWood) ? Colors.transparent : theme.navy,
+        color: showHexNet ? Colors.transparent : theme.navy,
         borderRadius: BorderRadius.circular(15),
       ),
       child: ClipRRect(
@@ -139,42 +172,33 @@ class _MatchstickContainer extends StatelessWidget {
                   painter: _HexNetPainter(color: Colors.white.withOpacity(0.15)),
                 ),
               ),
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: showHexNet 
-                    ? null 
-                    : RadialGradient(
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.3),
-                        ],
-                        stops: const [0.6, 1.0],
-                      ),
+            if (!showHexNet)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.3),
+                      ],
+                      stops: const [0.6, 1.0],
+                    ),
+                  ),
                 ),
               ),
-            ),
             ...List.generate(math.max(0, count), (index) {
-              final random = math.Random(index * 1337);
-              final isWood = theme.matchstickBoxType == MatchstickBoxType.wood;
-              
-              // If wood, make them horizontal with small deviation from 0 degrees
-              final angle = isWood 
-                  ? (random.nextDouble() - 0.5) * 0.4
-                  : (random.nextDouble() - 0.5) * 1.5;
-
-              // Ajuste para que la cabeza (derecha) asome bien y la madera (izquierda) vuele
-              final offsetX = -5 + (random.nextDouble() - 0.5) * 15;
-              final offsetY = (random.nextDouble() - 0.5) * 75;
+              final random = math.Random(index * 42); 
+              final angle = (random.nextDouble() - 0.5) * 1.5;
+              final offsetX = (random.nextDouble() - 0.5) * 90;
+              final offsetY = (random.nextDouble() - 0.5) * 45;
 
               return Transform.translate(
                 offset: Offset(offsetX, offsetY),
                 child: Transform.rotate(
                   angle: angle,
-                  child: MatchstickWidget(
-                    height: isWood ? 180 : 70, 
-                    width: isWood ? 6 : 10,
-                    horizontal: isWood,
+                  child: const MatchstickWidget(
+                    height: 70,
+                    width: 10,
                   ),
                 ),
               );
@@ -256,7 +280,7 @@ class _MatchstickBoxWood extends StatelessWidget {
             top: 15,
             bottom: 15,
             child: ClipRect(
-              child: _MatchstickContainer(count: count, showHexNet: false),
+              child: _MatchstickContainerWood(count: count),
             ),
           ),
         ],
