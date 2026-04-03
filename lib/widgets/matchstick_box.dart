@@ -163,15 +163,16 @@ class _MatchstickContainer extends StatelessWidget {
                   ? (random.nextDouble() - 0.5) * 0.4
                   : (random.nextDouble() - 0.5) * 1.5;
 
-              final offsetX = (random.nextDouble() - 0.5) * (isWood ? 20 : 90);
-              final offsetY = (random.nextDouble() - 0.5) * 75; // Más dispersión vertical
+              // Ajuste para que la cabeza (derecha) asome bien y la madera (izquierda) vuele
+              final offsetX = -5 + (random.nextDouble() - 0.5) * 15;
+              final offsetY = (random.nextDouble() - 0.5) * 75;
 
               return Transform.translate(
                 offset: Offset(offsetX, offsetY),
                 child: Transform.rotate(
                   angle: angle,
                   child: MatchstickWidget(
-                    height: isWood ? 100 : 70, // Fósforos más largos
+                    height: isWood ? 180 : 70, 
                     width: isWood ? 6 : 10,
                     horizontal: isWood,
                   ),
@@ -248,11 +249,11 @@ class _MatchstickBoxWood extends StatelessWidget {
             ),
           ),
 
-          // Fósforos AL FRENTE con márgenes corregidos (155 para limpiar la tapa)
+          // Fósforos AL FRENTE con máscara y margen derecho ajustado
           Positioned(
-            left: 155, // Zona segura para no pisar el cartón
-            right: 12, // Llegan hasta la madera de la derecha
-            top: 15,   // Repartidos en todo el alto
+            left: 155, 
+            right: 8, // Margen mínimo para que no se corten las cabezas
+            top: 15,
             bottom: 15,
             child: ClipRect(
               child: _MatchstickContainer(count: count, showHexNet: false),
