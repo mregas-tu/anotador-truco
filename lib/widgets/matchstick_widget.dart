@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/score_provider.dart';
@@ -146,7 +147,7 @@ class MatchstickPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant MatchstickPainter oldDelegate) {
-    return oldDelegate.headColors != headColors ||
+    return !listEquals(oldDelegate.headColors, headColors) ||
         oldDelegate.woodLight != woodLight ||
         oldDelegate.woodMedium != woodMedium ||
         oldDelegate.woodDark != woodDark ||
@@ -190,15 +191,17 @@ class MatchstickWidget extends StatelessWidget {
         return SizedBox(
           width: boxWidth,
           height: boxHeight,
-          child: CustomPaint(
-            painter: MatchstickPainter(
-              horizontal: horizontal,
-              diagonal: diagonal,
-              flipped: flipped,
-              headColors: scoreProvider.currentPalette.headColors,
-              woodLight: TrucoTheme.woodLight,
-              woodMedium: TrucoTheme.woodMedium,
-              woodDark: TrucoTheme.woodDark,
+          child: RepaintBoundary(
+            child: CustomPaint(
+              painter: MatchstickPainter(
+                horizontal: horizontal,
+                diagonal: diagonal,
+                flipped: flipped,
+                headColors: scoreProvider.currentPalette.headColors,
+                woodLight: TrucoTheme.woodLight,
+                woodMedium: TrucoTheme.woodMedium,
+                woodDark: TrucoTheme.woodDark,
+              ),
             ),
           ),
         );

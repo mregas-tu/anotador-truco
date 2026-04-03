@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/audio_service.dart';
+import '../services/analytics_service.dart';
 import '../theme/app_theme.dart';
 
 class GameMode {
@@ -362,6 +363,7 @@ class ScoreProvider with ChangeNotifier {
 
   void setAppTheme(TrucoTheme theme) {
     _appTheme = theme;
+    AnalyticsService.logThemeChanged(theme.name);
     notifyListeners();
   }
 

@@ -31,11 +31,30 @@ class ScoreGroup extends StatefulWidget {
 class _ScoreGroupState extends State<ScoreGroup> {
   final GlobalKey _key = GlobalKey();
   Offset _currentFlyInBegin = Offset.zero;
+  final Set<int> _alreadyAnimated = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // If we load with points and no animation is requested, they are already animated
+    if (widget.points > 0 && !widget.animateLast) {
+      for (int i = 1; i <= widget.points; i++) {
+        _alreadyAnimated.add(i);
+      }
+    }
+  }
 
   @override
   void didUpdateWidget(ScoreGroup oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
+    // If points decreased (undo/un-drag), remove those indices from state
+    if (widget.points < oldWidget.points) {
+      for (int i = widget.points + 1; i <= 5; i++) {
+        _alreadyAnimated.remove(i);
+      }
+    }
+
     // 1. Calculate Fly-In position for adding point
     if (widget.animateLast && widget.dropOffset != null) {
       _schedulePositionUpdate(widget.dropOffset!);
@@ -51,7 +70,6 @@ class _ScoreGroupState extends State<ScoreGroup> {
           final Offset globalPos = renderBox.localToGlobal(localPos);
           final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
           
-          // Only update if this is indeed the last stick for the whole team
           final int teamPoints = widget.team == "nosotros" ? scoreProvider.nosotros : scoreProvider.ellos;
           final int groupBase = widget.groupIndex * 5;
           if (teamPoints == groupBase + widget.points) {
@@ -77,13 +95,13 @@ class _ScoreGroupState extends State<ScoreGroup> {
 
   Offset _getStickLocalOffset(int index) {
     final double padding = widget.size * 0.05;
-    final double thickness = widget.size * 0.1; // estimate visual thickness
+    final double thickness = widget.size * 0.1; 
     switch (index) {
-      case 1: return Offset(padding + thickness/2, widget.size * 0.5); // Center left
-      case 2: return Offset(widget.size * 0.5, padding + thickness/2); // Center top
-      case 3: return Offset(widget.size - padding - thickness/2, widget.size * 0.5); // Center right
-      case 4: return Offset(widget.size * 0.5, widget.size - padding - thickness/2); // Center bottom
-      case 5: return Offset(widget.size * 0.5, widget.size * 0.5); // Center center
+      case 1: return Offset(padding + thickness/2, widget.size * 0.5);
+      case 2: return Offset(widget.size * 0.5, padding + thickness/2);
+      case 3: return Offset(widget.size - padding - thickness/2, widget.size * 0.5);
+      case 4: return Offset(widget.size * 0.5, widget.size - padding - thickness/2);
+      case 5: return Offset(widget.size * 0.5, widget.size * 0.5);
       default: return Offset.zero;
     }
   }
@@ -94,214 +112,93 @@ class _ScoreGroupState extends State<ScoreGroup> {
     final double matchHeight = widget.size * 0.85;
     final double padding = widget.size * 0.05;
 
-    final bool isTeamResetting = scoreProvider.isResetting;
-
-    if (isTeamResetting) {
-      return Container(
-        key: _key,
-        width: widget.size,
-        height: widget.size,
-        margin: const EdgeInsets.all(4),
-        child: Stack(
-          children: [
-            _buildReturningStick(1,
-                left: padding,
-                top: padding,
-                bottom: padding,
-                child: MatchstickWidget(height: matchHeight)),
-            _buildReturningStick(2,
-                left: padding,
-                right: padding,
-                top: padding,
-                child: MatchstickWidget(height: matchHeight, horizontal: true)),
-            _buildReturningStick(3,
-                right: padding,
-                top: padding,
-                bottom: padding,
-                child: MatchstickWidget(height: matchHeight, flipped: true)),
-            _buildReturningStick(4,
-                left: padding,
-                right: padding,
-                bottom: padding,
-                child: MatchstickWidget(height: matchHeight, horizontal: true, flipped: true)),
-            _buildReturningStick(5,
-                isDiagonal: true,
-                child: MatchstickWidget(height: matchHeight, diagonal: true)),
-          ],
-        ),
-      );
+    if (scoreProvider.isResetting) {
+      return _buildFrame(_key, widget.size, [
+        for (int i = 1; i <= 5; i++)
+          _buildReturningStick(i, padding, matchHeight)
+      ]);
     }
 
     final bool isTeamDraggingBack = widget.isDragging;
-    
     final int teamPoints = widget.team == "nosotros" ? scoreProvider.nosotros : scoreProvider.ellos;
     final int groupBase = widget.groupIndex * 5;
     final bool isLastGroup = (teamPoints / 5).ceil() - 1 == widget.groupIndex;
 
-    return Container(
-      key: _key,
-      width: widget.size,
-      height: widget.size,
-      margin: const EdgeInsets.all(4),
-      child: Stack(
-        children: [
-          _buildPositionedStick(1,
-              isTeamDraggingBack: isTeamDraggingBack,
-              isLastStick: isLastGroup && teamPoints == groupBase + 1,
-              left: padding,
-              top: padding,
-              bottom: padding,
-              child: MatchstickWidget(height: matchHeight)),
-          _buildPositionedStick(2,
-              isTeamDraggingBack: isTeamDraggingBack,
-              isLastStick: isLastGroup && teamPoints == groupBase + 2,
-              left: padding,
-              right: padding,
-              top: padding,
-              child: MatchstickWidget(height: matchHeight, horizontal: true)),
-          _buildPositionedStick(3,
-              isTeamDraggingBack: isTeamDraggingBack,
-              isLastStick: isLastGroup && teamPoints == groupBase + 3,
-              right: padding,
-              top: padding,
-              bottom: padding,
-              child: MatchstickWidget(height: matchHeight, flipped: true)),
-          _buildPositionedStick(4,
-              isTeamDraggingBack: isTeamDraggingBack,
-              isLastStick: isLastGroup && teamPoints == groupBase + 4,
-              left: padding,
-              right: padding,
-              bottom: padding,
-              child: MatchstickWidget(height: matchHeight, horizontal: true, flipped: true)),
-          _buildPositionedStick(5,
-              isTeamDraggingBack: isTeamDraggingBack,
-              isLastStick: isLastGroup && teamPoints == groupBase + 5,
-              isDiagonal: true,
-              child: MatchstickWidget(height: matchHeight, diagonal: true)),
-        ],
-      ),
-    );
+    return _buildFrame(_key, widget.size, [
+      for (int i = 1; i <= 5; i++)
+        _buildManagedStick(i, padding, matchHeight, isTeamDraggingBack, isLastGroup, teamPoints, groupBase, scoreProvider)
+    ]);
   }
 
-  Widget _buildReturningStick(int index,
-      {double? left,
-      double? right,
-      double? top,
-      double? bottom,
-      bool isDiagonal = false,
-      required Widget child}) {
-    if (widget.points < index) return const SizedBox();
-
-    final int baseDelay = widget.groupIndex * 20; // Very tight group stagger
-
-    return _wrapPositioned(
-      index,
-      left,
-      right,
-      top,
-      bottom,
-      isDiagonal,
-      child.animate(delay: (baseDelay + index * 10).ms).move(
-            end: const Offset(0, 30), 
-            duration: 350.ms,
-            curve: Curves.easeInCubic,
-          ).scale(
-            end: const Offset(0.5, 0.5), 
-            duration: 350.ms,
-          ).fadeOut(duration: 350.ms),
-    );
+  Widget _buildFrame(Key k, double size, List<Widget> children) {
+    return Container(key: k, width: size, height: size, margin: const EdgeInsets.all(4), child: Stack(children: children));
   }
 
-  Widget _buildPositionedStick(int index,
-      {required bool isTeamDraggingBack,
-      required bool isLastStick,
-      double? left,
-      double? right,
-      double? top,
-      double? bottom,
-      bool isDiagonal = false,
-      required Widget child}) {
-    if (widget.points < index) return const SizedBox();
+  Widget _buildManagedStick(int i, double p, double mh, bool isD, bool isLG, int tp, int gb, ScoreProvider sp) {
+    if (widget.points < i) return const SizedBox.shrink();
+    final bool isLastStick = isLG && tp == gb + i;
+    if (isD && isLastStick) return const SizedBox.shrink();
 
-    // Hide the stick if it's currently being dragged back by the user
-    if (isTeamDraggingBack && isLastStick) {
-      return const SizedBox();
+    // 🏆 SOLID STATE LOGIC:
+    // If already animated, return pure Positioned. No tree structural changes ever again.
+    if (_alreadyAnimated.contains(i)) {
+      return _wrapPositioned(i, p, _getManagedChild(i, mh));
     }
 
-    final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
-    final bool isThisReverting = scoreProvider.isReverting && 
-                                scoreProvider.revertTeam == widget.team &&
-                                isLastStick;
+    // Otherwise, we animate it
+    final bool isThisReverting = sp.isReverting && sp.revertTeam == widget.team && isLastStick;
+    final bool isThisFlyingOut = sp.scoringMode == ScoringMode.drag && sp.isFlyingOut && sp.flyOutTeam == widget.team && isLastStick;
+    final bool isNew = sp.scoringMode == ScoringMode.drag && widget.animateLast && widget.points == i;
 
-    final bool isThisFlyingOut = scoreProvider.scoringMode == ScoringMode.drag &&
-                                scoreProvider.isFlyingOut && 
-                                scoreProvider.flyOutTeam == widget.team &&
-                                isLastStick;
-
-    final bool isNew = scoreProvider.scoringMode == ScoringMode.drag &&
-                      widget.animateLast && widget.points == index;
-    final bool hasValidBegin = _currentFlyInBegin != Offset.zero;
-
-    // Apply animation wrapper only if needed
-    Widget animatedChild = child;
-    if (isThisFlyingOut && scoreProvider.flyOutTarget != null) {
-      final RenderBox? renderBox = _key.currentContext?.findRenderObject() as RenderBox?;
-      if (renderBox != null) {
-        final Offset groupGlobalPos = renderBox.localToGlobal(Offset.zero);
-        final Offset localPos = _getStickLocalOffset(index);
-        final Offset boxRelGroup = scoreProvider.flyOutTarget! - groupGlobalPos;
-        final Offset flyOutEnd = boxRelGroup - localPos;
-        
-        animatedChild = animatedChild.animate(target: 1.0)
-            .move(begin: Offset.zero, end: flyOutEnd, duration: 400.ms, curve: Curves.easeInCubic)
-            .fadeOut(duration: 400.ms);
+    Widget child = _getManagedChild(i, mh);
+    
+    if (isThisFlyingOut && sp.flyOutTarget != null) {
+      final RenderBox? r = _key.currentContext?.findRenderObject() as RenderBox?;
+      if (r != null) {
+        final Offset end = sp.flyOutTarget! - r.localToGlobal(_getStickLocalOffset(i));
+        return _wrapPositioned(i, p, child.animate(target: 1.0).move(begin: Offset.zero, end: end, duration: 400.ms, curve: Curves.easeInCubic).fadeOut(duration: 400.ms));
       }
-    } else if (isThisReverting && scoreProvider.revertOffset != null) {
-      final RenderBox? renderBox = _key.currentContext?.findRenderObject() as RenderBox?;
-      if (renderBox != null) {
-        final Offset groupGlobalPos = renderBox.localToGlobal(Offset.zero);
-        final Offset localPos = _getStickLocalOffset(index);
-        final Offset globalStickCenter = groupGlobalPos + localPos;
-        
-        // feedback is dragged by top-left by default, but we used pointerDragAnchorStrategy
-        // which centers it on the pointer. revertedOffset is the top-left of the widget!
-        // We need the center of the dropped widget.
-        final Offset droppedWidgetCenter = scoreProvider.revertOffset! + const Offset(10, 50); 
-        final Offset revertBegin = droppedWidgetCenter - globalStickCenter;
-
-        animatedChild = animatedChild.animate()
-            .move(begin: revertBegin, duration: 400.ms, curve: Curves.easeOutCubic)
-            .fadeIn(duration: 400.ms);
+    } else if (isThisReverting && sp.revertOffset != null) {
+      final RenderBox? r = _key.currentContext?.findRenderObject() as RenderBox?;
+      if (r != null) {
+        final Offset begin = (sp.revertOffset! + const Offset(10, 50)) - r.localToGlobal(_getStickLocalOffset(i));
+        return _wrapPositioned(i, p, child.animate(onComplete: (_) => setState(() => _alreadyAnimated.add(i)))
+            .move(begin: begin, duration: 400.ms, curve: Curves.easeOutCubic).fadeIn(duration: 400.ms));
       }
-    } else if (isNew && hasValidBegin) {
-      animatedChild = animatedChild.animate()
-          .move(begin: _currentFlyInBegin, duration: 400.ms, curve: Curves.easeOutCubic)
-          .fadeIn(duration: 400.ms);
+    } else if (isNew && _currentFlyInBegin != Offset.zero) {
+      return _wrapPositioned(i, p, child.animate(onComplete: (_) => setState(() => _alreadyAnimated.add(i)))
+          .move(begin: _currentFlyInBegin, duration: 400.ms, curve: Curves.easeOutCubic).fadeIn(duration: 400.ms));
     }
 
-    return _wrapPositioned(
-      index,
-      left,
-      right,
-      top,
-      bottom,
-      isDiagonal,
-      animatedChild,
-    );
+    // Default: static if we fail animation detection but it's not in the set (fail-safe)
+    return _wrapPositioned(i, p, child);
   }
 
-  Widget _wrapPositioned(int index, double? left, double? right, double? top,
-      double? bottom, bool isDiagonal, Widget content) {
-    if (isDiagonal) {
-      return Positioned.fill(
-          key: ValueKey("stick_$index"), child: Center(child: content));
+  Widget _getManagedChild(int i, double h) {
+    switch (i) {
+      case 1: return MatchstickWidget(height: h);
+      case 2: return MatchstickWidget(height: h, horizontal: true);
+      case 3: return MatchstickWidget(height: h, flipped: true);
+      case 4: return MatchstickWidget(height: h, horizontal: true, flipped: true);
+      case 5: return MatchstickWidget(height: h, diagonal: true);
+      default: return const SizedBox.shrink();
     }
+  }
+
+  Widget _buildReturningStick(int i, double p, double h) {
+    if (widget.points < i) return const SizedBox.shrink();
+    final int delay = (widget.groupIndex * 20) + (i * 10);
+    return _wrapPositioned(i, p, _getManagedChild(i, h).animate(delay: delay.ms).move(end: const Offset(0, 30), duration: 350.ms, curve: Curves.easeInCubic).scale(end: const Offset(0.5, 0.5), duration: 350.ms).fadeOut(duration: 350.ms));
+  }
+
+  Widget _wrapPositioned(int i, double p, Widget content) {
+    if (i == 5) return Positioned.fill(key: ValueKey("st_$i"), child: Center(child: content));
     return Positioned(
-      key: ValueKey("stick_$index"),
-      left: left,
-      right: right,
-      top: top,
-      bottom: bottom,
+      key: ValueKey("st_$i"),
+      left: i == 1 || i == 2 || i == 4 ? p : null,
+      right: i == 2 || i == 3 || i == 4 ? p : null,
+      top: i == 1 || i == 2 || i == 3 ? p : null,
+      bottom: i == 1 || i == 3 || i == 4 ? p : null,
       child: content,
     );
   }

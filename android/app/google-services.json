@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1036790098357",
+    "project_id": "puro-truco",
+    "storage_bucket": "puro-truco.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1036790098357:android:8ae98ad019e0fd1bca91fc",
+        "android_client_info": {
+          "package_name": "com.mregas.anotadortruco"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQkJ71kWh-9XCTUqS83yeuCKP3izjGAXk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

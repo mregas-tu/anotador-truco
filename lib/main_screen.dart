@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'services/ad_service.dart';
+import 'providers/premium_provider.dart';
 import 'providers/score_provider.dart';
 import 'widgets/score_group_widget.dart';
 import 'widgets/matchstick_widget.dart';
@@ -12,6 +13,9 @@ import 'widgets/matchstick_box.dart';
 import 'theme/app_theme.dart';
 
 class MainScreen extends StatefulWidget {
+// ... existed ...
+// I will place _showUnlockDialog after building winner dialog logic or in a good place.
+
   const MainScreen({super.key});
 
   @override
@@ -458,9 +462,11 @@ class _MainScreenState extends State<MainScreen> {
     final String winnerKey = scoreProvider.winner!;
     final String winnerName = winnerKey == "nosotros" ? scoreProvider.nosotrosName : scoreProvider.ellosName;
 
-    // Show Interstitial on victory as requested
+    // Show Interstitial on victory if NOT premium
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      AdService.showInterstitial();
+      if (!Provider.of<PremiumProvider>(context, listen: false).isPremium) {
+        AdService.showInterstitial();
+      }
     });
 
     showDialog(
@@ -709,8 +715,18 @@ class _MainScreenState extends State<MainScreen> {
           color: Colors.transparent,
           child: Stack(
             children: [
-              const Center(child: _SettingsDialogContent()),
-              const Positioned(
+              Center(child: _SettingsDialogContent(
+                onThemeLockedTap: (themeName) {
+                  _showUnlockDialog(context, 'theme_$themeName', 'tema');
+                },
+                onPaletteLockedTap: (index) {
+                  _showUnlockDialog(context, 'palette_$index', 'fósforo');
+                },
+                onPremiumTap: () {
+                   _showUnlockDialog(context, 'premium', 'premium');
+                },
+              )),
+              Positioned(
                 bottom: 20,
                 left: 0,
                 right: 0,
@@ -718,6 +734,102 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showUnlockDialog(BuildContext context, String id, String type) {
+    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+    final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: scoreProvider.appTheme.navy,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: scoreProvider.appTheme.slate, width: 1),
+          ),
+          title: Text(
+            "¡Llevá tu anotador a otro nivel! 🚀",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: AppFonts.oswald,
+              fontSize: 20,
+              color: scoreProvider.appTheme.cream,
+            ),
+          ),
+          content: Text(
+            id == 'premium' 
+              ? "Convertite en premium para usar todos los temas, diseños de fósforos y eliminar la publicidad para siempre."
+              : "Convertite en premium para usar todos los temas, diseños de fósforos y eliminar la publicidad para siempre. O mirá un video para desbloquear este diseño por 24hs.",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: scoreProvider.appTheme.white.withOpacity(0.8),
+              fontSize: 16,
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actionsOverflowButtonSpacing: 10,
+          actions: [
+            Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      premiumProvider.buyPremium();
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: scoreProvider.appTheme.buenas,
+                      foregroundColor: scoreProvider.appTheme.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("SER PREMIUM", style: TextStyle(fontWeight: FontWeight.bold, fontFamily: AppFonts.oswald)),
+                  ),
+                ),
+                if (id != 'premium') 
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        AdService.showRewardedAd(
+                          onUserEarnedReward: () {
+                            premiumProvider.unlockTemporarily(id);
+                          },
+                          onAdNotReady: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("El video todavía no está listo. Probá de nuevo en unos segundos."),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                        );
+                        Navigator.pop(context);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: scoreProvider.appTheme.slate),
+                        foregroundColor: scoreProvider.appTheme.cream,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text("VER VIDEO (24HS GRATIS)", style: TextStyle(fontFamily: AppFonts.oswald)),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    "QUIZÁS MÁS TARDE",
+                    style: TextStyle(color: scoreProvider.appTheme.white.withOpacity(0.5), fontFamily: AppFonts.oswald),
+                  ),
+                ),
+              ],
+            ),
+          ],
         );
       },
     );
@@ -769,7 +881,15 @@ class _MainScreenState extends State<MainScreen> {
 }
 
 class _SettingsDialogContent extends StatefulWidget {
-  const _SettingsDialogContent();
+  final Function(String) onThemeLockedTap;
+  final Function(int) onPaletteLockedTap;
+  final VoidCallback onPremiumTap;
+
+  const _SettingsDialogContent({
+    required this.onThemeLockedTap,
+    required this.onPaletteLockedTap,
+    required this.onPremiumTap,
+  });
 
   @override
   State<_SettingsDialogContent> createState() => _SettingsDialogContentState();
@@ -777,9 +897,25 @@ class _SettingsDialogContent extends StatefulWidget {
 
 class _SettingsDialogContentState extends State<_SettingsDialogContent> {
   int currentPane = 0; // 0: Main, 1: Customization, 2: Game Mode
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final premiumProvider = Provider.of<PremiumProvider>(context);
     final scoreProvider = Provider.of<ScoreProvider>(context);
 
     String title = "AJUSTES";
@@ -847,7 +983,7 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
                     scoreProvider.setMuted(!val);
                   },
                   activeColor: Colors.white,
-                  activeTrackColor: scoreProvider.appTheme.slate,
+                  activeTrackColor: scoreProvider.appTheme.accentColor,
                   inactiveThumbColor: Colors.white70,
                   inactiveTrackColor: Colors.white12,
                 ),
@@ -893,6 +1029,31 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
               ),
               Divider(color: scoreProvider.appTheme.slate, height: 1),
               
+              if (!premiumProvider.isPremium) ...[
+                  _buildMenuNavigationItem(
+                    label: "HACERME PREMIUM 🚀",
+                    onTap: () {
+                      Navigator.pop(context); // Close settings
+                      widget.onPremiumTap();
+                    },
+                    scoreProvider: scoreProvider,
+                  ),
+                  Divider(color: scoreProvider.appTheme.slate, height: 1),
+              ],
+
+              _buildMenuNavigationItem(
+                label: "RESTAURAR COMPRAS 🔄",
+                onTap: () async {
+                  await premiumProvider.restorePurchases();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Buscando compras anteriores..."))
+                    );
+                  }
+                },
+                scoreProvider: scoreProvider,
+              ),
+
               const SizedBox(height: 24),
               
               // Share Button
@@ -945,9 +1106,15 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
                         itemBuilder: (context, index) {
                           final theme = TrucoTheme.allThemes[index];
                           final isSelected = scoreProvider.appTheme.name == theme.name;
+                          final isLocked = !premiumProvider.isThemeUnlocked(theme.name);
+
                           return GestureDetector(
                             onTap: () {
-                              scoreProvider.setAppTheme(theme);
+                              if (isLocked) {
+                                widget.onThemeLockedTap(theme.name);
+                              } else {
+                                scoreProvider.setAppTheme(theme);
+                              }
                             },
                             child: Container(
                               decoration: BoxDecoration(
@@ -995,8 +1162,28 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
                                          child: Image.asset(theme.backgroundAsset!, fit: BoxFit.cover),
                                        ),
                                     
-                                    // Check icon only
-                                    if (isSelected)
+                                    // Lock, check icon OR Countdown
+                                    if (isLocked)
+                                      Container(
+                                        color: Colors.black45,
+                                        child: const Center(child: Icon(Icons.lock, color: Colors.white70, size: 24)),
+                                      )
+                                    else if (premiumProvider.getRemainingTime('theme_${theme.name}') != null)
+                                      Container(
+                                        color: Colors.black45,
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          premiumProvider.getRemainingTime('theme_${theme.name}')!,
+                                          style: const TextStyle(
+                                            fontFamily: AppFonts.oswald,
+                                            fontSize: 18,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.5,
+                                          ),
+                                        ),
+                                      )
+                                    else if (isSelected)
                                       Positioned(
                                         right: 8,
                                         top: 8,
@@ -1030,28 +1217,58 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
                       Wrap(
                         spacing: 16,
                         runSpacing: 16,
-                        children: availablePalettes.map((palette) {
+                        children: availablePalettes.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final palette = entry.value;
                           final isSelected = scoreProvider.currentPalette.name == palette.name;
+                          final isLocked = !premiumProvider.isPaletteUnlocked(index);
+                          final timeLeft = premiumProvider.getRemainingTime('palette_$index');
+
                           return GestureDetector(
                             onTap: () {
-                              scoreProvider.setPalette(palette);
+                              if (isLocked) {
+                                widget.onPaletteLockedTap(index);
+                              } else {
+                                scoreProvider.setPalette(palette);
+                              }
                             },
-                            child: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  colors: [palette.headColors[0], palette.headColors.last],
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      colors: [palette.headColors[0], palette.headColors.last],
+                                    ),
+                                    border: Border.all(
+                                      color: isSelected ? Colors.white : Colors.white10,
+                                      width: isSelected ? 3 : 1,
+                                    ),
+                                    boxShadow: isSelected ? [
+                                      BoxShadow(color: palette.headColors.first.withOpacity(0.4), blurRadius: 10, spreadRadius: 2)
+                                    ] : null,
+                                  ),
                                 ),
-                                border: Border.all(
-                                  color: isSelected ? Colors.white : Colors.white10,
-                                  width: isSelected ? 3 : 1,
-                                ),
-                                boxShadow: isSelected ? [
-                                  BoxShadow(color: palette.headColors.first.withOpacity(0.4), blurRadius: 10, spreadRadius: 2)
-                                ] : null,
-                              ),
+                                if (isLocked)
+                                  const Icon(Icons.lock, color: Colors.white, size: 18),
+                                if (timeLeft != null)
+                                  Container(
+                                    decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black45),
+                                    padding: const EdgeInsets.all(4),
+                                    child: Text(
+                                      timeLeft,
+                                      style: const TextStyle(
+                                        fontFamily: AppFonts.oswald,
+                                        fontSize: 10,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           );
                         }).toList(),
@@ -1185,7 +1402,8 @@ class _BannerAdWidgetState extends State<_BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isBannerLoaded || _bannerAd == null) return const SizedBox.shrink();
+    bool isPremium = Provider.of<PremiumProvider>(context).isPremium;
+    if (isPremium || !_isBannerLoaded || _bannerAd == null) return const SizedBox.shrink();
 
     return Center(
       child: Container(
