@@ -768,248 +768,334 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-class _SettingsDialogContent extends StatelessWidget {
+class _SettingsDialogContent extends StatefulWidget {
   const _SettingsDialogContent();
+
+  @override
+  State<_SettingsDialogContent> createState() => _SettingsDialogContentState();
+}
+
+class _SettingsDialogContentState extends State<_SettingsDialogContent> {
+  int currentPane = 0; // 0: Main, 1: Customization, 2: Game Mode
 
   @override
   Widget build(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context);
-    int currentPane = 0; // 0: Main, 1: Customization, 2: Game Mode
 
-    return StatefulBuilder(
-      builder: (context, setDialogState) {
-        String title = "AJUSTES";
-        if (currentPane == 1) title = "DISEÑO (FÓSFOROS)";
-        if (currentPane == 2) title = "MODO DE JUEGO";
+    String title = "AJUSTES";
+    if (currentPane == 1) title = "DISEÑO (FÓSFOROS)";
+    if (currentPane == 2) title = "MODO DE JUEGO";
 
-        return Dialog(
-          backgroundColor: scoreProvider.appTheme.navy,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-            side: BorderSide(color: scoreProvider.appTheme.slate, width: 1),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Dialog(
+      backgroundColor: scoreProvider.appTheme.navy,
+      insetPadding: const EdgeInsets.only(left: 20, right: 20, top: 40, bottom: 100),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+        side: BorderSide(color: scoreProvider.appTheme.slate, width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header Row (Back icon, Title, Close icon)
+            Stack(
+              alignment: Alignment.center,
               children: [
-                // Header Row (Back icon, Title, Close icon)
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    if (currentPane != 0)
-                      Positioned(
-                        left: 0,
-                        child: IconButton(
-                          onPressed: () => setDialogState(() => currentPane = 0),
-                          icon: Icon(Icons.arrow_back, color: scoreProvider.appTheme.cream),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ),
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: AppFonts.oswald,
-                        fontSize: 20,
-                        color: scoreProvider.appTheme.cream,
-                        letterSpacing: 2,
-                      ),
+                if (currentPane != 0)
+                  Positioned(
+                    left: 0,
+                    child: IconButton(
+                      onPressed: () => setState(() => currentPane = 0),
+                      icon: Icon(Icons.arrow_back, color: scoreProvider.appTheme.cream),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                     ),
-                    Positioned(
-                      right: 0,
-                      child: IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(Icons.close, color: scoreProvider.appTheme.cream),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ),
-                  ],
+                  ),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 20,
+                    color: scoreProvider.appTheme.cream,
+                    letterSpacing: 2,
+                  ),
                 ),
-                const SizedBox(height: 24),
-                
-                if (currentPane == 0) ...[
-                  // --- PANE 0: MAIN SETTINGS ---
-                  _buildMenuActionItem(
-                    label: "SONIDO",
-                    scoreProvider: scoreProvider,
-                    trailing: Switch(
-                      value: !scoreProvider.isMuted,
-                      onChanged: (val) {
-                        scoreProvider.setMuted(!val);
-                        setDialogState(() {});
-                      },
-                      activeColor: Colors.white,
-                      activeTrackColor: scoreProvider.appTheme.slate,
-                      inactiveThumbColor: Colors.white70,
-                      inactiveTrackColor: Colors.white12,
-                    ),
+                Positioned(
+                  right: 0,
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close, color: scoreProvider.appTheme.cream),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
-                  Divider(color: scoreProvider.appTheme.slate, height: 1),
-                  _buildMenuActionItem(
-                    label: "MODO DE CONTROL",
-                    scoreProvider: scoreProvider,
-                    trailing: TextButton(
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        backgroundColor: scoreProvider.appTheme.slate.withOpacity(0.1),
-                      ),
-                      onPressed: () {
-                        scoreProvider.setScoringMode(
-                          scoreProvider.scoringMode == ScoringMode.drag 
-                            ? ScoringMode.tap 
-                            : ScoringMode.drag
-                        );
-                        setDialogState(() {});
-                      },
-                      child: Text(
-                        scoreProvider.scoringMode == ScoringMode.drag ? "ARRASTRAR" : "TOQUE",
-                        style: TextStyle(
-                          fontFamily: AppFonts.oswald,
-                          fontSize: 14,
-                          color: scoreProvider.appTheme.cream,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Divider(color: scoreProvider.appTheme.slate, height: 1),
-                  _buildMenuNavigationItem(
-                    label: "MODO DE JUEGO",
-                    onTap: () => setDialogState(() => currentPane = 2),
-                    scoreProvider: scoreProvider,
-                  ),
-                  Divider(color: scoreProvider.appTheme.slate, height: 1),
-                  _buildMenuNavigationItem(
-                    label: "DISEÑO (FÓSFOROS)",
-                    onTap: () => setDialogState(() => currentPane = 1),
-                    scoreProvider: scoreProvider,
-                  ),
-                  Divider(color: scoreProvider.appTheme.slate, height: 1),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Share Button
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      Share.share("¡Mirá este anotador de Truco premium! Bajalo acá: [LINK]");
-                    },
-                    icon: const Icon(Icons.share_outlined, size: 20),
-                    label: const Text(
-                      "Compartir app",
-                      style: TextStyle(fontFamily: 'Oswald', fontSize: 16, letterSpacing: 0.5),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: scoreProvider.appTheme.cream,
-                      side: BorderSide(color: scoreProvider.appTheme.cream),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ] else if (currentPane == 1) ...[
-                  // --- PANE 1: DESIGN (THEMES & PALETTES) ---
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 250),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text("TEMA DE LA APP", style: TextStyle(fontFamily: AppFonts.oswald, fontSize: 14, color: scoreProvider.appTheme.slate, letterSpacing: 1)),
-                        ),
-                        Expanded(
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: TrucoTheme.allThemes.length,
-                            itemBuilder: (context, index) {
-                              final theme = TrucoTheme.allThemes[index];
-                              final isSelected = scoreProvider.appTheme.name == theme.name;
-                              return ListTile(
-                                visualDensity: VisualDensity.compact,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 0),
-                                leading: Container(width: 20, height: 20, decoration: BoxDecoration(color: theme.navy, shape: BoxShape.circle, border: Border.all(color: theme.dividerColor, width: 2))),
-                                title: Text(theme.name, style: TextStyle(fontFamily: AppFonts.oswald, fontSize: 16, color: isSelected ? scoreProvider.appTheme.cream : Colors.white70)),
-                                trailing: isSelected ? Icon(Icons.check, color: scoreProvider.appTheme.cream, size: 18) : null,
-                                onTap: () {
-                                  scoreProvider.setAppTheme(theme);
-                                  setDialogState(() {});
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                        const Divider(color: Colors.white12, height: 24),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text("DISEÑO DE FÓSFOROS", style: TextStyle(fontFamily: AppFonts.oswald, fontSize: 14, color: scoreProvider.appTheme.slate, letterSpacing: 1)),
-                        ),
-                        Expanded(
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: availablePalettes.length,
-                            itemBuilder: (context, index) {
-                              final palette = availablePalettes[index];
-                              final isSelected = scoreProvider.currentPalette.name == palette.name;
-                              return ListTile(
-                                visualDensity: VisualDensity.compact,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 0),
-                                leading: Container(width: 20, height: 20, decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: palette.headColors), border: isSelected ? Border.all(color: Colors.white, width: 2) : null)),
-                                title: Text(palette.name, style: TextStyle(fontFamily: AppFonts.oswald, fontSize: 16, color: isSelected ? scoreProvider.appTheme.cream : Colors.white70)),
-                                trailing: isSelected ? Icon(Icons.radio_button_checked, color: scoreProvider.appTheme.cream, size: 18) : Icon(Icons.radio_button_off, color: scoreProvider.appTheme.white.withOpacity(0.2), size: 18),
-                                onTap: () {
-                                  scoreProvider.setPalette(palette);
-                                  setDialogState(() {});
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ] else if (currentPane == 2) ...[
-                  // --- PANE 2: GAME MODE ---
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 300),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: availableModes.length,
-                      separatorBuilder: (context, index) => const Divider(color: Colors.white12, height: 1),
-                      itemBuilder: (context, index) {
-                        final mode = availableModes[index];
-                        final isSelected = scoreProvider.currentGameMode.label == mode.label;
-                        
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                          title: Text(
-                            mode.label,
-                            style: TextStyle(
-                              fontFamily: AppFonts.oswald,
-                              fontSize: 16,
-                              color: isSelected ? scoreProvider.appTheme.cream : Colors.white70,
-                            ),
-                          ),
-                          trailing: isSelected 
-                            ? Icon(Icons.radio_button_checked, color: scoreProvider.appTheme.cream, size: 20)
-                            : Icon(Icons.radio_button_off, color: scoreProvider.appTheme.white.withOpacity(0.2), size: 20),
-                          onTap: () {
-                            scoreProvider.setGameMode(mode);
-                            setDialogState(() {});
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                ),
               ],
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 24),
+            
+            if (currentPane == 0) ...[
+              // --- PANE 0: MAIN SETTINGS ---
+              _buildMenuActionItem(
+                label: "SONIDO",
+                scoreProvider: scoreProvider,
+                trailing: Switch(
+                  value: !scoreProvider.isMuted,
+                  onChanged: (val) {
+                    scoreProvider.setMuted(!val);
+                  },
+                  activeColor: Colors.white,
+                  activeTrackColor: scoreProvider.appTheme.slate,
+                  inactiveThumbColor: Colors.white70,
+                  inactiveTrackColor: Colors.white12,
+                ),
+              ),
+              Divider(color: scoreProvider.appTheme.slate, height: 1),
+              _buildMenuActionItem(
+                label: "MODO DE CONTROL",
+                scoreProvider: scoreProvider,
+                trailing: TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    backgroundColor: scoreProvider.appTheme.slate.withOpacity(0.1),
+                  ),
+                  onPressed: () {
+                    scoreProvider.setScoringMode(
+                      scoreProvider.scoringMode == ScoringMode.drag 
+                        ? ScoringMode.tap 
+                        : ScoringMode.drag
+                    );
+                  },
+                  child: Text(
+                    scoreProvider.scoringMode == ScoringMode.drag ? "ARRASTRAR" : "TOQUE",
+                    style: TextStyle(
+                      fontFamily: AppFonts.oswald,
+                      fontSize: 14,
+                      color: scoreProvider.appTheme.cream,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              Divider(color: scoreProvider.appTheme.slate, height: 1),
+              _buildMenuNavigationItem(
+                label: "MODO DE JUEGO",
+                onTap: () => setState(() => currentPane = 2),
+                scoreProvider: scoreProvider,
+              ),
+              Divider(color: scoreProvider.appTheme.slate, height: 1),
+              _buildMenuNavigationItem(
+                label: "DISEÑO (FÓSFOROS)",
+                onTap: () => setState(() => currentPane = 1),
+                scoreProvider: scoreProvider,
+              ),
+              Divider(color: scoreProvider.appTheme.slate, height: 1),
+              
+              const SizedBox(height: 24),
+              
+              // Share Button
+              OutlinedButton.icon(
+                onPressed: () {
+                  Share.share("¡Mirá este anotador de Truco premium! Bajalo acá: [LINK]");
+                },
+                icon: const Icon(Icons.share_outlined, size: 20),
+                label: const Text(
+                  "Compartir app",
+                  style: TextStyle(fontFamily: 'Oswald', fontSize: 16, letterSpacing: 0.5),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: scoreProvider.appTheme.cream,
+                  side: BorderSide(color: scoreProvider.appTheme.cream),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ] else if (currentPane == 1) ...[
+              // --- PANE 1: DESIGN (THEMES & PALETTES) ---
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          "TEMA DE LA APP", 
+                          style: TextStyle(
+                            fontFamily: AppFonts.oswald, 
+                            fontSize: 12, 
+                            fontWeight: FontWeight.bold,
+                            color: scoreProvider.appTheme.slate, 
+                            letterSpacing: 1.5
+                          )
+                        ),
+                      ),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.5,
+                        ),
+                        itemCount: TrucoTheme.allThemes.length,
+                        itemBuilder: (context, index) {
+                          final theme = TrucoTheme.allThemes[index];
+                          final isSelected = scoreProvider.appTheme.name == theme.name;
+                          return GestureDetector(
+                            onTap: () {
+                              scoreProvider.setAppTheme(theme);
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: theme.navy,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected ? Colors.white : Colors.white10,
+                                  width: isSelected ? 3 : 1,
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(9),
+                                child: Stack(
+                                  children: [
+                                    // Fondo según el tema
+                                    if (theme.name == "NAVY PROFUNDO")
+                                       Positioned.fill(
+                                         child: Padding(
+                                           padding: const EdgeInsets.all(8.0),
+                                           child: Opacity(
+                                             opacity: 0.8,
+                                             child: SvgPicture.asset('assets/images/footer.svg', fit: BoxFit.contain),
+                                           ),
+                                         ),
+                                       )
+                                    else if (theme.name == "ARGENTINA")
+                                       Positioned.fill(
+                                         child: Column(
+                                           children: [
+                                             Expanded(child: Container(color: const Color(0xFF74ACDF))),
+                                             Expanded(
+                                               child: Container(
+                                                 color: Colors.white,
+                                                 child: Center(
+                                                   child: SvgPicture.asset('assets/images/sun.svg', height: 16, fit: BoxFit.contain),
+                                                  ),
+                                               ),
+                                             ),
+                                             Expanded(child: Container(color: const Color(0xFF74ACDF))),
+                                           ],
+                                         ),
+                                       )
+                                    else if (theme.backgroundAsset != null)
+                                       Positioned.fill(
+                                         child: Image.asset(theme.backgroundAsset!, fit: BoxFit.cover),
+                                       ),
+                                    
+                                    // Check icon only
+                                    if (isSelected)
+                                      Positioned(
+                                        right: 8,
+                                        top: 8,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                          child: Icon(Icons.check, size: 12, color: theme.navy),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          "DISEÑO DE FÓSFOROS", 
+                          style: TextStyle(
+                            fontFamily: AppFonts.oswald, 
+                            fontSize: 12, 
+                            fontWeight: FontWeight.bold,
+                            color: scoreProvider.appTheme.slate, 
+                            letterSpacing: 1.5
+                          )
+                        ),
+                      ),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 16,
+                        children: availablePalettes.map((palette) {
+                          final isSelected = scoreProvider.currentPalette.name == palette.name;
+                          return GestureDetector(
+                            onTap: () {
+                              scoreProvider.setPalette(palette);
+                            },
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [palette.headColors[0], palette.headColors.last],
+                                ),
+                                border: Border.all(
+                                  color: isSelected ? Colors.white : Colors.white10,
+                                  width: isSelected ? 3 : 1,
+                                ),
+                                boxShadow: isSelected ? [
+                                  BoxShadow(color: palette.headColors.first.withOpacity(0.4), blurRadius: 10, spreadRadius: 2)
+                                ] : null,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ] else if (currentPane == 2) ...[
+              // --- PANE 2: GAME MODE ---
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 300),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: availableModes.length,
+                  separatorBuilder: (context, index) => const Divider(color: Colors.white12, height: 1),
+                  itemBuilder: (context, index) {
+                    final mode = availableModes[index];
+                    final isSelected = scoreProvider.currentGameMode.label == mode.label;
+                    
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      title: Text(
+                        mode.label,
+                        style: TextStyle(
+                          fontFamily: AppFonts.oswald,
+                          fontSize: 16,
+                          color: isSelected ? scoreProvider.appTheme.cream : Colors.white70,
+                        ),
+                      ),
+                      trailing: isSelected 
+                        ? Icon(Icons.radio_button_checked, color: scoreProvider.appTheme.cream, size: 20)
+                        : Icon(Icons.radio_button_off, color: scoreProvider.appTheme.white.withOpacity(0.2), size: 20),
+                      onTap: () {
+                        scoreProvider.setGameMode(mode);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -1018,26 +1104,18 @@ class _SettingsDialogContent extends StatelessWidget {
     required VoidCallback onTap,
     required ScoreProvider scoreProvider,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontFamily: AppFonts.oswald,
-                  fontSize: 16,
-                  color: scoreProvider.appTheme.white,
-                ),
-              ),
-            ),
-            Icon(Icons.chevron_right, color: scoreProvider.appTheme.cream, size: 24),
-          ],
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontFamily: AppFonts.oswald,
+          fontSize: 16,
+          color: scoreProvider.appTheme.cream,
         ),
       ),
+      trailing: Icon(Icons.chevron_right, color: scoreProvider.appTheme.cream),
+      onTap: onTap,
     );
   }
 
@@ -1046,23 +1124,17 @@ class _SettingsDialogContent extends StatelessWidget {
     required Widget trailing,
     required ScoreProvider scoreProvider,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: AppFonts.oswald,
-                fontSize: 16,
-                color: scoreProvider.appTheme.white,
-              ),
-            ),
-          ),
-          trailing,
-        ],
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontFamily: AppFonts.oswald,
+          fontSize: 16,
+          color: scoreProvider.appTheme.cream,
+        ),
       ),
+      trailing: trailing,
     );
   }
 }

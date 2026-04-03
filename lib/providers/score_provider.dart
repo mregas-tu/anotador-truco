@@ -44,6 +44,46 @@ const List<MatchstickPalette> availablePalettes = [
     name: "ORO",
     headColors: [Color(0xFFD4AC0D), Color(0xFF9A7D0A), Color(0xFF7D6608)],
   ),
+  MatchstickPalette(
+    name: "VIOLETA",
+    headColors: [Color(0xFFAF7AC5), Color(0xFF884EA0), Color(0xFF4A235A)],
+  ),
+  MatchstickPalette(
+    name: "NARANJA",
+    headColors: [Color(0xFFF39C12), Color(0xFFD35400), Color(0xFF873600)],
+  ),
+  MatchstickPalette(
+    name: "ROSA",
+    headColors: [Color(0xFFF06292), Color(0xFFE91E63), Color(0xFF880E4F)],
+  ),
+  MatchstickPalette(
+    name: "CIAN",
+    headColors: [Color(0xFF4DD0E1), Color(0xFF00BCD4), Color(0xFF006064)],
+  ),
+  MatchstickPalette(
+    name: "LIMA",
+    headColors: [Color(0xFFDCE775), Color(0xFFCDDC39), Color(0xFF827717)],
+  ),
+  MatchstickPalette(
+    name: "TURQUESA",
+    headColors: [Color(0xFF4DB6AC), Color(0xFF009688), Color(0xFF004D40)],
+  ),
+  MatchstickPalette(
+    name: "CHOCOLATE",
+    headColors: [Color(0xFF8D6E63), Color(0xFF5D4037), Color(0xFF3E2723)],
+  ),
+  MatchstickPalette(
+    name: "GRIS METAL",
+    headColors: [Color(0xFFB0BEC5), Color(0xFF607D8B), Color(0xFF263238)],
+  ),
+  MatchstickPalette(
+    name: "MENTA",
+    headColors: [Color(0xFFA9DFBF), Color(0xFF52BE80), Color(0xFF1E8449)],
+  ),
+  MatchstickPalette(
+    name: "COBRE",
+    headColors: [Color(0xFFDC7633), Color(0xFFA04000), Color(0xFF6E2C00)],
+  ),
 ];
 
 const List<GameMode> availableModes = [
