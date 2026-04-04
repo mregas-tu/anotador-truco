@@ -11,11 +11,9 @@ import 'widgets/score_group_widget.dart';
 import 'widgets/matchstick_widget.dart';
 import 'widgets/matchstick_box.dart';
 import 'theme/app_theme.dart';
+import 'services/persistence_service.dart';
 
 class MainScreen extends StatefulWidget {
-// ... existed ...
-// I will place _showUnlockDialog after building winner dialog logic or in a good place.
-
   const MainScreen({super.key});
 
   @override
@@ -31,6 +29,20 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
+      await scoreProvider.loadSettings();
+      
+      final data = await PersistenceService.loadAll();
+      final nosotros = data[PersistenceService.keyNosotrosScore] ?? 0;
+      final ellos = data[PersistenceService.keyEllosScore] ?? 0;
+      
+      if (nosotros > 0 || ellos > 0) {
+        if (mounted) {
+          _showRecoveryDialog(context, scoreProvider, data);
+        }
+      }
+    });
   }
 
   @override
@@ -408,12 +420,15 @@ class _MainScreenState extends State<MainScreen> {
           content: TextField(
             controller: controller,
             autofocus: true,
+            maxLength: 20,
+            maxLines: 1,
             style: TextStyle(
               color: scoreProvider.appTheme.cream,
               fontFamily: AppFonts.caminito,
               fontSize: 24,
             ),
             decoration: InputDecoration(
+              counterText: "", // Hide the counter for a cleaner look
               hintText: "Ej: LOS CRACKS",
               hintStyle: TextStyle(color: scoreProvider.appTheme.white.withOpacity(0.3)),
               enabledBorder: UnderlineInputBorder(
@@ -504,14 +519,17 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                winnerName.toUpperCase(),
-                style: TextStyle(
-                  fontFamily: AppFonts.oswald,
-                  fontSize: 38,
-                  color: scoreProvider.appTheme.slate,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  winnerName.toUpperCase(),
+                  style: TextStyle(
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 38,
+                    color: scoreProvider.appTheme.slate,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -620,16 +638,21 @@ class _MainScreenState extends State<MainScreen> {
           GestureDetector(
             onTap: () => _showNameEditDialog(context, teamKey, name),
             child: Container(
-              padding: EdgeInsets.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              width: double.infinity,
               color: Colors.transparent, // Expand hit area
-              child: Text(
-                name,
-                style: TextStyle(
-                  fontFamily: AppFonts.oswald,
-                  fontSize: 20,
-                  color: scoreProvider.appTheme.slate,
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.bold,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 20,
+                    color: scoreProvider.appTheme.slate,
+                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -876,6 +899,70 @@ class _MainScreenState extends State<MainScreen> {
           ],
         );
       },
+    );
+  }
+
+  void _showRecoveryDialog(
+      BuildContext context, ScoreProvider provider, Map<String, dynamic> data) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF161931),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          "DEJASTE UNA PARTIDA A MEDIAS",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            fontFamily: AppFonts.oswald,
+          ),
+        ),
+        content: const Text(
+          "¿Querés continuarla o prefieren arrancar una nueva?",
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white70, fontFamily: AppFonts.oswald),
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              provider.triggerReset();
+            },
+            child: const Text(
+              "NUEVA PARTIDA",
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontFamily: AppFonts.oswald,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2E86C1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              provider.restoreGame(data);
+            },
+            child: const Text(
+              "VOLVER AL PARTIDO",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontFamily: AppFonts.oswald,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

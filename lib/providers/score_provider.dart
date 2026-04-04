@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/audio_service.dart';
 import '../services/analytics_service.dart';
+import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
 
 class GameMode {
@@ -253,6 +254,7 @@ class ScoreProvider with ChangeNotifier {
         if (!_isMuted) _audioService.playStick();
       }
       notifyListeners();
+      _saveCurrentState();
     }
   }
 
@@ -265,6 +267,7 @@ class ScoreProvider with ChangeNotifier {
       _winner = null; // Clear winner if score decreased
       _totalRemainingMatchsticks++;
       notifyListeners();
+      _saveCurrentState();
     }
   }
 
@@ -285,6 +288,20 @@ class ScoreProvider with ChangeNotifier {
         if (!_isMuted) _audioService.playStick();
       }
       notifyListeners();
+      _saveCurrentState();
+    }
+  }
+
+  void removePointEllos() {
+    if (_ellos > 0) {
+      if (_currentGameMode.hasBuenas && _ellos == _currentGameMode.milestone) {
+        _ellosFinishedMalas = false;
+      }
+      _ellos--;
+      _winner = null; // Clear winner if score decreased
+      _totalRemainingMatchsticks++;
+      notifyListeners();
+      _saveCurrentState();
     }
   }
 
@@ -295,6 +312,7 @@ class ScoreProvider with ChangeNotifier {
       _ellosName = name.trim().toUpperCase();
     }
     notifyListeners();
+    _saveCurrentState();
   }
 
   Future<void> triggerReset({bool keepNames = true}) async {
@@ -317,6 +335,7 @@ class ScoreProvider with ChangeNotifier {
     _lastPointTeam = null;
     _isResetting = false;
     notifyListeners();
+    PersistenceService.clearGameState();
   }
 
   Future<void> triggerFlyOut(String team, Offset targetOffset) async {
@@ -349,39 +368,103 @@ class ScoreProvider with ChangeNotifier {
   void setScoringMode(ScoringMode mode) {
     _scoringMode = mode;
     notifyListeners();
+    _saveCurrentSettings();
   }
 
   void setGameMode(GameMode mode) {
     _currentGameMode = mode;
     triggerReset(keepNames: true);
+    _saveCurrentSettings();
   }
 
   void setMuted(bool muted) {
     _isMuted = muted;
     notifyListeners();
+    _saveCurrentSettings();
   }
 
   void setAppTheme(TrucoTheme theme) {
     _appTheme = theme;
     AnalyticsService.logThemeChanged(theme.name);
     notifyListeners();
+    _saveCurrentSettings();
   }
 
   void setPalette(MatchstickPalette palette) {
     _currentPalette = palette;
     notifyListeners();
+    _saveCurrentSettings();
   }
 
-  void removePointEllos() {
-    if (_ellos > 0) {
-      if (_currentGameMode.hasBuenas && _ellos == _currentGameMode.milestone) {
-        _ellosFinishedMalas = false;
-      }
-      _ellos--;
-      _winner = null; // Clear winner if score decreased
-      _totalRemainingMatchsticks++;
-      notifyListeners();
+  void _saveCurrentState() {
+    PersistenceService.saveGameState(
+      nosotros: _nosotros,
+      ellos: _ellos,
+      nosotrosName: _nosotrosName,
+      ellosName: _ellosName,
+      finishedMalasNosotros: _nosotrosFinishedMalas,
+      finishedMalasEllos: _ellosFinishedMalas,
+    );
+  }
+
+  void _saveCurrentSettings() {
+    PersistenceService.saveSettings(
+      gameModeIndex: availableModes.indexOf(_currentGameMode),
+      themeId: _appTheme.name, // Using name as ID
+      paletteIndex: availablePalettes.indexOf(_currentPalette),
+      scoringMode: _scoringMode.name,
+      isMuted: _isMuted,
+    );
+  }
+
+  Future<void> restoreGame(Map<String, dynamic> data) async {
+    _nosotros = data[PersistenceService.keyNosotrosScore] ?? 0;
+    _ellos = data[PersistenceService.keyEllosScore] ?? 0;
+    _nosotrosName = data[PersistenceService.keyNosotrosName] ?? "NOSOTROS";
+    _ellosName = data[PersistenceService.keyEllosName] ?? "ELLOS";
+    _nosotrosFinishedMalas = data[PersistenceService.keyFinishedMalasNosotros] ?? false;
+    _ellosFinishedMalas = data[PersistenceService.keyFinishedMalasEllos] ?? false;
+    
+    // Recalculate matchsticks based on scores
+    _totalRemainingMatchsticks = (_currentGameMode.totalPoints * 2) - _nosotros - _ellos;
+    
+    notifyListeners();
+    _saveCurrentState();
+  }
+
+  Future<void> loadSettings() async {
+    final data = await PersistenceService.loadAll();
+    
+    if (data[PersistenceService.keyGameModeIndex] != null) {
+      _currentGameMode = availableModes[data[PersistenceService.keyGameModeIndex]];
     }
+    if (data[PersistenceService.keyThemeId] != null) {
+      _appTheme = TrucoTheme.allThemes.firstWhere(
+        (t) => t.name == data[PersistenceService.keyThemeId],
+        orElse: () => TrucoTheme.navyTheme,
+      );
+    }
+    if (data[PersistenceService.keyPaletteIndex] != null) {
+      _currentPalette = availablePalettes[data[PersistenceService.keyPaletteIndex]];
+    }
+    if (data[PersistenceService.keyScoringMode] != null) {
+      _scoringMode = data[PersistenceService.keyScoringMode] == ScoringMode.tap.name 
+          ? ScoringMode.tap 
+          : ScoringMode.drag;
+    }
+    if (data[PersistenceService.keyIsMuted] != null) {
+      _isMuted = data[PersistenceService.keyIsMuted];
+    }
+    
+    // Always load names if they exist
+    if (data[PersistenceService.keyNosotrosName] != null) {
+      _nosotrosName = data[PersistenceService.keyNosotrosName];
+    }
+    if (data[PersistenceService.keyEllosName] != null) {
+      _ellosName = data[PersistenceService.keyEllosName];
+    }
+
+    notifyListeners();
   }
 
   void reset() {
@@ -389,6 +472,4 @@ class ScoreProvider with ChangeNotifier {
     _ellos = 0;
     notifyListeners();
   }
-
-  // Eliminated setMaxScore - handled by setGameMode
 }
