@@ -39,11 +39,16 @@ class _MainScreenState extends State<MainScreen> {
       final data = await PersistenceService.loadAll();
       final nosotros = data[PersistenceService.keyNosotrosScore] ?? 0;
       final ellos = data[PersistenceService.keyEllosScore] ?? 0;
+      final targetScore = scoreProvider.currentGameMode.totalPoints;
       
-      if (nosotros > 0 || ellos > 0) {
+      // Solo mostramos recuperar si alguien tiene puntos PERO nadie llegó al límite
+      if ((nosotros > 0 || ellos > 0) && (nosotros < targetScore && ellos < targetScore)) {
         if (mounted) {
           _showRecoveryDialog(context, scoreProvider, data);
         }
+      } else if (nosotros >= targetScore || ellos >= targetScore) {
+        // Si ya terminó, limpiamos para que no vuelva a molestar al reiniciar
+        await PersistenceService.clearGameState();
       }
     });
   }
