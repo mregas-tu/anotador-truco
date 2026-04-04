@@ -3,7 +3,8 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BillingService {
-  static const String premiumId = '33-de-mano';
+  static const String premiumId = '33_de_mano';
+  static const String premiumIdAlt = '33-de-mano';
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   late StreamSubscription<List<PurchaseDetails>> _subscription;
   
@@ -43,7 +44,7 @@ class BillingService {
   }
 
   Future<void> _deliverProduct(PurchaseDetails purchaseDetails) async {
-    if (purchaseDetails.productID == premiumId) {
+    if (purchaseDetails.productID == premiumId || purchaseDetails.productID == premiumIdAlt) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_premium', true);
       onPremiumStatusChanged(true);
@@ -54,12 +55,12 @@ class BillingService {
     final bool available = await _inAppPurchase.isAvailable();
     if (!available) return;
 
-    const Set<String> kIds = <String>{premiumId};
+    const Set<String> kIds = <String>{premiumId, premiumIdAlt};
     final ProductDetailsResponse response =
         await _inAppPurchase.queryProductDetails(kIds);
 
-    if (response.notFoundIDs.isNotEmpty) {
-      // El ID no se encontró en Google Play
+    if (response.productDetails.isEmpty) {
+      // Ningún ID se encontró en Google Play
       return;
     }
 

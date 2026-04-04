@@ -1034,7 +1034,7 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
                     label: "HACERME PREMIUM 🚀",
                     onTap: () {
                       Navigator.pop(context); // Close settings
-                      widget.onPremiumTap();
+                      premiumProvider.buyPremium();
                     },
                     scoreProvider: scoreProvider,
                   ),

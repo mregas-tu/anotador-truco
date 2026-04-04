@@ -1,4 +1,4 @@
-package com.mregas.anotadortruco
+package com.mregas.truco.anotador
 
 import io.flutter.embedding.android.FlutterActivity
 

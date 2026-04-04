@@ -10,7 +10,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mregas.anotadortruco"
+    namespace = "com.mregas.truco.anotador"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -43,7 +43,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.mregas.anotadortruco"
+        applicationId = "com.mregas.truco.anotador"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
