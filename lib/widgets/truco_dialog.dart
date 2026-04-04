@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../providers/score_provider.dart';
 import 'truco_banner_ad.dart';
 
 class TrucoDialog extends StatelessWidget {
@@ -8,8 +10,6 @@ class TrucoDialog extends StatelessWidget {
   final String? contentText;
   final List<Widget>? actions;
   final MainAxisAlignment actionsAlignment;
-  final Color? borderColor;
-  final double borderWidth;
 
   const TrucoDialog({
     super.key,
@@ -18,14 +18,17 @@ class TrucoDialog extends StatelessWidget {
     this.contentText,
     this.actions,
     this.actionsAlignment = MainAxisAlignment.spaceEvenly,
-    this.borderColor,
-    this.borderWidth = 1.0,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Buscamos el tema actual automáticamente vía Provider
+    final scoreProvider = Provider.of<ScoreProvider>(context);
+    final borderColor = scoreProvider.appTheme.slate;
+    const double borderWidth = 1.0; 
+
     return Material(
-      color: Colors.transparent, // Background mask is handled by showDialog
+      color: Colors.transparent, // El overlay de showDialog maneja el fondo oscuro
       child: Stack(
         children: [
           Center(
@@ -38,7 +41,7 @@ class TrucoDialog extends StatelessWidget {
                   color: const Color(0xFF161931),
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
-                    color: borderColor ?? Colors.white.withOpacity(0.15),
+                    color: borderColor,
                     width: borderWidth,
                   ),
                   boxShadow: [
@@ -87,7 +90,7 @@ class TrucoDialog extends StatelessWidget {
             ),
           ),
 
-          // El banner FIXED al pie de la pantalla, fuera del cuadro azul
+          // Banner fijo al pie de la pantalla
           const Positioned(
             bottom: 20,
             left: 0,

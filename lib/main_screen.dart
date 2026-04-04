@@ -492,8 +492,8 @@ class _MainScreenState extends State<MainScreen> {
       barrierDismissible: false,
       builder: (context) => TrucoDialog(
         title: "¡TENEMOS UN GANADOR!",
-        borderColor: scoreProvider.appTheme.slate,
         content: Column(
+
 
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -696,8 +696,8 @@ class _MainScreenState extends State<MainScreen> {
     showDialog(
       context: context,
       builder: (context) => TrucoDialog(
-        borderColor: scoreProvider.appTheme.slate,
         content: _SettingsDialogContent(
+
           onThemeLockedTap: (themeName) => _showUnlockDialog(context, 'theme_$themeName', 'tema'),
           onPaletteLockedTap: (index) => _showUnlockDialog(context, 'palette_$index', 'fósforo'),
           onPremiumTap: () => _showUnlockDialog(context, 'premium', 'premium'),
@@ -715,7 +715,6 @@ class _MainScreenState extends State<MainScreen> {
       context: context,
       builder: (context) => TrucoDialog(
         title: "¡LLEVÁ TU ANOTADOR A OTRO NIVEL! 🚀",
-        borderColor: scoreProvider.appTheme.slate,
         contentText: id == 'premium' 
             ? "Convertite en premium para usar todos los temas, diseños de fósforos y eliminar la publicidad para siempre."
             : "Este diseño es exclusivo de la versión Premium. Podés desbloquearlo temporalmente viendo un video.",
@@ -832,9 +831,8 @@ class _MainScreenState extends State<MainScreen> {
       barrierDismissible: false,
       builder: (context) => TrucoDialog(
         title: "DEJASTE UNA PARTIDA A MEDIAS",
-        borderColor: provider.appTheme.slate,
-        borderWidth: 1.5,
         contentText: "¿Querés continuarla o prefieren arrancar una nueva?",
+
 
         actions: [
           TextButton(
@@ -1065,208 +1063,205 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
               ),
             ] else if (currentPane == 1) ...[
               // --- PANE 1: DESIGN (THEMES & PALETTES) ---
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Text(
-                          "TEMA DE LA APP", 
-                          style: TextStyle(
-                            fontFamily: AppFonts.oswald, 
-                            fontSize: 12, 
-                            fontWeight: FontWeight.bold,
-                            color: scoreProvider.appTheme.slate, 
-                            letterSpacing: 1.5
-                          )
-                        ),
-                      ),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 1.5,
-                        ),
-                        itemCount: TrucoTheme.allThemes.length,
-                        itemBuilder: (context, index) {
-                          final theme = TrucoTheme.allThemes[index];
-                          final isSelected = scoreProvider.appTheme.name == theme.name;
-                          final isLocked = !premiumProvider.isThemeUnlocked(theme.name);
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      "TEMA DE LA APP", 
+                      style: TextStyle(
+                        fontFamily: AppFonts.oswald, 
+                        fontSize: 12, 
+                        fontWeight: FontWeight.bold,
+                        color: scoreProvider.appTheme.slate, 
+                        letterSpacing: 1.5
+                      )
+                    ),
+                  ),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.5,
+                    ),
+                    itemCount: TrucoTheme.allThemes.length,
+                    itemBuilder: (context, index) {
+                      final theme = TrucoTheme.allThemes[index];
+                      final isSelected = scoreProvider.appTheme.name == theme.name;
+                      final isLocked = !premiumProvider.isThemeUnlocked(theme.name);
 
-                          return GestureDetector(
-                            onTap: () {
-                              if (isLocked) {
-                                widget.onThemeLockedTap(theme.name);
-                              } else {
-                                scoreProvider.setAppTheme(theme);
-                              }
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: theme.navy,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected ? Colors.white : Colors.white10,
-                                  width: isSelected ? 3 : 1,
-                                ),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(9),
-                                child: Stack(
-                                  children: [
-                                    // Fondo según el tema
-                                    if (theme.name == "NAVY PROFUNDO")
-                                       Positioned.fill(
-                                         child: Padding(
-                                           padding: const EdgeInsets.all(8.0),
-                                           child: Opacity(
-                                             opacity: 0.8,
-                                             child: SvgPicture.asset('assets/images/footer.svg', fit: BoxFit.contain),
+                      return GestureDetector(
+                        onTap: () {
+                          if (isLocked) {
+                            widget.onThemeLockedTap(theme.name);
+                          } else {
+                            scoreProvider.setAppTheme(theme);
+                          }
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: theme.navy,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? Colors.white : Colors.white10,
+                              width: isSelected ? 3 : 1,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(9),
+                            child: Stack(
+                              children: [
+                                // Fondo según el tema
+                                if (theme.name == "NAVY PROFUNDO")
+                                   Positioned.fill(
+                                     child: Padding(
+                                       padding: const EdgeInsets.all(8.0),
+                                       child: Opacity(
+                                         opacity: 0.8,
+                                         child: SvgPicture.asset('assets/images/footer.svg', fit: BoxFit.contain),
+                                       ),
+                                     ),
+                                   )
+                                else if (theme.name == "ARGENTINA")
+                                   Positioned.fill(
+                                     child: Column(
+                                       children: [
+                                         Expanded(child: Container(color: const Color(0xFF74ACDF))),
+                                         Expanded(
+                                           child: Container(
+                                             color: Colors.white,
+                                             child: Center(
+                                               child: SvgPicture.asset('assets/images/sun.svg', height: 16, fit: BoxFit.contain),
+                                              ),
                                            ),
                                          ),
-                                       )
-                                    else if (theme.name == "ARGENTINA")
-                                       Positioned.fill(
-                                         child: Column(
-                                           children: [
-                                             Expanded(child: Container(color: const Color(0xFF74ACDF))),
-                                             Expanded(
-                                               child: Container(
-                                                 color: Colors.white,
-                                                 child: Center(
-                                                   child: SvgPicture.asset('assets/images/sun.svg', height: 16, fit: BoxFit.contain),
-                                                  ),
-                                               ),
-                                             ),
-                                             Expanded(child: Container(color: const Color(0xFF74ACDF))),
-                                           ],
-                                         ),
-                                       )
-                                    else if (theme.backgroundAsset != null)
-                                       Positioned.fill(
-                                         child: Image.asset(theme.backgroundAsset!, fit: BoxFit.cover),
-                                       ),
-                                    
-                                    // Lock, check icon OR Countdown
-                                    if (isLocked)
-                                      Container(
-                                        color: Colors.black45,
-                                        child: const Center(child: Icon(Icons.lock, color: Colors.white70, size: 24)),
-                                      )
-                                    else if (premiumProvider.getRemainingTime('theme_${theme.name}') != null)
-                                      Container(
-                                        color: Colors.black45,
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          premiumProvider.getRemainingTime('theme_${theme.name}')!,
-                                          style: const TextStyle(
-                                            fontFamily: AppFonts.oswald,
-                                            fontSize: 18,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1.5,
-                                          ),
-                                        ),
-                                      )
-                                    else if (isSelected)
-                                      Positioned(
-                                        right: 8,
-                                        top: 8,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(2),
-                                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                                          child: Icon(Icons.check, size: 12, color: theme.navy),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Text(
-                          "DISEÑO DE FÓSFOROS", 
-                          style: TextStyle(
-                            fontFamily: AppFonts.oswald, 
-                            fontSize: 12, 
-                            fontWeight: FontWeight.bold,
-                            color: scoreProvider.appTheme.slate, 
-                            letterSpacing: 1.5
-                          )
-                        ),
-                      ),
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 16,
-                        children: availablePalettes.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final palette = entry.value;
-                          final isSelected = scoreProvider.currentPalette.name == palette.name;
-                          final isLocked = !premiumProvider.isPaletteUnlocked(index);
-                          final timeLeft = premiumProvider.getRemainingTime('palette_$index');
-
-                          return GestureDetector(
-                            onTap: () {
-                              if (isLocked) {
-                                widget.onPaletteLockedTap(index);
-                              } else {
-                                scoreProvider.setPalette(palette);
-                              }
-                            },
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: RadialGradient(
-                                      colors: [palette.headColors[0], palette.headColors.last],
-                                    ),
-                                    border: Border.all(
-                                      color: isSelected ? Colors.white : Colors.white10,
-                                      width: isSelected ? 3 : 1,
-                                    ),
-                                    boxShadow: isSelected ? [
-                                      BoxShadow(color: palette.headColors.first.withOpacity(0.4), blurRadius: 10, spreadRadius: 2)
-                                    ] : null,
-                                  ),
-                                ),
+                                         Expanded(child: Container(color: const Color(0xFF74ACDF))),
+                                       ],
+                                     ),
+                                   )
+                                else if (theme.backgroundAsset != null)
+                                   Positioned.fill(
+                                     child: Image.asset(theme.backgroundAsset!, fit: BoxFit.cover),
+                                   ),
+                                
+                                // Lock, check icon OR Countdown
                                 if (isLocked)
-                                  const Icon(Icons.lock, color: Colors.white, size: 18),
-                                if (timeLeft != null)
                                   Container(
-                                    decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black45),
-                                    padding: const EdgeInsets.all(4),
+                                    color: Colors.black45,
+                                    child: const Center(child: Icon(Icons.lock, color: Colors.white70, size: 24)),
+                                  )
+                                else if (premiumProvider.getRemainingTime('theme_${theme.name}') != null)
+                                  Container(
+                                    color: Colors.black45,
+                                    alignment: Alignment.center,
                                     child: Text(
-                                      timeLeft,
+                                      premiumProvider.getRemainingTime('theme_${theme.name}')!,
                                       style: const TextStyle(
                                         fontFamily: AppFonts.oswald,
-                                        fontSize: 10,
+                                        fontSize: 18,
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
+                                        letterSpacing: 1.5,
                                       ),
+                                    ),
+                                  )
+                                else if (isSelected)
+                                  Positioned(
+                                    right: 8,
+                                    top: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                      child: Icon(Icons.check, size: 12, color: theme.navy),
                                     ),
                                   ),
                               ],
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      "DISEÑO DE FÓSFOROS", 
+                      style: TextStyle(
+                        fontFamily: AppFonts.oswald, 
+                        fontSize: 12, 
+                        fontWeight: FontWeight.bold,
+                        color: scoreProvider.appTheme.slate, 
+                        letterSpacing: 1.5
+                      )
+                    ),
+                  ),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: availablePalettes.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final palette = entry.value;
+                      final isSelected = scoreProvider.currentPalette.name == palette.name;
+                      final isLocked = !premiumProvider.isPaletteUnlocked(index);
+                      final timeLeft = premiumProvider.getRemainingTime('palette_$index');
+
+                      return GestureDetector(
+                        onTap: () {
+                          if (isLocked) {
+                            widget.onPaletteLockedTap(index);
+                          } else {
+                            scoreProvider.setPalette(palette);
+                          }
+                        },
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [palette.headColors[0], palette.headColors.last],
+                                ),
+                                border: Border.all(
+                                  color: isSelected ? Colors.white : Colors.white10,
+                                  width: isSelected ? 3 : 1,
+                                ),
+                                boxShadow: isSelected ? [
+                                  BoxShadow(color: palette.headColors.first.withOpacity(0.4), blurRadius: 10, spreadRadius: 2)
+                                ] : null,
+                              ),
+                            ),
+                            if (isLocked)
+                              const Icon(Icons.lock, color: Colors.white, size: 18),
+                            if (timeLeft != null)
+                              Container(
+                                decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black45),
+                                padding: const EdgeInsets.all(4),
+                                child: Text(
+                                  timeLeft,
+                                  style: const TextStyle(
+                                    fontFamily: AppFonts.oswald,
+                                    fontSize: 10,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
+
             ] else if (currentPane == 2) ...[
               // --- PANE 2: GAME MODE ---
               ConstrainedBox(
