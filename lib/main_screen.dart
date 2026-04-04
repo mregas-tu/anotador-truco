@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import 'services/ad_service.dart';
 import 'providers/premium_provider.dart';
 import 'providers/score_provider.dart';
@@ -12,6 +12,9 @@ import 'widgets/matchstick_widget.dart';
 import 'widgets/matchstick_box.dart';
 import 'theme/app_theme.dart';
 import 'services/persistence_service.dart';
+import 'widgets/truco_dialog.dart';
+import 'widgets/truco_banner_ad.dart';
+
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -487,97 +490,49 @@ class _MainScreenState extends State<MainScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: scoreProvider.appTheme.navy,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: BorderSide(color: scoreProvider.appTheme.slate, width: 1),
-          ),
-          title: Center(
-            child: Text(
-              "¡Partida finalizada!",
-              textAlign: TextAlign.center,
+      builder: (context) => TrucoDialog(
+        title: "¡TENEMOS UN GANADOR!",
+        borderColor: scoreProvider.appTheme.slate,
+        content: Column(
+
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "¡FELICITACIONES A",
+              style: TextStyle(fontFamily: AppFonts.oswald, color: scoreProvider.appTheme.slate),
+            ),
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                winnerName.toUpperCase(),
+                style: TextStyle(
+                  fontFamily: AppFonts.oswald,
+                  fontSize: 38,
+                  color: scoreProvider.appTheme.slate,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              "${scoreProvider.nosotros.toString().padLeft(2, '0')}  —  ${scoreProvider.ellos.toString().padLeft(2, '0')}",
               style: TextStyle(
-                fontFamily: AppFonts.oswald,
-                fontSize: 20,
+                fontFamily: AppFonts.caminito,
+                fontSize: 52,
                 color: scoreProvider.appTheme.cream,
               ),
             ),
-          ),
-          contentPadding: const EdgeInsets.all(24),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
+          ],
+        ),
+        actions: [
+          Column(
             children: [
-              Text(
-                "GANADOR",
-                style: TextStyle(
-                  fontFamily: AppFonts.oswald,
-                  fontSize: 16,
-                  color: scoreProvider.appTheme.white,
-                  letterSpacing: 2.5,
-                ),
-              ),
-              const SizedBox(height: 4),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  winnerName.toUpperCase(),
-                  style: TextStyle(
-                    fontFamily: AppFonts.oswald,
-                    fontSize: 38,
-                    color: scoreProvider.appTheme.slate,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                "${scoreProvider.nosotros.toString().padLeft(2, '0')}  —  ${scoreProvider.ellos.toString().padLeft(2, '0')}",
-                style: TextStyle(
-                  fontFamily: AppFonts.caminito,
-                  fontSize: 52,
-                  color: scoreProvider.appTheme.cream,
-                ),
-              ),
-              const SizedBox(height: 32),
-              
-              // Main Action
-              SizedBox(
-                width: double.infinity,
-                height: 40,
-                child: ElevatedButton(
-                  onPressed: () {
-                    scoreProvider.triggerReset();
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: scoreProvider.appTheme.slate,
-                    foregroundColor: scoreProvider.appTheme.cream,
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    "VOLVER A JUGAR",
-                    style: TextStyle(
-                      fontFamily: AppFonts.oswald, 
-                      fontSize: 16, 
-                      fontWeight: FontWeight.w600, // SemiBold
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 12),
-              
-              // Secondary Actions
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: OutlinedButton(
                       onPressed: () {
                         if (winnerKey == "nosotros") {
                           scoreProvider.removePointNosotros();
@@ -587,46 +542,53 @@ class _MainScreenState extends State<MainScreen> {
                         Navigator.pop(context);
                       },
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: scoreProvider.appTheme.malas, width: 1.5),
+                        side: BorderSide(color: scoreProvider.appTheme.malas),
                         foregroundColor: scoreProvider.appTheme.malas,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      icon: const Icon(Icons.undo_outlined, size: 18),
-                      label: const Text(
-                        "Deshacer",
-                        style: TextStyle(fontFamily: 'Oswald', fontSize: 14),
-                      ),
+                      child: const Text("DESHACER", style: TextStyle(fontFamily: AppFonts.oswald, fontWeight: FontWeight.bold)),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: OutlinedButton(
                       onPressed: () {
-                        final message = "¡Gané al Truco! $winnerName venció ${scoreProvider.nosotros} a ${scoreProvider.ellos}. #AnatadorDeTruco";
-                        Share.share(message);
+                        scoreProvider.triggerReset();
+                        Navigator.pop(context);
                       },
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: scoreProvider.appTheme.cream, width: 1.5),
-                        foregroundColor: scoreProvider.appTheme.cream,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        side: BorderSide(color: scoreProvider.appTheme.slate),
+                        foregroundColor: scoreProvider.appTheme.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      icon: const Icon(Icons.share_outlined, size: 18),
-                      label: const Text(
-                        "Compartir",
-                        style: TextStyle(fontFamily: AppFonts.oswald, fontSize: 14),
-                      ),
+                      child: const Text("NUEVA PARTIDA", style: TextStyle(fontFamily: AppFonts.oswald, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final message = "¡Gané al Truco! $winnerName venció ${scoreProvider.nosotros} a ${scoreProvider.ellos}. #AnotadorDeTruco";
+                    Share.share(message);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: scoreProvider.appTheme.buenas,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text("COMPARTIR RESULTADO", style: TextStyle(fontWeight: FontWeight.bold, fontFamily: AppFonts.oswald)),
+                ),
+              ),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
   }
+
 
   Widget _buildTeamColumnContent(String name, int totalPoints, bool isBuenas, bool isNosotros, ScoreProvider scoreProvider, bool isDraggingBack, {bool highlight = false}) {
     final String teamKey = isNosotros ? "nosotros" : "ellos";
@@ -733,34 +695,17 @@ class _MainScreenState extends State<MainScreen> {
   void _showSettingsDialog(BuildContext context, ScoreProvider scoreProvider) {
     showDialog(
       context: context,
-      builder: (context) {
-        return Material(
-          color: Colors.transparent,
-          child: Stack(
-            children: [
-              Center(child: _SettingsDialogContent(
-                onThemeLockedTap: (themeName) {
-                  _showUnlockDialog(context, 'theme_$themeName', 'tema');
-                },
-                onPaletteLockedTap: (index) {
-                  _showUnlockDialog(context, 'palette_$index', 'fósforo');
-                },
-                onPremiumTap: () {
-                   _showUnlockDialog(context, 'premium', 'premium');
-                },
-              )),
-              Positioned(
-                bottom: 20,
-                left: 0,
-                right: 0,
-                child: _BannerAdWidget(),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (context) => TrucoDialog(
+        borderColor: scoreProvider.appTheme.slate,
+        content: _SettingsDialogContent(
+          onThemeLockedTap: (themeName) => _showUnlockDialog(context, 'theme_$themeName', 'tema'),
+          onPaletteLockedTap: (index) => _showUnlockDialog(context, 'palette_$index', 'fósforo'),
+          onPremiumTap: () => _showUnlockDialog(context, 'premium', 'premium'),
+        ),
+      ),
     );
   }
+
 
   void _showUnlockDialog(BuildContext context, String id, String type) {
     final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
@@ -768,95 +713,73 @@ class _MainScreenState extends State<MainScreen> {
 
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: scoreProvider.appTheme.navy,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: BorderSide(color: scoreProvider.appTheme.slate, width: 1),
-          ),
-          title: Text(
-            "¡Llevá tu anotador a otro nivel! 🚀",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: AppFonts.oswald,
-              fontSize: 20,
-              color: scoreProvider.appTheme.cream,
-            ),
-          ),
-          content: Text(
-            id == 'premium' 
-              ? "Convertite en premium para usar todos los temas, diseños de fósforos y eliminar la publicidad para siempre."
-              : "Convertite en premium para usar todos los temas, diseños de fósforos y eliminar la publicidad para siempre. O mirá un video para desbloquear este diseño por 24hs.",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: scoreProvider.appTheme.white.withOpacity(0.8),
-              fontSize: 16,
-            ),
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actionsOverflowButtonSpacing: 10,
-          actions: [
-            Column(
-              children: [
+      builder: (context) => TrucoDialog(
+        title: "¡LLEVÁ TU ANOTADOR A OTRO NIVEL! 🚀",
+        borderColor: scoreProvider.appTheme.slate,
+        contentText: id == 'premium' 
+            ? "Convertite en premium para usar todos los temas, diseños de fósforos y eliminar la publicidad para siempre."
+            : "Este diseño es exclusivo de la versión Premium. Podés desbloquearlo temporalmente viendo un video.",
+        actions: [
+          Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    premiumProvider.buyPremium();
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: scoreProvider.appTheme.buenas,
+                    foregroundColor: scoreProvider.appTheme.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text("SER PREMIUM", style: TextStyle(fontWeight: FontWeight.bold, fontFamily: AppFonts.oswald)),
+                ),
+              ),
+              if (id != 'premium') 
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  child: OutlinedButton(
                     onPressed: () {
-                      premiumProvider.buyPremium();
+                      AdService.showRewardedAd(
+                        onUserEarnedReward: () {
+                          premiumProvider.unlockTemporarily(id);
+                        },
+                        onAdNotReady: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("El video todavía no está listo. Probá de nuevo en unos segundos."),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                      );
                       Navigator.pop(context);
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: scoreProvider.appTheme.buenas,
-                      foregroundColor: scoreProvider.appTheme.white,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: scoreProvider.appTheme.slate),
+                      foregroundColor: scoreProvider.appTheme.cream,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text("SER PREMIUM", style: TextStyle(fontWeight: FontWeight.bold, fontFamily: AppFonts.oswald)),
+                    child: const Text("VER VIDEO (24HS GRATIS)", style: TextStyle(fontFamily: AppFonts.oswald)),
                   ),
                 ),
-                if (id != 'premium') 
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        AdService.showRewardedAd(
-                          onUserEarnedReward: () {
-                            premiumProvider.unlockTemporarily(id);
-                          },
-                          onAdNotReady: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("El video todavía no está listo. Probá de nuevo en unos segundos."),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                        );
-                        Navigator.pop(context);
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: scoreProvider.appTheme.slate),
-                        foregroundColor: scoreProvider.appTheme.cream,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text("VER VIDEO (24HS GRATIS)", style: TextStyle(fontFamily: AppFonts.oswald)),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    "QUIZÁS MÁS TARDE",
-                    style: TextStyle(color: scoreProvider.appTheme.white.withOpacity(0.5), fontFamily: AppFonts.oswald),
-                  ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  "QUIZÁS MÁS TARDE",
+                  style: TextStyle(color: scoreProvider.appTheme.white.withOpacity(0.5), fontFamily: AppFonts.oswald),
                 ),
-              ],
-            ),
-          ],
-        );
-      },
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
+
 
   Widget _buildFooter(BuildContext context, ScoreProvider scoreProvider) {
 
@@ -907,25 +830,12 @@ class _MainScreenState extends State<MainScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF161931),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "DEJASTE UNA PARTIDA A MEDIAS",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            fontFamily: AppFonts.oswald,
-          ),
-        ),
-        content: const Text(
-          "¿Querés continuarla o prefieren arrancar una nueva?",
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white70, fontFamily: AppFonts.oswald),
-        ),
-        actionsAlignment: MainAxisAlignment.spaceEvenly,
+      builder: (context) => TrucoDialog(
+        title: "DEJASTE UNA PARTIDA A MEDIAS",
+        borderColor: provider.appTheme.slate,
+        borderWidth: 1.5,
+        contentText: "¿Querés continuarla o prefieren arrancar una nueva?",
+
         actions: [
           TextButton(
             onPressed: () {
@@ -965,6 +875,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
+
 }
 
 class _SettingsDialogContent extends StatefulWidget {
@@ -1009,19 +920,11 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
     if (currentPane == 1) title = "DISEÑO (FÓSFOROS)";
     if (currentPane == 2) title = "MODO DE JUEGO";
 
-    return Dialog(
-      backgroundColor: scoreProvider.appTheme.navy,
-      insetPadding: const EdgeInsets.only(left: 20, right: 20, top: 40, bottom: 100),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-        side: BorderSide(color: scoreProvider.appTheme.slate, width: 1),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+
             // Header Row (Back icon, Title, Close icon)
             Stack(
               alignment: Alignment.center,
@@ -1398,10 +1301,9 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
               ),
             ],
           ],
-        ),
-      ),
-    );
+        );
   }
+
 
   Widget _buildMenuNavigationItem({
     required String label,
@@ -1443,63 +1345,4 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
   }
 }
 
-class _BannerAdWidget extends StatefulWidget {
-  const _BannerAdWidget();
 
-  @override
-  State<_BannerAdWidget> createState() => _BannerAdWidgetState();
-}
-
-class _BannerAdWidgetState extends State<_BannerAdWidget> {
-  BannerAd? _bannerAd;
-  bool _isBannerLoaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadBanner();
-  }
-
-  void _loadBanner() {
-    _bannerAd = BannerAd(
-      adUnitId: AdService.bannerAdUnitId,
-      size: AdSize.banner,
-      request: const AdRequest(),
-      listener: BannerAdListener(
-        onAdLoaded: (ad) {
-          if (mounted) {
-            setState(() {
-              _isBannerLoaded = true;
-            });
-          }
-        },
-        onAdFailedToLoad: (ad, error) {
-          ad.dispose();
-          debugPrint('Banner failed to load: $error');
-        },
-      ),
-    )..load();
-  }
-
-  @override
-  void dispose() {
-    _bannerAd?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    bool isPremium = Provider.of<PremiumProvider>(context).isPremium;
-    if (isPremium || !_isBannerLoaded || _bannerAd == null) return const SizedBox.shrink();
-
-    return Center(
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        width: _bannerAd!.size.width.toDouble(),
-        height: _bannerAd!.size.height.toDouble() + 8,
-        child: AdWidget(ad: _bannerAd!),
-      ),
-    );
-  }
-}
