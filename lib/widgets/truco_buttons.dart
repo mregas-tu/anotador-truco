@@ -29,8 +29,8 @@ class PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: theme.slate,
-          foregroundColor: theme.cream,
+          backgroundColor: theme.primaryBackgroundButton,
+          foregroundColor: theme.primaryTextButton,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           elevation: 0,
@@ -43,7 +43,7 @@ class PrimaryButton extends StatelessWidget {
               SvgPicture.asset(
                 iconAsset!,
                 height: 18,
-                colorFilter: ColorFilter.mode(theme.cream, BlendMode.srcIn),
+                colorFilter: ColorFilter.mode(theme.primaryTextButton, BlendMode.srcIn),
               ),
               const SizedBox(width: 8),
             ],
@@ -86,7 +86,15 @@ class SecondaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Provider.of<ScoreProvider>(context).appTheme;
-    final color = type == SecondaryButtonType.secondary ? theme.malas : theme.cream;
+    
+    // Determine colors based on type
+    final Color borderColor = type == SecondaryButtonType.secondary 
+        ? theme.malas 
+        : theme.secondaryButtonBorder;
+        
+    final Color textColor = type == SecondaryButtonType.secondary 
+        ? theme.malas 
+        : theme.secondaryButtonText;
 
     return SizedBox(
       width: width,
@@ -94,8 +102,8 @@ class SecondaryButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: color, width: 1.5),
-          foregroundColor: color,
+          side: BorderSide(color: borderColor, width: 1.5),
+          foregroundColor: textColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 12),
         ),
@@ -107,7 +115,7 @@ class SecondaryButton extends StatelessWidget {
               SvgPicture.asset(
                 iconAsset!,
                 height: 18,
-                colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
               ),
               const SizedBox(width: 8),
             ],

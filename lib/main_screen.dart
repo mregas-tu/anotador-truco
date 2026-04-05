@@ -441,7 +441,8 @@ class _MainScreenState extends State<MainScreen>
                             Text(
                               "${_tutorialStep + 1}/${_tutorialSteps.length}",
                               style: TextStyle(
-                                color: scoreProvider.appTheme.white.withOpacity(0.5),
+                                color: scoreProvider.appTheme.white
+                                    .withOpacity(0.5),
                                 fontFamily: AppFonts.oswald,
                                 fontSize: 14,
                               ),
@@ -457,7 +458,8 @@ class _MainScreenState extends State<MainScreen>
                               key: ValueKey<int>(_tutorialStep),
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: scoreProvider.appTheme.white.withOpacity(0.9),
+                                color: scoreProvider.appTheme.white
+                                    .withOpacity(0.9),
                                 fontSize: 16,
                                 height: 1.4,
                               ),
@@ -488,7 +490,8 @@ class _MainScreenState extends State<MainScreen>
                                     : "SIGUIENTE",
                                 height: 40,
                                 onPressed: () {
-                                  if (_tutorialStep < _tutorialSteps.length - 1) {
+                                  if (_tutorialStep <
+                                      _tutorialSteps.length - 1) {
                                     setState(() {
                                       _tutorialStep++;
                                       _startGhostHandTutorial();
@@ -553,15 +556,17 @@ class _MainScreenState extends State<MainScreen>
         key: key,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTapDown: _isTutorialActive ? null : (_) {
-            _longPressTimers[teamKey]?.cancel();
-            _longPressTimers[teamKey] =
-                Timer(const Duration(milliseconds: 200), () {
-              final boxOffset = _getBoxOffset();
-              scoreProvider.triggerFlyOut(teamKey, boxOffset);
-              _longPressTimers[teamKey] = null;
-            });
-          },
+          onTapDown: _isTutorialActive
+              ? null
+              : (_) {
+                  _longPressTimers[teamKey]?.cancel();
+                  _longPressTimers[teamKey] =
+                      Timer(const Duration(milliseconds: 200), () {
+                    final boxOffset = _getBoxOffset();
+                    scoreProvider.triggerFlyOut(teamKey, boxOffset);
+                    _longPressTimers[teamKey] = null;
+                  });
+                },
           onTapUp: (_) {
             if (_longPressTimers[teamKey] != null) {
               _longPressTimers[teamKey]!.cancel();
@@ -628,7 +633,9 @@ class _MainScreenState extends State<MainScreen>
               dragAnchorStrategy: pointerDragAnchorStrategy,
               maxSimultaneousDrags: _isTutorialActive
                   ? 0
-                  : (isNosotros ? scoreProvider.nosotros : scoreProvider.ellos) >
+                  : (isNosotros
+                              ? scoreProvider.nosotros
+                              : scoreProvider.ellos) >
                           0
                       ? 1
                       : 0,
@@ -1146,14 +1153,14 @@ class _MainScreenState extends State<MainScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) => TrucoDialog(
-        title: "DEJASTE UNA PARTIDA A MEDIAS",
-        contentText: "¿Querés continuarla o prefieren arrancar una nueva?",
+        title: "Tenés una partida en curso",
+        contentText: "¿Querés continuarla o empezar una nueva?",
         actions: [
           Row(
             children: [
               Expanded(
                 child: SecondaryButton(
-                  text: "NUEVA PARTIDA",
+                  text: "Nueva partida",
                   toUpperCase: true,
                   onPressed: () {
                     Navigator.pop(context);
@@ -1164,7 +1171,7 @@ class _MainScreenState extends State<MainScreen>
               const SizedBox(width: 16),
               Expanded(
                 child: PrimaryButton(
-                  text: "VOLVER AL PARTIDO",
+                  text: "Continuar partida",
                   onPressed: () {
                     Navigator.pop(context);
                     provider.restoreGame(data);

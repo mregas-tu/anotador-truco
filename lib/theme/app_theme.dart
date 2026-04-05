@@ -12,8 +12,13 @@ class TrucoTheme {
   final Color navyAccent;
   final Color buenas;
   final Color malas;
-  final Color
-      centerCircleColor; // NEW: Specific color for the center ornament background
+  final Color centerCircleColor;
+
+  // New Button specific colors
+  final Color primaryBackgroundButton;
+  final Color primaryTextButton;
+  final Color secondaryButtonBorder;
+  final Color secondaryButtonText;
 
   // FIXED WOOD COLORS (Independent of theme)
   static const Color woodLight = Color(0xFFE6D2B5);
@@ -38,8 +43,7 @@ class TrucoTheme {
   // FINE-TUNING FOR SCORE
   final double scoreFontSize;
   final double scoreVerticalOffset;
-  final double
-      centerSectionOffset; // NEW: Vertical position of the whole center stack
+  final double centerSectionOffset;
 
   final MatchstickBoxType matchstickBoxType;
 
@@ -54,6 +58,10 @@ class TrucoTheme {
     required this.buenas,
     required this.malas,
     required this.centerCircleColor,
+    required this.primaryBackgroundButton,
+    required this.primaryTextButton,
+    required this.secondaryButtonBorder,
+    required this.secondaryButtonText,
     this.headerAsset,
     this.footerAsset,
     this.footerHeight = 45,
@@ -82,7 +90,11 @@ class TrucoTheme {
     navyAccent: Color(0xFF252A50),
     buenas: Color(0xFF888D71),
     malas: Color(0xFFF47580),
-    centerCircleColor: Color(0xFF161931), // Same as navy
+    centerCircleColor: Color(0xFF161931),
+    primaryBackgroundButton: Color(0xFF718C9C), // matches slate
+    primaryTextButton: Color(0xFFEFEBE2), // matches cream
+    secondaryButtonBorder: Color(0xFFEFEBE2), // matches cream
+    secondaryButtonText: Color(0xFFEFEBE2), // matches cream
     headerAsset: 'assets/images/header.svg',
     footerAsset: 'assets/images/footer.svg',
     dividerColor: Color(0xFFEFEBE2),
@@ -108,7 +120,11 @@ class TrucoTheme {
     navyAccent: Color(0xFF5A91C5),
     buenas: Color(0xFFF6B000),
     malas: Colors.white,
-    centerCircleColor: Color(0xFF74ACDF), // Same as navy
+    centerCircleColor: Color(0xFF74ACDF),
+    primaryBackgroundButton: Color(0xFF5A91C5), // matches slate
+    primaryTextButton: Colors.white, // matches cream
+    secondaryButtonBorder: Colors.white, // matches cream
+    secondaryButtonText: Colors.white, // matches cream
     headerAsset: 'assets/images/header.svg',
     footerAsset: 'assets/images/footer.svg',
     dividerColor: Colors.white,
@@ -127,22 +143,26 @@ class TrucoTheme {
 
   static const TrucoTheme soccerTheme = TrucoTheme(
     name: "LA CANCHA",
-    navy: Color(0xFF1B5E20), // Solid green background
+    navy: Color(0xFF1B5E20),
     navyLight: Color(0xFF388E3C),
     slate: Colors.white,
-    cream: Color(0xFF2E4393),
+    cream: Colors.white,
     white: Colors.white,
     navyAccent: Color(0xFF388E3C),
-    buenas: Color(0xFFFFD600),
+    buenas: Color(0xFF07007A),
     malas: Color(0xFFFF5252),
-    centerCircleColor: Colors.transparent, // No circle background
+    centerCircleColor: Colors.transparent,
+    primaryBackgroundButton: Color(0xFF07007A), // matches slate
+    primaryTextButton: Colors.white, // matches cream
+    secondaryButtonBorder: Colors.white, // matches cream
+    secondaryButtonText: Colors.white, // matches cream
     headerAsset: null,
     footerAsset: 'assets/images/dibu.svg',
     footerHeight: 75,
     dividerColor: Colors.transparent,
-    scoreColor: Color(0xFF2E4393),
+    scoreColor: Color(0xFF07007A),
     teamScoreColor: Colors.white,
-    accentColor: Color(0xFF2E4393),
+    accentColor: Color(0xFF07007A),
     backgroundAsset: 'assets/images/background_2.jpg',
     centerOrnamentAsset: 'assets/images/afa.svg',
     hideCenterCircleBorder: true,
@@ -155,7 +175,7 @@ class TrucoTheme {
 
   static const TrucoTheme woodTheme = TrucoTheme(
     name: "MESA DE MADERA",
-    navy: Color(0xFF3E2723), // Marrón oscuro
+    navy: Color(0xFF3E2723),
     navyLight: Color(0xFF5D4037),
     slate: Color(0xFFD7CCC8),
     cream: Color(0xFFFFF3E0),
@@ -164,6 +184,10 @@ class TrucoTheme {
     buenas: Color(0xFF8D6E63),
     malas: Color(0xFFBCAAA4),
     centerCircleColor: Colors.transparent,
+    primaryBackgroundButton: Color(0xFFD7CCC8), // matches slate
+    primaryTextButton: Color(0xFFFFF3E0), // matches cream
+    secondaryButtonBorder: Color(0xFFFFF3E0), // matches cream
+    secondaryButtonText: Color(0xFFFFF3E0), // matches cream
     headerAsset: null,
     footerAsset: null,
     dividerColor: Colors.transparent,
@@ -194,7 +218,6 @@ class AppFonts {
   static const String caminito = 'CaminitoBase';
 }
 
-// Deprecated AppColors for transition (will be removed after refactor)
 class AppColors {
   static Color get navy => TrucoTheme.navyTheme.navy;
   static Color get navyLight => TrucoTheme.navyTheme.navyLight;
