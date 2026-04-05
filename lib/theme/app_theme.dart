@@ -13,7 +13,7 @@ class TrucoTheme {
   final Color buenas;
   final Color malas;
   final Color
-  centerCircleColor; // NEW: Specific color for the center ornament background
+      centerCircleColor; // NEW: Specific color for the center ornament background
 
   // FIXED WOOD COLORS (Independent of theme)
   static const Color woodLight = Color(0xFFE6D2B5);
@@ -39,7 +39,7 @@ class TrucoTheme {
   final double scoreFontSize;
   final double scoreVerticalOffset;
   final double
-  centerSectionOffset; // NEW: Vertical position of the whole center stack
+      centerSectionOffset; // NEW: Vertical position of the whole center stack
 
   final MatchstickBoxType matchstickBoxType;
 
@@ -130,7 +130,7 @@ class TrucoTheme {
     navy: Color(0xFF1B5E20), // Solid green background
     navyLight: Color(0xFF388E3C),
     slate: Colors.white,
-    cream: Colors.white,
+    cream: Color(0xFF2E4393),
     white: Colors.white,
     navyAccent: Color(0xFF388E3C),
     buenas: Color(0xFFFFD600),

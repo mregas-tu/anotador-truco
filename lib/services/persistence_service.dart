@@ -12,6 +12,17 @@ class PersistenceService {
   static const String keyIsMuted = 'is_muted';
   static const String keyFinishedMalasNosotros = 'finished_malas_nosotros';
   static const String keyFinishedMalasEllos = 'finished_malas_ellos';
+  static const String keyTutorialDone = 'tutorial_done';
+
+  static Future<bool> getTutorialDone() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keyTutorialDone) ?? false;
+  }
+
+  static Future<void> setTutorialDone(bool done) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keyTutorialDone, done);
+  }
 
   static Future<void> saveGameState({
     required int nosotros,

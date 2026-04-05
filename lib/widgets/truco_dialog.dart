@@ -10,6 +10,10 @@ class TrucoDialog extends StatelessWidget {
   final String? contentText;
   final List<Widget>? actions;
   final MainAxisAlignment actionsAlignment;
+  final bool toUpperCaseTitle;
+  final double titleFontSize;
+  final Color? titleColor;
+  final double? marginHorizontal;
 
   const TrucoDialog({
     super.key,
@@ -18,6 +22,10 @@ class TrucoDialog extends StatelessWidget {
     this.contentText,
     this.actions,
     this.actionsAlignment = MainAxisAlignment.spaceEvenly,
+    this.toUpperCaseTitle = true,
+    this.titleFontSize = 20,
+    this.titleColor,
+    this.marginHorizontal,
   });
 
   @override
@@ -27,6 +35,10 @@ class TrucoDialog extends StatelessWidget {
     final borderColor = scoreProvider.appTheme.slate;
     const double borderWidth = 1.0; 
 
+    final double effectiveWidth = marginHorizontal != null 
+        ? MediaQuery.of(context).size.width - (marginHorizontal! * 2)
+        : MediaQuery.of(context).size.width * 0.9;
+
     return Material(
       color: Colors.transparent, // El overlay de showDialog maneja el fondo oscuro
       child: Stack(
@@ -34,11 +46,11 @@ class TrucoDialog extends StatelessWidget {
           Center(
             child: SingleChildScrollView(
               child: Container(
-                width: MediaQuery.of(context).size.width * 0.9,
+                width: effectiveWidth,
                 margin: const EdgeInsets.symmetric(vertical: 60),
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF161931),
+                  color: scoreProvider.appTheme.navy,
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
                     color: borderColor,
@@ -57,14 +69,14 @@ class TrucoDialog extends StatelessWidget {
                   children: [
                     if (title != null) ...[
                       Text(
-                        title!.toUpperCase(),
+                        toUpperCaseTitle ? title!.toUpperCase() : title!,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: AppFonts.oswald,
-                          fontSize: 20,
-                          color: Colors.white,
-                          letterSpacing: 2,
-                          fontWeight: FontWeight.bold,
+                          fontSize: titleFontSize,
+                          color: titleColor ?? Colors.white,
+                          letterSpacing: toUpperCaseTitle ? 2 : 0,
+                          fontWeight: toUpperCaseTitle ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
                       const SizedBox(height: 24),
