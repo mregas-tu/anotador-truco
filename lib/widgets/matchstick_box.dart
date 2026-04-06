@@ -24,6 +24,9 @@ class MatchstickBox extends StatelessWidget {
           case MatchstickBoxType.classic:
             return _MatchstickBoxClassic(count: count, theme: theme);
           case MatchstickBoxType.wood:
+            if (scoreProvider.pointType == PointType.beans) {
+              return _MatchstickBoxPlate(count: count, theme: theme);
+            }
             return _MatchstickBoxWood(count: count, theme: theme);
         }
       },
@@ -292,6 +295,77 @@ class _MatchstickBoxWood extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _MatchstickBoxPlate extends StatelessWidget {
+  final int count;
+  final TrucoTheme theme;
+
+  const _MatchstickBoxPlate({required this.count, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 260,
+      height: 160, // Increased height to give safe vertical padding for rotations
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          // The Plate SVG explicitly sized to leave top/bottom margins
+          SizedBox(
+            width: 260,
+            height: 120,
+            child: SvgPicture.asset(
+              'assets/images/plate.svg',
+              fit: BoxFit.contain,
+            ),
+          ),
+          
+          // Beans clustered in the center of the plate
+          SizedBox(
+            width: 260,
+            height: 120,
+            child: _MatchstickContainerPlate(count: count),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MatchstickContainerPlate extends StatelessWidget {
+  final int count;
+
+  const _MatchstickContainerPlate({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        ...List.generate(math.max(0, count), (index) {
+          final random = math.Random(index * 1337); 
+          final angle = (random.nextDouble() - 0.5) * 4.0;
+          
+          // Allow a wider horizontal distribution to fill the plate
+          final offsetX = (random.nextDouble() - 0.5) * 180; 
+          
+          // Allow a wider vertical distribution, taking advantage of the new SVG margins
+          final offsetY = (random.nextDouble() - 0.5) * 45;
+
+          return Transform.translate(
+            offset: Offset(offsetX, offsetY),
+            child: Transform.rotate(
+              angle: angle,
+              child: const BeanWidget(size: 24), // Size increased slightly again
+            ),
+          );
+        }),
+      ],
     );
   }
 }

@@ -103,6 +103,7 @@ flutter:
     - assets/sounds/buenas.wav
     - assets/images/share_icon.svg
     - assets/images/undo_icon.svg
+    - assets/images/plate.svg
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
