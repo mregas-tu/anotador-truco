@@ -97,6 +97,7 @@ flutter:
     - assets/images/afa.svg
     - assets/images/dibu.svg
     - assets/images/hand.svg
+    - assets/images/wood.svg
     - assets/sounds/stick.wav
     - assets/sounds/clear.wav
     - assets/sounds/buenas.wav

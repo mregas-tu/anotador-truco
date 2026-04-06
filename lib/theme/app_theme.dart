@@ -51,6 +51,8 @@ class TrucoTheme {
   final double scoreFontSize;
   final double scoreVerticalOffset;
   final double centerSectionOffset;
+  final double nosotrosMarginRight;
+  final double ellosMarginLeft;
 
   final MatchstickBoxType matchstickBoxType;
 
@@ -88,6 +90,8 @@ class TrucoTheme {
     required this.scoreFontSize,
     required this.scoreVerticalOffset,
     required this.centerSectionOffset,
+    this.nosotrosMarginRight = 0.0,
+    this.ellosMarginLeft = 0.0,
     required this.matchstickBoxType,
   });
 
@@ -182,6 +186,8 @@ class TrucoTheme {
     scoreFontSize: 28,
     scoreVerticalOffset: 40.0,
     centerSectionOffset: 0.0,
+    nosotrosMarginRight: 32.0,
+    ellosMarginLeft: 32.0,
     matchstickBoxType: MatchstickBoxType.soccer,
   );
 
@@ -214,11 +220,11 @@ class TrucoTheme {
     teamScoreColor: Color(0xFFEFEBE2), // Fully opaque again
     accentColor: Color(0xFFA48C83),
     backgroundAsset: 'assets/images/background_1.jpg',
-    centerOrnamentAsset: null,
+    centerOrnamentAsset: 'assets/images/wood.svg',
     hideCenterCircleBorder: true,
     scoreFontSize: 32,
     scoreVerticalOffset: 5.0,
-    centerSectionOffset: 10.0,
+    centerSectionOffset: 35.0,
     matchstickBoxType: MatchstickBoxType.wood,
   );
 

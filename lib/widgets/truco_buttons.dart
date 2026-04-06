@@ -35,26 +35,29 @@ class PrimaryButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           elevation: 0,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (iconAsset != null) ...[
-              SvgPicture.asset(
-                iconAsset!,
-                height: 18,
-                colorFilter: ColorFilter.mode(theme.primaryTextButton, BlendMode.srcIn),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (iconAsset != null) ...[
+                SvgPicture.asset(
+                  iconAsset!,
+                  height: 18,
+                  colorFilter: ColorFilter.mode(theme.primaryTextButton, BlendMode.srcIn),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                text.toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: AppFonts.oswald,
+                  fontSize: 14,
+                ),
               ),
-              const SizedBox(width: 8),
             ],
-            Text(
-              text.toUpperCase(),
-              style: const TextStyle(
-                fontFamily: AppFonts.oswald,
-                fontSize: 14,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -107,26 +110,29 @@ class SecondaryButton extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 12),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (iconAsset != null) ...[
-              SvgPicture.asset(
-                iconAsset!,
-                height: 18,
-                colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (iconAsset != null) ...[
+                SvgPicture.asset(
+                  iconAsset!,
+                  height: 18,
+                  colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                toUpperCase ? text.toUpperCase() : text,
+                style: const TextStyle(
+                  fontFamily: AppFonts.oswald,
+                  fontSize: 14,
+                ),
               ),
-              const SizedBox(width: 8),
             ],
-            Text(
-              toUpperCase ? text.toUpperCase() : text,
-              style: const TextStyle(
-                fontFamily: AppFonts.oswald,
-                fontSize: 14,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

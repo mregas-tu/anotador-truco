@@ -166,6 +166,7 @@ class _MainScreenState extends State<MainScreen>
         }
 
         return Scaffold(
+          resizeToAvoidBottomInset: false,
           backgroundColor: scoreProvider.appTheme.navy,
           body: Stack(
             children: [
@@ -966,9 +967,14 @@ class _MainScreenState extends State<MainScreen>
       {bool highlight = false}) {
     final String teamKey = isNosotros ? "nosotros" : "ellos";
 
-    return Container(
-      color: highlight ? Colors.white.withOpacity(0.05) : Colors.transparent,
-      child: Column(
+    return Padding(
+      padding: EdgeInsets.only(
+        right: isNosotros ? scoreProvider.appTheme.nosotrosMarginRight : 0.0,
+        left: !isNosotros ? scoreProvider.appTheme.ellosMarginLeft : 0.0,
+      ),
+      child: Container(
+        color: highlight ? Colors.white.withOpacity(0.05) : Colors.transparent,
+        child: Column(
         children: [
           GestureDetector(
             onTap: () => _showNameEditDialog(context, teamKey, name),
@@ -1072,6 +1078,7 @@ class _MainScreenState extends State<MainScreen>
           ),
         ],
       ),
+    ),
     );
   }
 
