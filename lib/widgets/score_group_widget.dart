@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../providers/score_provider.dart';
 import 'matchstick_widget.dart';
+import 'bean_widget.dart';
 
 class ScoreGroup extends StatefulWidget {
   final int points;
@@ -94,8 +95,22 @@ class _ScoreGroupState extends State<ScoreGroup> {
   }
 
   Offset _getStickLocalOffset(int index) {
+    final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
     final double padding = widget.size * 0.05;
-    final double thickness = widget.size * 0.1; 
+    final double thickness = widget.size * 0.1;
+    
+    if (scoreProvider.pointType == PointType.beans) {
+      final double s = widget.size;
+      switch (index) {
+        case 1: return Offset(s * 0.35, s * 0.65);
+        case 2: return Offset(s * 0.35, s * 0.35);
+        case 3: return Offset(s * 0.65, s * 0.65);
+        case 4: return Offset(s * 0.65, s * 0.35);
+        case 5: return Offset(s * 0.5, s * 0.5);
+        default: return Offset.zero;
+      }
+    }
+
     switch (index) {
       case 1: return Offset(padding + thickness/2, widget.size * 0.5);
       case 2: return Offset(widget.size * 0.5, padding + thickness/2);
@@ -142,7 +157,7 @@ class _ScoreGroupState extends State<ScoreGroup> {
     // 🏆 SOLID STATE LOGIC:
     // If already animated, return pure Positioned. No tree structural changes ever again.
     if (_alreadyAnimated.contains(i)) {
-      return _wrapPositioned(i, p, _getManagedChild(i, mh));
+      return _wrapPositioned(i, p, _getManagedChild(i, mh, sp), sp);
     }
 
     // Otherwise, we animate it
@@ -150,31 +165,40 @@ class _ScoreGroupState extends State<ScoreGroup> {
     final bool isThisFlyingOut = sp.scoringMode == ScoringMode.drag && sp.isFlyingOut && sp.flyOutTeam == widget.team && isLastStick;
     final bool isNew = sp.scoringMode == ScoringMode.drag && widget.animateLast && widget.points == i;
 
-    Widget child = _getManagedChild(i, mh);
+    Widget child = _getManagedChild(i, mh, sp);
     
     if (isThisFlyingOut && sp.flyOutTarget != null) {
       final RenderBox? r = _key.currentContext?.findRenderObject() as RenderBox?;
       if (r != null) {
         final Offset end = sp.flyOutTarget! - r.localToGlobal(_getStickLocalOffset(i));
-        return _wrapPositioned(i, p, child.animate(target: 1.0).move(begin: Offset.zero, end: end, duration: 400.ms, curve: Curves.easeInCubic).fadeOut(duration: 400.ms));
+        return _wrapPositioned(i, p, child.animate(target: 1.0).move(begin: Offset.zero, end: end, duration: 400.ms, curve: Curves.easeInCubic).fadeOut(duration: 400.ms), sp);
       }
     } else if (isThisReverting && sp.revertOffset != null) {
       final RenderBox? r = _key.currentContext?.findRenderObject() as RenderBox?;
       if (r != null) {
         final Offset begin = (sp.revertOffset! + const Offset(10, 50)) - r.localToGlobal(_getStickLocalOffset(i));
         return _wrapPositioned(i, p, child.animate(onComplete: (_) => setState(() => _alreadyAnimated.add(i)))
-            .move(begin: begin, duration: 400.ms, curve: Curves.easeOutCubic).fadeIn(duration: 400.ms));
+            .move(begin: begin, duration: 400.ms, curve: Curves.easeOutCubic).fadeIn(duration: 400.ms), sp);
       }
     } else if (isNew && _currentFlyInBegin != Offset.zero) {
       return _wrapPositioned(i, p, child.animate(onComplete: (_) => setState(() => _alreadyAnimated.add(i)))
-          .move(begin: _currentFlyInBegin, duration: 400.ms, curve: Curves.easeOutCubic).fadeIn(duration: 400.ms));
+          .move(begin: _currentFlyInBegin, duration: 400.ms, curve: Curves.easeOutCubic).fadeIn(duration: 400.ms), sp);
     }
 
     // Default: static if we fail animation detection but it's not in the set (fail-safe)
-    return _wrapPositioned(i, p, child);
+    return _wrapPositioned(i, p, child, sp);
   }
 
-  Widget _getManagedChild(int i, double h) {
+  Widget _getManagedChild(int i, double h, ScoreProvider sp) {
+    if (sp.pointType == PointType.beans) {
+      // Rotate each bean randomly for organic clusters
+      final double angle = [0.2, -0.15, 0.4, -0.3, 0.05][i % 5];
+      return Transform.rotate(
+        angle: angle,
+        child: BeanWidget(size: widget.size * 0.3),
+      );
+    }
+    
     switch (i) {
       case 1: return MatchstickWidget(height: h);
       case 2: return MatchstickWidget(height: h, horizontal: true);
@@ -186,12 +210,32 @@ class _ScoreGroupState extends State<ScoreGroup> {
   }
 
   Widget _buildReturningStick(int i, double p, double h) {
+    final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
     if (widget.points < i) return const SizedBox.shrink();
     final int delay = (widget.groupIndex * 20) + (i * 10);
-    return _wrapPositioned(i, p, _getManagedChild(i, h).animate(delay: delay.ms).move(end: const Offset(0, 30), duration: 350.ms, curve: Curves.easeInCubic).scale(end: const Offset(0.5, 0.5), duration: 350.ms).fadeOut(duration: 350.ms));
+    return _wrapPositioned(i, p, _getManagedChild(i, h, scoreProvider).animate(delay: delay.ms).move(end: const Offset(0, 30), duration: 350.ms, curve: Curves.easeInCubic).scale(end: const Offset(0.5, 0.5), duration: 350.ms).fadeOut(duration: 350.ms), scoreProvider);
   }
 
-  Widget _wrapPositioned(int i, double p, Widget content) {
+  Widget _wrapPositioned(int i, double p, Widget content, ScoreProvider sp) {
+    if (sp.pointType == PointType.beans) {
+      final double s = widget.size;
+      // clustered pile
+      final offsets = [
+        Offset(s * 0.35 - widget.size * 0.15, s * 0.65 - widget.size * 0.1),
+        Offset(s * 0.35 - widget.size * 0.1, s * 0.35 - widget.size * 0.15),
+        Offset(s * 0.65 - widget.size * 0.15, s * 0.65 - widget.size * 0.1),
+        Offset(s * 0.65 - widget.size * 0.1, s * 0.35 - widget.size * 0.15),
+        Offset(s * 0.5 - widget.size * 0.15, s * 0.5 - widget.size * 0.1),
+      ];
+
+      return Positioned(
+        key: ValueKey("bean_$i"),
+        left: offsets[i - 1].dx,
+        top: offsets[i - 1].dy,
+        child: content,
+      );
+    }
+
     if (i == 5) return Positioned.fill(key: ValueKey("st_$i"), child: Center(child: content));
     return Positioned(
       key: ValueKey("st_$i"),

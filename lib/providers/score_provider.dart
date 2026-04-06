@@ -98,6 +98,7 @@ const List<GameMode> availableModes = [
 ];
 
 enum ScoringMode { drag, tap }
+enum PointType { matches, beans }
 
 class ScoreProvider with ChangeNotifier {
   final AudioService _audioService = AudioService();
@@ -116,6 +117,7 @@ class ScoreProvider with ChangeNotifier {
   bool _isResetting = false;
   bool _nosotrosFinishedMalas = false;
   bool _ellosFinishedMalas = false;
+  PointType _pointType = PointType.matches;
 
   String? _winner;
 
@@ -163,6 +165,7 @@ class ScoreProvider with ChangeNotifier {
   Offset? get flyOutTarget => _flyOutTarget;
   String? get flyOutTeam => _flyOutTeam;
   bool get isFlyingOut => _isFlyingOut;
+  PointType get pointType => _pointType;
 
   void updateLastStickPos(String team, Offset pos) {
     if (team == "nosotros") {
@@ -396,6 +399,12 @@ class ScoreProvider with ChangeNotifier {
     _saveCurrentSettings();
   }
 
+  void setPointType(PointType type) {
+    _pointType = type;
+    notifyListeners();
+    _saveCurrentSettings();
+  }
+
   void _saveCurrentState() {
     PersistenceService.saveGameState(
       nosotros: _nosotros,
@@ -414,6 +423,7 @@ class ScoreProvider with ChangeNotifier {
       paletteIndex: availablePalettes.indexOf(_currentPalette),
       scoringMode: _scoringMode.name,
       isMuted: _isMuted,
+      pointType: _pointType.name,
     );
   }
 
@@ -454,6 +464,11 @@ class ScoreProvider with ChangeNotifier {
     }
     if (data[PersistenceService.keyIsMuted] != null) {
       _isMuted = data[PersistenceService.keyIsMuted];
+    }
+    if (data[PersistenceService.keyPointType] != null) {
+      _pointType = data[PersistenceService.keyPointType] == PointType.beans.name
+          ? PointType.beans
+          : PointType.matches;
     }
     
     // Always load names if they exist

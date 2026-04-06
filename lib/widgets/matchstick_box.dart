@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'matchstick_widget.dart';
+import 'bean_widget.dart';
 import '../providers/score_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -117,6 +118,7 @@ class _MatchstickContainerWood extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scoreProvider = Provider.of<ScoreProvider>(context);
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -131,11 +133,13 @@ class _MatchstickContainerWood extends StatelessWidget {
             offset: Offset(offsetX, offsetY),
             child: Transform.rotate(
               angle: angle,
-              child: const MatchstickWidget(
-                height: 180, 
-                width: 6,
-                horizontal: true,
-              ),
+                child: scoreProvider.pointType == PointType.beans
+                  ? const BeanWidget(size: 20)
+                  : const MatchstickWidget(
+                      height: 180,
+                      width: 6,
+                      horizontal: true,
+                    ),
             ),
           );
         }),
@@ -152,7 +156,8 @@ class _MatchstickContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Provider.of<ScoreProvider>(context, listen: false).appTheme;
+    final scoreProvider = Provider.of<ScoreProvider>(context);
+    final theme = scoreProvider.appTheme;
     
     return Container(
       width: 200,
@@ -196,10 +201,12 @@ class _MatchstickContainer extends StatelessWidget {
                 offset: Offset(offsetX, offsetY),
                 child: Transform.rotate(
                   angle: angle,
-                  child: const MatchstickWidget(
-                    height: 70,
-                    width: 10,
-                  ),
+                  child: scoreProvider.pointType == PointType.beans
+                      ? BeanWidget(size: showHexNet ? 16 : 22)
+                      : const MatchstickWidget(
+                          height: 70,
+                          width: 10,
+                        ),
                 ),
               );
             }),

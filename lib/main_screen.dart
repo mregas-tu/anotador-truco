@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'providers/score_provider.dart';
 import 'widgets/score_group_widget.dart';
 import 'widgets/matchstick_widget.dart';
+import 'widgets/bean_widget.dart';
 import 'widgets/matchstick_box.dart';
 import 'theme/app_theme.dart';
 import 'services/persistence_service.dart';
@@ -401,7 +402,9 @@ class _MainScreenState extends State<MainScreen>
                     child: child,
                   );
                 },
-                child: MatchstickWidget(height: 100),
+                child: scoreProvider.pointType == PointType.beans
+                    ? BeanWidget(size: 48)
+                    : MatchstickWidget(height: 100),
               ),
               childWhenDragging: _buildTeamColumnContent(
                   name, totalPoints, isBuenas, isNosotros, scoreProvider, true),
@@ -696,7 +699,9 @@ class _MainScreenState extends State<MainScreen>
                         angle: 0.1,
                         child: Transform.translate(
                           offset: const Offset(-5, -50),
-                          child: MatchstickWidget(height: 100),
+                          child: scoreProvider.pointType == PointType.beans
+                              ? BeanWidget(size: 48)
+                              : MatchstickWidget(height: 100),
                         ),
                       ),
                       childWhenDragging: MatchstickBox(

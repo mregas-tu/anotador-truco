@@ -146,6 +146,36 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             ),
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
+          _buildMenuActionItem(
+            label: "TIPO DE PUNTOS",
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+            trailing: TextButton(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                backgroundColor:
+                    scoreProvider.appTheme.slate.withValues(alpha: 0.1),
+              ),
+              onPressed: () {
+                scoreProvider.setPointType(
+                    scoreProvider.pointType == PointType.matches
+                        ? PointType.beans
+                        : PointType.matches);
+              },
+              child: Text(
+                scoreProvider.pointType == PointType.matches
+                    ? "FÓSFOROS"
+                    : "POROTOS",
+                style: TextStyle(
+                  fontFamily: AppFonts.oswald,
+                  fontSize: 14,
+                  color: scoreProvider.appTheme.cream,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
             label: "MODO DE JUEGO",
             onTap: () => setState(() => currentPane = 2),
