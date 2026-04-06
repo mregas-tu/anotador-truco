@@ -1,88 +1,90 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 class BeanPainter extends CustomPainter {
   final Color baseColor;
+  final int seed;
 
-  BeanPainter({required this.baseColor});
+  BeanPainter({required this.baseColor, this.seed = 0});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final width = size.width;
-    final height = size.height;
+    final random = math.Random(seed);
+    final w = size.width;
+    final h = size.height;
 
-    // 1. Shadow (Soft and slightly offset)
-    final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.18)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+    final darkColor = Color.lerp(baseColor, Colors.black, 0.12)!;
+    final highlightColor = Colors.white.withOpacity(0.25);
+
+    // 1. Simple smooth rect for the bean
+    final rect = Rect.fromLTWH(0, 0, w, h);
+
+    // 2. Soft Drop Shadow
     canvas.drawOval(
-      Rect.fromCenter(center: center.translate(1.5, 1.5), width: width, height: height * 0.9),
-      shadowPaint,
+      rect.shift(const Offset(1.2, 2.0)),
+      Paint()
+        ..color = Colors.black.withOpacity(0.15)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5),
     );
 
-    // 2. Bean Body (Oval)
+    // 3. Body: Round Oval with asymmetric gradient to simulate bean volume
     final bodyPaint = Paint()
       ..shader = RadialGradient(
-        colors: [
-          baseColor,
-          Color.lerp(baseColor, Colors.black, 0.08)!,
-          Color.lerp(baseColor, Colors.black, 0.15)!,
-        ],
-        stops: const [0.0, 0.7, 1.0],
-        center: const Alignment(-0.2, -0.3),
-        radius: 0.8,
-      ).createShader(Rect.fromLTWH(0, 0, width, height));
+        colors: [baseColor, darkColor],
+        stops: const [0.6, 1.0],
+        center: const Alignment(-0.25, -0.25),
+        radius: 1.1,
+      ).createShader(rect);
 
-    canvas.drawOval(Rect.fromLTWH(0, 0, width, height), bodyPaint);
+    canvas.drawOval(rect, bodyPaint);
 
-    // 3. Highlight (Top shine)
-    final shinePaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.white.withOpacity(0.4),
-          Colors.white.withOpacity(0.0),
-        ],
-      ).createShader(Rect.fromLTWH(width * 0.2, height * 0.15, width * 0.4, height * 0.4));
-    
-    canvas.drawOval(Rect.fromLTWH(width * 0.2, height * 0.15, width * 0.4, height * 0.25), shinePaint);
+    // 4. Subtle Texture (Speckles)
+    final specklePaint = Paint()..color = darkColor.withOpacity(0.1);
+    for (int i = 0; i < 12; i++) {
+        final sx = random.nextDouble() * w;
+        final sy = random.nextDouble() * h;
+        // Keep speckles within oval
+        if (math.pow(sx - w/2, 2) / math.pow(w/2, 2) + math.pow(sy - h/2, 2) / math.pow(h/2, 2) <= 0.7) {
+          canvas.drawCircle(Offset(sx, sy), 0.4, specklePaint);
+        }
+    }
 
-    // 4. Hilum (The bean's "belly button")
-    final hilumPaint = Paint()
-      ..color = Color.lerp(baseColor, Colors.black, 0.3)!.withOpacity(0.6)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.5);
-    
-    // Draw a small subtle curve or dot on the side
-    final hilumPath = Path();
-    hilumPath.addOval(Rect.fromCenter(
-      center: Offset(width * 0.45, height * 0.5),
-      width: width * 0.1,
-      height: height * 0.18,
-    ));
-    canvas.drawPath(hilumPath, hilumPaint);
-    
-    // Add a tiny lighter dot inside hilum for more realism
-    final hilumLightPaint = Paint()..color = baseColor.withOpacity(0.3);
-    canvas.drawCircle(Offset(width * 0.45, height * 0.5), width * 0.03, hilumLightPaint);
+    // 5. Hilum (Belly button) - Very subtle
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(w * 0.4, h * 0.52), width: w * 0.05, height: h * 0.12),
+      Paint()..color = Colors.black.withOpacity(0.08),
+    );
+
+    // 6. Soft Upper Highlight
+    canvas.drawOval(
+      Rect.fromLTWH(w * 0.2, h * 0.15, w * 0.4, h * 0.25),
+      Paint()..color = highlightColor..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+    );
   }
 
   @override
-  bool shouldRepaint(covariant BeanPainter oldDelegate) => oldDelegate.baseColor != baseColor;
+  bool shouldRepaint(covariant BeanPainter oldDelegate) => oldDelegate.seed != seed;
 }
 
 class BeanWidget extends StatelessWidget {
   final double size;
-  const BeanWidget({super.key, this.size = 24});
+  final int seed;
+  const BeanWidget({super.key, this.size = 24, this.seed = 0});
 
   @override
   Widget build(BuildContext context) {
-    // Ivory / Cream color typical of beans
-    const beanColor = Color(0xFFF5F5DC);
+    // Soft Off-white / Ivory
+    const beanColor = Color(0xFFF9F7F2); 
+    
+    final r = math.Random(seed);
+    // Natural aspect ratio (beans are longer)
+    final widthFactor = 1.25 + (r.nextDouble() * 0.15); 
     
     return SizedBox(
-      width: size * 1.2, // Beans are usually longer than wide
+      width: size * widthFactor, 
       height: size,
       child: CustomPaint(
-        painter: BeanPainter(baseColor: beanColor),
+        painter: BeanPainter(baseColor: beanColor, seed: seed),
       ),
     );
   }

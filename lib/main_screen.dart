@@ -403,7 +403,7 @@ class _MainScreenState extends State<MainScreen>
                   );
                 },
                 child: scoreProvider.pointType == PointType.beans
-                    ? BeanWidget(size: 48)
+                    ? BeanWidget(size: 48, seed: totalPoints)
                     : MatchstickWidget(height: 100),
               ),
               childWhenDragging: _buildTeamColumnContent(
@@ -700,7 +700,7 @@ class _MainScreenState extends State<MainScreen>
                         child: Transform.translate(
                           offset: const Offset(-5, -50),
                           child: scoreProvider.pointType == PointType.beans
-                              ? BeanWidget(size: 48)
+                              ? BeanWidget(size: 48, seed: 1)
                               : MatchstickWidget(height: 100),
                         ),
                       ),

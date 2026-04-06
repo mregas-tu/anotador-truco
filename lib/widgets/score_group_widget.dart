@@ -163,6 +163,7 @@ class _ScoreGroupState extends State<ScoreGroup> {
 
     final bool isThisReverting = sp.isReverting && sp.revertTeam == widget.team && isLastStick;
     final bool isThisFlyingOut = sp.scoringMode == ScoringMode.drag && sp.isFlyingOut && sp.flyOutTeam == widget.team && isLastStick;
+    final bool isWaitingForLayout = _pointToAnimate == i;
     final bool isNew = sp.scoringMode == ScoringMode.drag && widget.animateLast && widget.points == i && _pointAnimatingNow == i;
 
     Widget child = _getManagedChild(i, mh, sp);
@@ -171,7 +172,7 @@ class _ScoreGroupState extends State<ScoreGroup> {
       final RenderBox? r = _key.currentContext?.findRenderObject() as RenderBox?;
       if (r != null) {
         final Offset end = sp.flyOutTarget! - r.localToGlobal(_getStickLocalOffset(i));
-        return _wrapPositioned(i, p, child.animate(key: ValueKey("anim_$i"), target: 1.0).move(begin: Offset.zero, end: end, duration: 400.ms, curve: Curves.easeInCubic).fadeOut(duration: 400.ms), sp);
+        return _wrapPositioned(i, p, child.animate(key: ValueKey("anim_$i")).move(begin: Offset.zero, end: end, duration: 400.ms, curve: Curves.easeInCubic).fadeOut(duration: 400.ms), sp);
       }
     } else if (isThisReverting && sp.revertOffset != null) {
       final RenderBox? r = _key.currentContext?.findRenderObject() as RenderBox?;
@@ -180,14 +181,17 @@ class _ScoreGroupState extends State<ScoreGroup> {
         return _wrapPositioned(i, p, child.animate(key: ValueKey("anim_$i"))
             .move(begin: begin, duration: 400.ms, curve: Curves.easeOutCubic).fadeIn(duration: 400.ms), sp);
       }
+    } else if (isWaitingForLayout) {
+      // Hide the point for 1 frame while we measure where to fly it in from
+      return const SizedBox.shrink();
     } else if (isNew && _currentFlyInBegin != Offset.zero) {
       return _wrapPositioned(i, p, child.animate(key: ValueKey("anim_$i"))
           .move(begin: _currentFlyInBegin, duration: 400.ms, curve: Curves.easeOutCubic).fadeIn(duration: 400.ms), sp);
     }
 
-    // Default: not yet triggered — show at final state, preserve Animate type.
-    return _wrapPositioned(
-        i, p, child.animate(key: ValueKey("anim_$i"), target: 1.0).fadeIn(begin: 1.0, duration: 1.ms), sp);
+    // Default: animation finished, return static widget.
+    // Unmounting the Animate widget here is safe because it only happens after the animation completes (450ms).
+    return _wrapPositioned(i, p, child, sp);
   }
 
   Widget _getManagedChild(int i, double h, ScoreProvider sp) {
@@ -196,7 +200,7 @@ class _ScoreGroupState extends State<ScoreGroup> {
       final double angle = [0.2, -0.15, 0.4, -0.3, 0.05][i % 5];
       return Transform.rotate(
         angle: angle,
-        child: BeanWidget(size: widget.size * 0.3),
+        child: BeanWidget(size: widget.size * 0.3, seed: i),
       );
     }
     
