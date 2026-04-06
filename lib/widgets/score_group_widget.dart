@@ -32,32 +32,27 @@ class ScoreGroup extends StatefulWidget {
 class _ScoreGroupState extends State<ScoreGroup> {
   final GlobalKey _key = GlobalKey();
   Offset _currentFlyInBegin = Offset.zero;
-  final Set<int> _alreadyAnimated = {};
+  int _pointToAnimate = -1;
+  int _pointAnimatingNow = -1;
 
   @override
   void initState() {
     super.initState();
-    // If we load with points and no animation is requested, they are already animated
-    if (widget.points > 0 && !widget.animateLast) {
-      for (int i = 1; i <= widget.points; i++) {
-        _alreadyAnimated.add(i);
-      }
-    }
+    // Points loaded initially just render statically.
   }
 
   @override
   void didUpdateWidget(ScoreGroup oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // If points decreased (undo/un-drag), remove those indices from state
-    if (widget.points < oldWidget.points) {
-      for (int i = widget.points + 1; i <= 5; i++) {
-        _alreadyAnimated.remove(i);
-      }
+    // If points decreased (undo/un-drag), no special tracking needed here
+    // If points increased, mark the latest point for fly-in animation
+    if (widget.points > oldWidget.points) {
+      _pointToAnimate = widget.points;
     }
 
     // 1. Calculate Fly-In position for adding point
-    if (widget.animateLast && widget.dropOffset != null) {
+    if (widget.animateLast && widget.dropOffset != null && _pointToAnimate != -1) {
       _schedulePositionUpdate(widget.dropOffset!);
     }
     
@@ -89,6 +84,18 @@ class _ScoreGroupState extends State<ScoreGroup> {
         final Offset groupGlobalPos = renderBox.localToGlobal(Offset.zero);
         setState(() {
           _currentFlyInBegin = dropOffset - groupGlobalPos;
+          _pointAnimatingNow = _pointToAnimate;
+          _pointToAnimate = -1; // Reset to avoid re-triggering
+        });
+
+        // Ensure it doesn't re-animate on future rebuilds (e.g. hover events)
+        final int animatingPoint = _pointAnimatingNow;
+        Future.delayed(const Duration(milliseconds: 450), () {
+          if (mounted && _pointAnimatingNow == animatingPoint) {
+            setState(() {
+              _pointAnimatingNow = -1;
+            });
+          }
         });
       }
     });
@@ -154,39 +161,33 @@ class _ScoreGroupState extends State<ScoreGroup> {
     final bool isLastStick = isLG && tp == gb + i;
     if (isD && isLastStick) return const SizedBox.shrink();
 
-    // 🏆 SOLID STATE LOGIC:
-    // If already animated, return pure Positioned. No tree structural changes ever again.
-    if (_alreadyAnimated.contains(i)) {
-      return _wrapPositioned(i, p, _getManagedChild(i, mh, sp), sp);
-    }
-
-    // Otherwise, we animate it
     final bool isThisReverting = sp.isReverting && sp.revertTeam == widget.team && isLastStick;
     final bool isThisFlyingOut = sp.scoringMode == ScoringMode.drag && sp.isFlyingOut && sp.flyOutTeam == widget.team && isLastStick;
-    final bool isNew = sp.scoringMode == ScoringMode.drag && widget.animateLast && widget.points == i;
+    final bool isNew = sp.scoringMode == ScoringMode.drag && widget.animateLast && widget.points == i && _pointAnimatingNow == i;
 
     Widget child = _getManagedChild(i, mh, sp);
-    
+
     if (isThisFlyingOut && sp.flyOutTarget != null) {
       final RenderBox? r = _key.currentContext?.findRenderObject() as RenderBox?;
       if (r != null) {
         final Offset end = sp.flyOutTarget! - r.localToGlobal(_getStickLocalOffset(i));
-        return _wrapPositioned(i, p, child.animate(target: 1.0).move(begin: Offset.zero, end: end, duration: 400.ms, curve: Curves.easeInCubic).fadeOut(duration: 400.ms), sp);
+        return _wrapPositioned(i, p, child.animate(key: ValueKey("anim_$i"), target: 1.0).move(begin: Offset.zero, end: end, duration: 400.ms, curve: Curves.easeInCubic).fadeOut(duration: 400.ms), sp);
       }
     } else if (isThisReverting && sp.revertOffset != null) {
       final RenderBox? r = _key.currentContext?.findRenderObject() as RenderBox?;
       if (r != null) {
         final Offset begin = (sp.revertOffset! + const Offset(10, 50)) - r.localToGlobal(_getStickLocalOffset(i));
-        return _wrapPositioned(i, p, child.animate(onComplete: (_) => setState(() => _alreadyAnimated.add(i)))
+        return _wrapPositioned(i, p, child.animate(key: ValueKey("anim_$i"))
             .move(begin: begin, duration: 400.ms, curve: Curves.easeOutCubic).fadeIn(duration: 400.ms), sp);
       }
     } else if (isNew && _currentFlyInBegin != Offset.zero) {
-      return _wrapPositioned(i, p, child.animate(onComplete: (_) => setState(() => _alreadyAnimated.add(i)))
+      return _wrapPositioned(i, p, child.animate(key: ValueKey("anim_$i"))
           .move(begin: _currentFlyInBegin, duration: 400.ms, curve: Curves.easeOutCubic).fadeIn(duration: 400.ms), sp);
     }
 
-    // Default: static if we fail animation detection but it's not in the set (fail-safe)
-    return _wrapPositioned(i, p, child, sp);
+    // Default: not yet triggered — show at final state, preserve Animate type.
+    return _wrapPositioned(
+        i, p, child.animate(key: ValueKey("anim_$i"), target: 1.0).fadeIn(begin: 1.0, duration: 1.ms), sp);
   }
 
   Widget _getManagedChild(int i, double h, ScoreProvider sp) {
