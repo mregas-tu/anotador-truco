@@ -20,6 +20,12 @@ class TrucoTheme {
   final Color secondaryButtonBorder;
   final Color secondaryButtonText;
 
+  // Aesthetic Enhancements
+  final List<Shadow>? teamNameShadow;
+  final BoxDecoration? topIconDecoration;
+  final Color? topIconColor;
+  final BoxDecoration? centerCircleDecoration;
+
   // FIXED WOOD COLORS (Independent of theme)
   static const Color woodLight = Color(0xFFE6D2B5);
   static const Color woodMedium = Color(0xFFD2B48C);
@@ -39,6 +45,7 @@ class TrucoTheme {
   final String? centerOrnamentAsset;
   final bool hideCenterCircleBorder;
   final double centerOrnamentScale;
+  final List<Shadow>? centerOrnamentShadows;
 
   // FINE-TUNING FOR SCORE
   final double scoreFontSize;
@@ -62,6 +69,10 @@ class TrucoTheme {
     required this.primaryTextButton,
     required this.secondaryButtonBorder,
     required this.secondaryButtonText,
+    this.teamNameShadow,
+    this.topIconDecoration,
+    this.topIconColor,
+    this.centerCircleDecoration,
     this.headerAsset,
     this.footerAsset,
     this.footerHeight = 45,
@@ -73,6 +84,7 @@ class TrucoTheme {
     this.centerOrnamentAsset,
     this.hideCenterCircleBorder = false,
     this.centerOrnamentScale = 1.0,
+    this.centerOrnamentShadows,
     required this.scoreFontSize,
     required this.scoreVerticalOffset,
     required this.centerSectionOffset,
@@ -91,10 +103,10 @@ class TrucoTheme {
     buenas: Color(0xFF888D71),
     malas: Color(0xFFF47580),
     centerCircleColor: Color(0xFF161931),
-    primaryBackgroundButton: Color(0xFF718C9C), // matches slate
-    primaryTextButton: Color(0xFFEFEBE2), // matches cream
-    secondaryButtonBorder: Color(0xFFEFEBE2), // matches cream
-    secondaryButtonText: Color(0xFFEFEBE2), // matches cream
+    primaryBackgroundButton: Color(0xFF718C9C),
+    primaryTextButton: Color(0xFFEFEBE2),
+    secondaryButtonBorder: Color(0xFFEFEBE2),
+    secondaryButtonText: Color(0xFFEFEBE2),
     headerAsset: 'assets/images/header.svg',
     footerAsset: 'assets/images/footer.svg',
     dividerColor: Color(0xFFEFEBE2),
@@ -121,10 +133,10 @@ class TrucoTheme {
     buenas: Color(0xFFF6B000),
     malas: Colors.white,
     centerCircleColor: Color(0xFF74ACDF),
-    primaryBackgroundButton: Color(0xFF5A91C5), // matches slate
-    primaryTextButton: Colors.white, // matches cream
-    secondaryButtonBorder: Colors.white, // matches cream
-    secondaryButtonText: Colors.white, // matches cream
+    primaryBackgroundButton: Color(0xFF5A91C5),
+    primaryTextButton: Colors.white,
+    secondaryButtonBorder: Colors.white,
+    secondaryButtonText: Colors.white,
     headerAsset: 'assets/images/header.svg',
     footerAsset: 'assets/images/footer.svg',
     dividerColor: Colors.white,
@@ -152,10 +164,10 @@ class TrucoTheme {
     buenas: Color(0xFF07007A),
     malas: Color(0xFFFF5252),
     centerCircleColor: Colors.transparent,
-    primaryBackgroundButton: Color(0xFF07007A), // matches slate
-    primaryTextButton: Colors.white, // matches cream
-    secondaryButtonBorder: Colors.white, // matches cream
-    secondaryButtonText: Colors.white, // matches cream
+    primaryBackgroundButton: Color(0xFF07007A),
+    primaryTextButton: Colors.white,
+    secondaryButtonBorder: Colors.white,
+    secondaryButtonText: Colors.white,
     headerAsset: null,
     footerAsset: 'assets/images/dibu.svg',
     footerHeight: 75,
@@ -177,27 +189,34 @@ class TrucoTheme {
     name: "MESA DE MADERA",
     navy: Color(0xFF3E2723),
     navyLight: Color(0xFF5D4037),
-    slate: Color(0xFFD7CCC8),
-    cream: Color(0xFFFFF3E0),
+    slate: Color(0xFFEFEBE2), // Fully opaque again
+    cream: Color(0xFFEFEBE2), // Fully opaque again
     white: Colors.white,
     navyAccent: Color(0xFF4E342E),
-    buenas: Color(0xFF8D6E63),
-    malas: Color(0xFFBCAAA4),
+    buenas: Color(0xFFADB199),
+    malas: Color(0xFFC8BDB8),
     centerCircleColor: Colors.transparent,
-    primaryBackgroundButton: Color(0xFFD7CCC8), // matches slate
-    primaryTextButton: Color(0xFFFFF3E0), // matches cream
-    secondaryButtonBorder: Color(0xFFFFF3E0), // matches cream
-    secondaryButtonText: Color(0xFFFFF3E0), // matches cream
+    primaryBackgroundButton: Color(0xFFA48C83),
+    primaryTextButton: Color(0xFFEFEBE2),
+    secondaryButtonBorder: Color(0xFFFFF3E0),
+    secondaryButtonText: Color(0xFFFFF3E0),
+    teamNameShadow: [
+      Shadow(offset: Offset(-1.0, -1.0), blurRadius: 1.0, color: Colors.black),
+      Shadow(offset: Offset(1.0, 1.0), blurRadius: 1.0, color: Colors.white10),
+    ],
+    topIconDecoration: null,
+    topIconColor: Color(0xFFEFEBE2), // Fully opaque again
+    centerCircleDecoration: null,
     headerAsset: null,
     footerAsset: null,
     dividerColor: Colors.transparent,
-    scoreColor: Color(0xFFFFF3E0),
-    teamScoreColor: Color(0xFFE0E0E0),
-    accentColor: Color(0xFFD7CCC8),
+    scoreColor: Color(0xFFEFEBE2), // Fully opaque again
+    teamScoreColor: Color(0xFFEFEBE2), // Fully opaque again
+    accentColor: Color(0xFFA48C83),
     backgroundAsset: 'assets/images/background_1.jpg',
     centerOrnamentAsset: null,
     hideCenterCircleBorder: true,
-    scoreFontSize: 26,
+    scoreFontSize: 32,
     scoreVerticalOffset: 5.0,
     centerSectionOffset: 10.0,
     matchstickBoxType: MatchstickBoxType.wood,

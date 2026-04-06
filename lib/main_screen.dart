@@ -44,41 +44,41 @@ class _MainScreenState extends State<MainScreen>
 
   final List<Map<String, String>> _tutorialSteps = [
     {
-      "title": "Modo Arrastrar",
+      "title": "MODO ARRASTRAR",
       "desc":
-          "En modo arrastre, para agregar un fósforo tenes que arrastrarlo desde la caja hacia la mesa"
+          "Arrastrá un fósforo desde la caja hacia la mesa para sumar puntos en el jugador."
     },
     {
-      "title": "Modo Arrastrar",
+      "title": "MODE ARRASTRAR",
       "desc":
-          "En modo arrastre, para sacar el último fósforo tenes que arrastrarlo desde la mesa hacia la caja"
+          "Para sacar el último punto, arrastrá el fósforo desde la mesa hacia la caja."
     },
     {
-      "title": "Modo Toque",
+      "title": "MODO TOQUE",
+      "desc": "Hacé un toque sobre la mesa para sumar puntos."
+    },
+    {
+      "title": "MODO TOQUE",
+      "desc": "Para sacar el último punto mantené el dedo sobre la mesa."
+    },
+    {
+      "title": "CAMBIAR NOMBRES",
+      "desc": "Tocá “Nosotros” o “Ellos” para editar el nombre del equipo."
+    },
+    {
+      "title": "PUNTUACIÓN TOTAL",
       "desc":
-          "En modo toque, para agregar un fósforo tenes que hacer un toque sobre la mesa"
+          "En el centro entre los equipos ves los puntos totales de la partida."
     },
     {
-      "title": "Modo Toque",
+      "title": "REINICIAR PARTIDA",
       "desc":
-          "En modo toque, para sacar un fósforo tenes que sostener el dedo sobre la mesa"
+          "Usá la flecha ubicada arriba a la izquierda para reiniciar los puntos de la partida."
     },
     {
-      "title": "Cambiar nombres",
-      "desc": "Haciendo un toque acá podés cambiar el nombre de cada equipo."
-    },
-    {
-      "title": "Puntuación total",
-      "desc": "Acá podés ver los puntos totales de la partida."
-    },
-    {
-      "title": "Comenzar de nuevo",
-      "desc": "Tocá acá para resetear los puntos y empezar de cero."
-    },
-    {
-      "title": "Menú de opciones",
+      "title": "MENÚ DE AJUSTES",
       "desc":
-          "Acá podés elegir nuevos temas, cambiar el modo de juego, decidir si preferís usar el control por arrastre o toque, ¡y más!"
+          "Usá el engranaje ubicado arriba a la derecha para personalizar temas, modo de juego, típo de control y más."
     },
   ];
 
@@ -203,26 +203,60 @@ class _MainScreenState extends State<MainScreen>
                             children: [
                               IconButton(
                                 key: _restartKey,
-                                icon: SvgPicture.asset(
-                                  'assets/images/restart.svg',
-                                  height: 24,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.white.withOpacity(0.7),
-                                    BlendMode.srcIn,
-                                  ),
+                                icon: Stack(
+                                  children: [
+                                    if (scoreProvider.appTheme.teamNameShadow !=
+                                        null)
+                                      Positioned(
+                                        left: 1,
+                                        top: 1,
+                                        child: SvgPicture.asset(
+                                          'assets/images/restart.svg',
+                                          height: 24,
+                                          colorFilter: const ColorFilter.mode(
+                                              Colors.black45, BlendMode.srcIn),
+                                        ),
+                                      ),
+                                    SvgPicture.asset(
+                                      'assets/images/restart.svg',
+                                      height: 24,
+                                      colorFilter: ColorFilter.mode(
+                                        scoreProvider.appTheme.topIconColor ??
+                                            Colors.white.withOpacity(0.7),
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 onPressed: () => _showResetConfirmationDialog(
                                     context, scoreProvider),
                               ),
                               IconButton(
                                 key: _settingsKey,
-                                icon: SvgPicture.asset(
-                                  'assets/images/settings.svg',
-                                  height: 24,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.white.withOpacity(0.7),
-                                    BlendMode.srcIn,
-                                  ),
+                                icon: Stack(
+                                  children: [
+                                    if (scoreProvider.appTheme.teamNameShadow !=
+                                        null)
+                                      Positioned(
+                                        left: 1,
+                                        top: 1,
+                                        child: SvgPicture.asset(
+                                          'assets/images/settings.svg',
+                                          height: 24,
+                                          colorFilter: const ColorFilter.mode(
+                                              Colors.black45, BlendMode.srcIn),
+                                        ),
+                                      ),
+                                    SvgPicture.asset(
+                                      'assets/images/settings.svg',
+                                      height: 24,
+                                      colorFilter: ColorFilter.mode(
+                                        scoreProvider.appTheme.topIconColor ??
+                                            Colors.white.withOpacity(0.7),
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 onPressed: () =>
                                     _showSettingsDialog(context, scoreProvider),
@@ -273,32 +307,33 @@ class _MainScreenState extends State<MainScreen>
                                 Container(
                                   width: 56,
                                   height: 56,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: scoreProvider
-                                        .appTheme.centerCircleColor,
-                                    border: scoreProvider
-                                            .appTheme.hideCenterCircleBorder
-                                        ? null
-                                        : Border.all(
-                                            color: scoreProvider
-                                                .appTheme.accentColor
-                                                .withOpacity(0.5),
-                                            width: 1.5,
-                                          ),
-                                    boxShadow: !scoreProvider
-                                            .appTheme.hideCenterCircleBorder
-                                        ? [
-                                            BoxShadow(
-                                              color: scoreProvider
-                                                  .appTheme.accentColor
-                                                  .withOpacity(0.35),
-                                              blurRadius: 4,
-                                              spreadRadius: 1,
-                                            ),
-                                          ]
-                                        : null,
-                                  ),
+                                  decoration: scoreProvider
+                                          .appTheme.centerCircleDecoration ??
+                                      BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: scoreProvider
+                                            .appTheme.centerCircleColor,
+                                        border: scoreProvider
+                                                .appTheme.hideCenterCircleBorder
+                                            ? null
+                                            : Border.all(
+                                                color: scoreProvider
+                                                    .appTheme.accentColor
+                                                    .withOpacity(0.5),
+                                                width: 1.5,
+                                              ),
+                                        boxShadow: !scoreProvider
+                                                .appTheme.hideCenterCircleBorder
+                                            ? [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.2),
+                                                  blurRadius: 10,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
                                 ),
 
                                 // 2. The ornament (Sun/AFA)
@@ -308,11 +343,36 @@ class _MainScreenState extends State<MainScreen>
                                   Transform.scale(
                                     scale: scoreProvider
                                         .appTheme.centerOrnamentScale,
-                                    child: SvgPicture.asset(
-                                      scoreProvider
-                                          .appTheme.centerOrnamentAsset!,
-                                      width: 56,
-                                      height: 56,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        if (scoreProvider.appTheme
+                                                .centerOrnamentShadows !=
+                                            null)
+                                          ...scoreProvider
+                                              .appTheme.centerOrnamentShadows!
+                                              .map((s) => Transform.translate(
+                                                    offset: s.offset,
+                                                    child: ColorFiltered(
+                                                      colorFilter:
+                                                          ColorFilter.mode(
+                                                              s.color,
+                                                              BlendMode.srcIn),
+                                                      child: SvgPicture.asset(
+                                                        scoreProvider.appTheme
+                                                            .centerOrnamentAsset!,
+                                                        width: 56,
+                                                        height: 56,
+                                                      ),
+                                                    ),
+                                                  )),
+                                        SvgPicture.asset(
+                                          scoreProvider
+                                              .appTheme.centerOrnamentAsset!,
+                                          width: 56,
+                                          height: 56,
+                                        ),
+                                      ],
                                     ),
                                   ),
 
@@ -331,6 +391,8 @@ class _MainScreenState extends State<MainScreen>
                                           scoreProvider.appTheme.scoreFontSize,
                                       color: scoreProvider.appTheme.scoreColor,
                                       fontWeight: FontWeight.bold,
+                                      shadows:
+                                          scoreProvider.appTheme.teamNameShadow,
                                     ),
                                   ),
                                 ),
@@ -435,7 +497,7 @@ class _MainScreenState extends State<MainScreen>
                                 fontFamily: AppFonts.oswald,
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 1.2,
+                                letterSpacing: 0,
                               ),
                             ),
                             Text(
@@ -475,10 +537,7 @@ class _MainScreenState extends State<MainScreen>
                                 height: 40,
                                 toUpperCase: true,
                                 onPressed: () {
-                                  setState(() {
-                                    _isTutorialActive = false;
-                                    _handController.stop();
-                                  });
+                                  _skipTutorial();
                                 },
                               ),
                             ),
@@ -497,10 +556,7 @@ class _MainScreenState extends State<MainScreen>
                                       _startGhostHandTutorial();
                                     });
                                   } else {
-                                    setState(() {
-                                      _isTutorialActive = false;
-                                      _handController.stop();
-                                    });
+                                    _skipTutorial();
                                   }
                                 },
                               ),
@@ -701,7 +757,7 @@ class _MainScreenState extends State<MainScreen>
             style: TextStyle(
               fontFamily: AppFonts.oswald,
               color: scoreProvider.appTheme.white.withOpacity(0.9),
-              letterSpacing: 2,
+              letterSpacing: 0,
             ),
           ),
           content: TextField(
@@ -835,7 +891,7 @@ class _MainScreenState extends State<MainScreen>
                   fontSize: 38,
                   color: scoreProvider.appTheme.slate,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
+                  letterSpacing: 0,
                 ),
               ),
             ),
@@ -929,8 +985,9 @@ class _MainScreenState extends State<MainScreen>
                     fontFamily: AppFonts.oswald,
                     fontSize: 20,
                     color: scoreProvider.appTheme.slate,
-                    letterSpacing: 1.5,
+                    letterSpacing: 0,
                     fontWeight: FontWeight.bold,
+                    shadows: scoreProvider.appTheme.teamNameShadow,
                   ),
                 ),
               ),
@@ -943,6 +1000,7 @@ class _MainScreenState extends State<MainScreen>
               fontFamily: AppFonts.caminito,
               fontSize: 32,
               color: scoreProvider.appTheme.teamScoreColor,
+              shadows: scoreProvider.appTheme.teamNameShadow,
             ),
           ),
 
@@ -955,7 +1013,7 @@ class _MainScreenState extends State<MainScreen>
               color: isBuenas
                   ? scoreProvider.appTheme.buenas
                   : scoreProvider.appTheme.malas,
-              letterSpacing: 1.2,
+              letterSpacing: 0,
             ),
           ),
 
@@ -1335,17 +1393,6 @@ class _MainScreenState extends State<MainScreen>
     _handController.repeat(reverse: false);
   }
 
-  void _nextTutorialStep() {
-    if (_tutorialStep < _tutorialSteps.length - 1) {
-      setState(() {
-        _tutorialStep++;
-      });
-      _startGhostHandTutorial();
-    } else {
-      _skipTutorial();
-    }
-  }
-
   void _skipTutorial() async {
     setState(() {
       _isTutorialActive = false;
@@ -1428,7 +1475,7 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
                 fontFamily: AppFonts.oswald,
                 fontSize: 20,
                 color: scoreProvider.appTheme.cream,
-                letterSpacing: 2,
+                letterSpacing: 0,
               ),
             ),
             Positioned(
@@ -1508,7 +1555,7 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
 
           if (!premiumProvider.isPremium) ...[
             _buildMenuNavigationItem(
-              label: "HACERME PREMIUM 🚀",
+              label: "HACERME PREMIUM",
               onTap: () {
                 Navigator.pop(context); // Close settings
                 premiumProvider.buyPremium();
@@ -1520,7 +1567,7 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
           ],
 
           _buildMenuNavigationItem(
-            label: "RESTAURAR COMPRAS 🔄",
+            label: "RESTAURAR COMPRAS",
             onTap: () async {
               await premiumProvider.restorePurchases();
               if (mounted) {
@@ -1567,7 +1614,7 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: scoreProvider.appTheme.slate,
-                        letterSpacing: 1.5)),
+                        letterSpacing: 0)),
               ),
               GridView.builder(
                 shrinkWrap: true,
@@ -1670,7 +1717,7 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
                                     fontSize: 18,
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.5,
+                                    letterSpacing: 0,
                                   ),
                                 ),
                               )
@@ -1703,7 +1750,7 @@ class _SettingsDialogContentState extends State<_SettingsDialogContent> {
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: scoreProvider.appTheme.slate,
-                        letterSpacing: 1.5)),
+                        letterSpacing: 0)),
               ),
               Wrap(
                 spacing: isSmallScreen ? 12 : 16,

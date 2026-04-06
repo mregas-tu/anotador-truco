@@ -33,14 +33,15 @@ class TrucoDialog extends StatelessWidget {
     // Buscamos el tema actual automáticamente vía Provider
     final scoreProvider = Provider.of<ScoreProvider>(context);
     final borderColor = scoreProvider.appTheme.slate;
-    const double borderWidth = 1.0; 
+    const double borderWidth = 1.0;
 
-    final double effectiveWidth = marginHorizontal != null 
+    final double effectiveWidth = marginHorizontal != null
         ? MediaQuery.of(context).size.width - (marginHorizontal! * 2)
         : MediaQuery.of(context).size.width * 0.9;
 
     return Material(
-      color: Colors.transparent, // El overlay de showDialog maneja el fondo oscuro
+      color:
+          Colors.transparent, // El overlay de showDialog maneja el fondo oscuro
       child: Stack(
         children: [
           Center(
@@ -75,8 +76,10 @@ class TrucoDialog extends StatelessWidget {
                           fontFamily: AppFonts.oswald,
                           fontSize: titleFontSize,
                           color: titleColor ?? Colors.white,
-                          letterSpacing: toUpperCaseTitle ? 2 : 0,
-                          fontWeight: toUpperCaseTitle ? FontWeight.bold : FontWeight.normal,
+                          letterSpacing: 0,
+                          fontWeight: toUpperCaseTitle
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                       const SizedBox(height: 24),

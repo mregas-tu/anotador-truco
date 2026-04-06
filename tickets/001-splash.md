@@ -1,0 +1,1 @@
+Armame un splash para Android utilizando la imagen splash.jpg
