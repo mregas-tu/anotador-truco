@@ -200,7 +200,11 @@ class _ScoreGroupState extends State<ScoreGroup> {
       final double angle = [0.2, -0.15, 0.4, -0.3, 0.05][i % 5];
       return Transform.rotate(
         angle: angle,
-        child: BeanWidget(size: widget.size * 0.3, seed: i),
+        child: BeanWidget(
+          size: widget.size * 0.3, 
+          seed: i, 
+          beanType: sp.currentBeanPalette.type,
+        ),
       );
     }
     

@@ -15,6 +15,8 @@ class PersistenceService {
   static const String keyTutorialDone = 'tutorial_done';
   static const String keyPointType = 'point_type';
 
+  static const String keyBeanPaletteIndex = 'bean_palette_index';
+
   static Future<bool> getTutorialDone() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(keyTutorialDone) ?? false;
@@ -55,6 +57,7 @@ class PersistenceService {
     required int gameModeIndex,
     required String themeId,
     required int paletteIndex,
+    required int beanPaletteIndex,
     required String scoringMode,
     required bool isMuted,
     required String pointType,
@@ -63,6 +66,7 @@ class PersistenceService {
     await prefs.setInt(keyGameModeIndex, gameModeIndex);
     await prefs.setString(keyThemeId, themeId);
     await prefs.setInt(keyPaletteIndex, paletteIndex);
+    await prefs.setInt(keyBeanPaletteIndex, beanPaletteIndex);
     await prefs.setString(keyScoringMode, scoringMode);
     await prefs.setBool(keyIsMuted, isMuted);
     await prefs.setString(keyPointType, pointType);
@@ -78,6 +82,7 @@ class PersistenceService {
       keyGameModeIndex: prefs.getInt(keyGameModeIndex),
       keyThemeId: prefs.getString(keyThemeId),
       keyPaletteIndex: prefs.getInt(keyPaletteIndex),
+      keyBeanPaletteIndex: prefs.getInt(keyBeanPaletteIndex),
       keyScoringMode: prefs.getString(keyScoringMode),
       keyIsMuted: prefs.getBool(keyIsMuted),
       keyFinishedMalasNosotros: prefs.getBool(keyFinishedMalasNosotros),

@@ -146,36 +146,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             ),
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
-          _buildMenuActionItem(
-            label: "TIPO DE PUNTOS",
-            scoreProvider: scoreProvider,
-            isSmallScreen: isSmallScreen,
-            trailing: TextButton(
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                backgroundColor:
-                    scoreProvider.appTheme.slate.withValues(alpha: 0.1),
-              ),
-              onPressed: () {
-                scoreProvider.setPointType(
-                    scoreProvider.pointType == PointType.matches
-                        ? PointType.beans
-                        : PointType.matches);
-              },
-              child: Text(
-                scoreProvider.pointType == PointType.matches
-                    ? "FÓSFOROS"
-                    : "POROTOS",
-                style: TextStyle(
-                  fontFamily: AppFonts.oswald,
-                  fontSize: 14,
-                  color: scoreProvider.appTheme.cream,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
             label: "MODO DE JUEGO",
             onTap: () => setState(() => currentPane = 2),
@@ -184,7 +154,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
-            label: "DISEÑO (FÓSFOROS)",
+            label: "DISEÑO",
             onTap: () => setState(() => currentPane = 1),
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
@@ -377,9 +347,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                 },
               ),
               const SizedBox(height: 24),
+
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: Text("DISEÑO DE FÓSFOROS",
+                child: Text("TIPO DE FICHAS",
                     style: TextStyle(
                         fontFamily: AppFonts.oswald,
                         fontSize: 12,
@@ -387,77 +358,206 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         color: scoreProvider.appTheme.slate,
                         letterSpacing: 0)),
               ),
-              Wrap(
-                spacing: isSmallScreen ? 12 : 16,
-                runSpacing: isSmallScreen ? 12 : 16,
-                children: availablePalettes.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final palette = entry.value;
-                  final isSelected =
-                      scoreProvider.currentPalette.name == palette.name;
-                  final isLocked = !premiumProvider.isPaletteUnlocked(index);
-                  final timeLeft =
-                      premiumProvider.getRemainingTime('palette_$index');
-
-                  return GestureDetector(
-                    onTap: () {
-                      if (isLocked) {
-                        widget.onPaletteLockedTap(index);
-                      } else {
-                        scoreProvider.setPalette(palette);
-                      }
-                    },
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: isSmallScreen ? 44 : 48,
-                          height: isSmallScreen ? 44 : 48,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                palette.headColors[0],
-                                palette.headColors.last
-                              ],
-                            ),
-                            border: Border.all(
-                              color: isSelected ? Colors.white : Colors.white10,
-                              width: isSelected ? 3 : 1,
-                            ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                        color: palette.headColors.first
-                                            .withValues(alpha: 0.4),
-                                        blurRadius: 10,
-                                        spreadRadius: 2)
-                                  ]
-                                : null,
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => scoreProvider.setPointType(PointType.matches),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: scoreProvider.pointType == PointType.matches
+                              ? scoreProvider.appTheme.cream.withValues(alpha: 0.2)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: scoreProvider.pointType == PointType.matches
+                                ? scoreProvider.appTheme.cream
+                                : Colors.white10,
                           ),
                         ),
-                        if (isLocked)
-                          const Icon(Icons.lock, color: Colors.white, size: 18),
-                        if (timeLeft != null)
+                        alignment: Alignment.center,
+                        child: Text(
+                          "FÓSFOROS",
+                          style: TextStyle(
+                            fontFamily: AppFonts.oswald,
+                            fontSize: 14,
+                            color: scoreProvider.appTheme.cream,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => scoreProvider.setPointType(PointType.beans),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: scoreProvider.pointType == PointType.beans
+                              ? scoreProvider.appTheme.cream.withValues(alpha: 0.2)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: scoreProvider.pointType == PointType.beans
+                                ? scoreProvider.appTheme.cream
+                                : Colors.white10,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          "POROTOS",
+                          style: TextStyle(
+                            fontFamily: AppFonts.oswald,
+                            fontSize: 14,
+                            color: scoreProvider.appTheme.cream,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 24),
+
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(scoreProvider.pointType == PointType.matches ? "DISEÑO DE FÓSFOROS" : "DISEÑO DE POROTOS",
+                    style: TextStyle(
+                        fontFamily: AppFonts.oswald,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: scoreProvider.appTheme.slate,
+                        letterSpacing: 0)),
+              ),
+              
+              if (scoreProvider.pointType == PointType.matches)
+                Wrap(
+                  spacing: isSmallScreen ? 12 : 16,
+                  runSpacing: isSmallScreen ? 12 : 16,
+                  children: availablePalettes.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final palette = entry.value;
+                    final isSelected =
+                        scoreProvider.currentPalette.name == palette.name;
+                    final isLocked = !premiumProvider.isPaletteUnlocked(index);
+                    final timeLeft =
+                        premiumProvider.getRemainingTime('palette_$index');
+  
+                    return GestureDetector(
+                      onTap: () {
+                        if (isLocked) {
+                          widget.onPaletteLockedTap(index);
+                        } else {
+                          scoreProvider.setPalette(palette);
+                        }
+                      },
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
                           Container(
-                            decoration: const BoxDecoration(
-                                shape: BoxShape.circle, color: Colors.black45),
-                            padding: const EdgeInsets.all(4),
-                            child: Text(
-                              timeLeft,
-                              style: const TextStyle(
-                                fontFamily: AppFonts.oswald,
-                                fontSize: 10,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                            width: isSmallScreen ? 44 : 48,
+                            height: isSmallScreen ? 44 : 48,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  palette.headColors[0],
+                                  palette.headColors.last
+                                ],
                               ),
+                              border: Border.all(
+                                color: isSelected ? Colors.white : Colors.white10,
+                                width: isSelected ? 3 : 1,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                          color: palette.headColors.first
+                                              .withValues(alpha: 0.4),
+                                          blurRadius: 10,
+                                          spreadRadius: 2)
+                                    ]
+                                  : null,
                             ),
                           ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
+                          if (isLocked)
+                            const Icon(Icons.lock, color: Colors.white, size: 18),
+                          if (timeLeft != null)
+                            Container(
+                              decoration: const BoxDecoration(
+                                  shape: BoxShape.circle, color: Colors.black45),
+                              padding: const EdgeInsets.all(4),
+                              child: Text(
+                                timeLeft,
+                                style: const TextStyle(
+                                  fontFamily: AppFonts.oswald,
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                )
+              else
+                Wrap(
+                  spacing: isSmallScreen ? 12 : 16,
+                  runSpacing: isSmallScreen ? 12 : 16,
+                  children: availableBeanPalettes.asMap().entries.map((entry) {
+                    final palette = entry.value;
+                    final isSelected = scoreProvider.currentBeanPalette.name == palette.name;
+                    
+                    Color getBeanPreviewColor(BeanType type) {
+                      switch (type) {
+                        case BeanType.alubia: return const Color(0xFFF9F6F0);
+                        case BeanType.negro: return const Color(0xFF2E2E2E);
+                        case BeanType.fideo: return const Color(0xFF8B0000);
+                        case BeanType.pinto: return const Color(0xFFD2B48C);
+                        case BeanType.manteca: return const Color(0xFFEBEBD3);
+                        case BeanType.bandera: return const Color(0xFF5A1A40);
+                        case BeanType.cisne: return const Color(0xFFF9F6F0);
+                        case BeanType.borlotto: return const Color(0xFFCBA37E);
+                        case BeanType.magnum: return const Color(0xFF4B5121);
+                        case BeanType.frutilla: return const Color(0xFF9E2A2B);
+                      }
+                    }
+                    
+                    return GestureDetector(
+                      onTap: () {
+                        scoreProvider.setBeanPalette(palette);
+                      },
+                      child: Container(
+                        width: isSmallScreen ? 44 : 48,
+                        height: isSmallScreen ? 44 : 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: getBeanPreviewColor(palette.type),
+                          border: Border.all(
+                            color: isSelected ? Colors.white : Colors.white10,
+                            width: isSelected ? 3 : 1,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                      color: getBeanPreviewColor(palette.type)
+                                          .withValues(alpha: 0.4),
+                                      blurRadius: 10,
+                                      spreadRadius: 2)
+                                ]
+                              : null,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
             ],
           ),
         ] else if (currentPane == 2) ...[

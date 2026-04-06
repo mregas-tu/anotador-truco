@@ -88,6 +88,39 @@ const List<MatchstickPalette> availablePalettes = [
   ),
 ];
 
+enum BeanType {
+  alubia,
+  negro,
+  fideo,
+  pinto,
+  manteca,
+  bandera,
+  cisne,
+  borlotto,
+  magnum,
+  frutilla,
+}
+
+class BeanPalette {
+  final String name;
+  final BeanType type;
+
+  const BeanPalette({required this.name, required this.type});
+}
+
+const List<BeanPalette> availableBeanPalettes = [
+  BeanPalette(name: "ALUBIA", type: BeanType.alubia),
+  BeanPalette(name: "NEGRO", type: BeanType.negro),
+  BeanPalette(name: "FIDEO", type: BeanType.fideo),
+  BeanPalette(name: "PINTO", type: BeanType.pinto),
+  BeanPalette(name: "MANTECA", type: BeanType.manteca),
+  BeanPalette(name: "BANDERA", type: BeanType.bandera),
+  BeanPalette(name: "CISNE", type: BeanType.cisne),
+  BeanPalette(name: "BORLOTTO", type: BeanType.borlotto),
+  BeanPalette(name: "MAGNUM", type: BeanType.magnum),
+  BeanPalette(name: "FRUTILLA", type: BeanType.frutilla),
+];
+
 const List<GameMode> availableModes = [
   GameMode(label: "12 puntos - 12 malas", totalPoints: 12, hasBuenas: false),
   GameMode(label: "15 puntos - 15 malas", totalPoints: 15, hasBuenas: false),
@@ -104,6 +137,7 @@ class ScoreProvider with ChangeNotifier {
   final AudioService _audioService = AudioService();
   GameMode _currentGameMode = availableModes[4]; // Default to 30 pts (15/15)
   MatchstickPalette _currentPalette = availablePalettes[1]; // Default to BORDÓ
+  BeanPalette _currentBeanPalette = availableBeanPalettes[0]; // Default to ALUBIA
   ScoringMode _scoringMode = ScoringMode.drag;
   TrucoTheme _appTheme = TrucoTheme.navyTheme;
   bool _isMuted = false;
@@ -138,6 +172,7 @@ class ScoreProvider with ChangeNotifier {
 
   GameMode get currentGameMode => _currentGameMode;
   MatchstickPalette get currentPalette => _currentPalette;
+  BeanPalette get currentBeanPalette => _currentBeanPalette;
   ScoringMode get scoringMode => _scoringMode;
   bool get isMuted => _isMuted;
   int get nosotros => _nosotros;
@@ -399,6 +434,12 @@ class ScoreProvider with ChangeNotifier {
     _saveCurrentSettings();
   }
 
+  void setBeanPalette(BeanPalette beanPalette) {
+    _currentBeanPalette = beanPalette;
+    notifyListeners();
+    _saveCurrentSettings();
+  }
+
   void setPointType(PointType type) {
     _pointType = type;
     notifyListeners();
@@ -421,6 +462,7 @@ class ScoreProvider with ChangeNotifier {
       gameModeIndex: availableModes.indexOf(_currentGameMode),
       themeId: _appTheme.name, // Using name as ID
       paletteIndex: availablePalettes.indexOf(_currentPalette),
+      beanPaletteIndex: availableBeanPalettes.indexOf(_currentBeanPalette),
       scoringMode: _scoringMode.name,
       isMuted: _isMuted,
       pointType: _pointType.name,
@@ -456,6 +498,9 @@ class ScoreProvider with ChangeNotifier {
     }
     if (data[PersistenceService.keyPaletteIndex] != null) {
       _currentPalette = availablePalettes[data[PersistenceService.keyPaletteIndex]];
+    }
+    if (data[PersistenceService.keyBeanPaletteIndex] != null) {
+      _currentBeanPalette = availableBeanPalettes[data[PersistenceService.keyBeanPaletteIndex]];
     }
     if (data[PersistenceService.keyScoringMode] != null) {
       _scoringMode = data[PersistenceService.keyScoringMode] == ScoringMode.tap.name 

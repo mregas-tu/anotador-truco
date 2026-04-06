@@ -137,7 +137,7 @@ class _MatchstickContainerWood extends StatelessWidget {
             child: Transform.rotate(
               angle: angle,
                 child: scoreProvider.pointType == PointType.beans
-                  ? const BeanWidget(size: 20)
+                  ? BeanWidget(size: 20, beanType: scoreProvider.currentBeanPalette.type)
                   : const MatchstickWidget(
                       height: 180,
                       width: 6,
@@ -205,7 +205,7 @@ class _MatchstickContainer extends StatelessWidget {
                 child: Transform.rotate(
                   angle: angle,
                   child: scoreProvider.pointType == PointType.beans
-                      ? BeanWidget(size: showHexNet ? 16 : 22)
+                      ? BeanWidget(size: showHexNet ? 16 : 22, beanType: scoreProvider.currentBeanPalette.type)
                       : const MatchstickWidget(
                           height: 70,
                           width: 10,
@@ -343,6 +343,8 @@ class _MatchstickContainerPlate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scoreProvider = Provider.of<ScoreProvider>(context);
+    
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.center,
@@ -361,7 +363,7 @@ class _MatchstickContainerPlate extends StatelessWidget {
             offset: Offset(offsetX, offsetY),
             child: Transform.rotate(
               angle: angle,
-              child: const BeanWidget(size: 24), // Size increased slightly again
+              child: BeanWidget(size: 24, beanType: scoreProvider.currentBeanPalette.type),
             ),
           );
         }),
