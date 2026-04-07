@@ -139,30 +139,54 @@ class BeanPainter extends CustomPainter {
         canvas.restore();
       }
     } else if (beanType == BeanType.bandera) {
-      // Large white/cream blotches
-      final int numBlotches = 2 + random.nextInt(3);
+      // Bandera: Organic creamy white patches blending into the dark purple
+      final int numPatchGroups = 2 + random.nextInt(2);
       final blotchPaint = Paint()
-        ..color = const Color(0xFFF7F4E9).withValues(alpha: 0.95);
+        ..color = const Color(0xFFF7F4E9).withValues(alpha: 0.90);
       
-      for (int i = 0; i < numBlotches; i++) {
-        final sx = w * (0.2 + random.nextDouble() * 0.6);
-        final sy = h * (0.2 + random.nextDouble() * 0.6);
-        final sw = w * (0.3 + random.nextDouble() * 0.3);
-        final sh = h * (0.3 + random.nextDouble() * 0.3);
+      for (int i = 0; i < numPatchGroups; i++) {
+        final cx = w * (0.2 + random.nextDouble() * 0.6);
+        final cy = h * (0.2 + random.nextDouble() * 0.6);
+        
+        final patchPath = Path();
+        // A main blotch
+        patchPath.addOval(Rect.fromCenter(center: Offset(cx, cy), width: w * (0.3 + random.nextDouble() * 0.2), height: h * (0.25 + random.nextDouble() * 0.25)));
+        // And an attached smaller overlapping blotch to make an irregular shape
+        patchPath.addOval(Rect.fromCenter(
+            center: Offset(cx + w * (random.nextDouble() - 0.5) * 0.2, cy + h * (random.nextDouble() - 0.5) * 0.2), 
+            width: w * (0.2 + random.nextDouble() * 0.15), 
+            height: h * (0.15 + random.nextDouble() * 0.15)));
         
         canvas.save();
-        canvas.translate(sx, sy);
+        // Slight rotation to the whole group
+        canvas.translate(cx, cy);
         canvas.rotate(random.nextDouble() * math.pi);
-        canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: sw, height: sh), blotchPaint);
+        canvas.translate(-cx, -cy);
+        canvas.drawPath(patchPath, blotchPaint);
         canvas.restore();
       }
     } else if (beanType == BeanType.cisne) {
-      // Large black patch around the eye
-      final blotchPaint = Paint()..color = const Color(0xFF1E1E1E);
-      canvas.drawOval(
-        Rect.fromCenter(center: Offset(w * 0.45, h * 0.35), width: w * 0.6, height: h * 0.45),
-        blotchPaint,
-      );
+      // Cisne: A large, irregular dark spot hugging the side/eye, distinct split 
+      final patchPaint = Paint()
+        ..color = const Color(0xFF151515).withValues(alpha: 0.92);
+      
+      // We randomly shift the center hue of the black patch just a bit per seed
+      final cx = w * (0.45 + (random.nextDouble() - 0.5) * 0.1);
+      final cy = h * (0.35 + (random.nextDouble() - 0.5) * 0.1);
+      
+      final path = Path();
+      // Main central blob
+      path.addOval(Rect.fromCenter(center: Offset(cx, cy), width: w * 0.5, height: h * 0.45));
+      // Tapering into the top lobe
+      path.addOval(Rect.fromCenter(
+          center: Offset(cx + w * 0.1 * (random.nextDouble() - 0.5), cy - h * 0.2), 
+          width: w * 0.3, height: h * 0.3));
+      // Tapering into the side
+      path.addOval(Rect.fromCenter(
+          center: Offset(cx - w * 0.15, cy + h * 0.1 * (random.nextDouble() - 0.5)), 
+          width: w * 0.4, height: h * 0.25));
+
+      canvas.drawPath(path, patchPaint);
     }
 
     // 4. Subtle Eye (Hilum)

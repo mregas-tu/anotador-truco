@@ -9,12 +9,12 @@ const List<Map<String, String>> kTutorialSteps = [
   {
     "title": "MODO ARRASTRAR",
     "desc":
-        "Arrastrá un fósforo desde la caja hacia la mesa para sumar puntos en el jugador."
+        "Arrastrá un punto desde la caja hacia la mesa para sumar puntos en el jugador."
   },
   {
     "title": "MODE ARRASTRAR",
     "desc":
-        "Para sacar el último punto, arrastrá el fósforo desde la mesa hacia la caja."
+        "Para sacar el último punto, arrastralo desde la mesa hacia la caja."
   },
   {
     "title": "MODO TOQUE",
