@@ -30,6 +30,7 @@ class SettingsDialogContent extends StatefulWidget {
 class _SettingsDialogContentState extends State<SettingsDialogContent> {
   int currentPane = 0; // 0: Main, 1: Customization, 2: Game Mode
   Timer? _timer;
+  final ScrollController _gameModeScrollController = ScrollController();
 
   @override
   void initState() {
@@ -42,7 +43,25 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   @override
   void dispose() {
     _timer?.cancel();
+    _gameModeScrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToSelectedMode(ScoreProvider scoreProvider) {
+    if (!mounted) return;
+    final index = availableModes.indexWhere(
+        (m) => m.label == scoreProvider.currentGameMode.label);
+    if (index != -1) {
+      // ListTile height with internal padding is approx 48-52
+      const double itemHeight = 48.0; 
+      final double offset = index * (itemHeight + 1.0);
+      
+      _gameModeScrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   @override
@@ -148,7 +167,12 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
             label: "MODO DE JUEGO",
-            onTap: () => setState(() => currentPane = 2),
+            onTap: () {
+              setState(() => currentPane = 2);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _scrollToSelectedMode(scoreProvider);
+              });
+            },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
@@ -565,6 +589,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 300),
             child: ListView.separated(
+              controller: _gameModeScrollController,
               shrinkWrap: true,
               itemCount: availableModes.length,
               separatorBuilder: (context, index) =>
