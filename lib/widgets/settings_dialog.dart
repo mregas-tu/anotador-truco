@@ -744,8 +744,27 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                       divisions: scoreProvider.currentGameMode.totalPoints ~/ 5,
                       onChanged: scoreProvider.picaPicaEnabled 
                         ? (RangeValues values) {
-                            scoreProvider.setPicaPicaRange(
-                                values.start.round(), values.end.round());
+                            int start = values.start.round();
+                            int end = values.end.round();
+                            
+                            // Enforce 5 point minimum difference
+                            if (end - start < 5) {
+                              if (start != scoreProvider.picaPicaStart) {
+                                // Start was moved up
+                                start = end - 5;
+                              } else {
+                                // End was moved down
+                                end = start + 5;
+                              }
+                            }
+                            
+                            if (start < 0) start = 0;
+                            if (end > scoreProvider.currentGameMode.totalPoints) {
+                                end = scoreProvider.currentGameMode.totalPoints;
+                                if (end - start < 5) start = end - 5;
+                            }
+
+                            scoreProvider.setPicaPicaRange(start, end);
                           }
                         : null,
                     ),

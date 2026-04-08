@@ -619,12 +619,14 @@ class _MainScreenState extends State<MainScreen>
 
                     // Start Marker
                     int picaStart = scoreProvider.picaPicaStart;
-                    bool startInThisPhase = isBuenas ? picaStart >= milestone : picaStart < milestone;
+                    bool startInThisPhase = isBuenas ? picaStart >= milestone : picaStart <= milestone;
                     if (startInThisPhase && !anyoneReachedStart) {
                       int localStart = isBuenas ? picaStart - milestone : picaStart;
                       double top = (localStart / 5) * groupHeight;
+                      
                       picaMarkers.add(Positioned(
-                        top: top,
+                        top: (localStart == milestone) ? null : top,
+                        bottom: (localStart == milestone) ? -8 : null,
                         left: 0,
                         right: 0,
                         child: PicaPicaLine(
@@ -637,25 +639,34 @@ class _MainScreenState extends State<MainScreen>
 
                     // End Marker
                     int picaEnd = scoreProvider.picaPicaEnd;
-                    bool endInThisPhase = isBuenas ? picaEnd > milestone : picaEnd <= milestone;
+                    bool endInThisPhase = isBuenas ? picaEnd >= milestone : picaEnd <= milestone;
                     if (endInThisPhase && !anyoneReachedEnd) {
                       int localEnd = isBuenas ? picaEnd - milestone : picaEnd;
                       double top = (localEnd / 5) * groupHeight;
+                      final bool isSmallScreen = availableHeight < 500;
+
                       picaMarkers.add(Positioned(
-                        top: top,
+                        top: (localEnd == milestone) ? null : top,
+                        bottom: (localEnd == milestone) ? -8 : null,
                         left: 0,
                         right: 0,
                         child: PicaPicaLine(
                           label: "FIN PICA PICA",
                           color: scoreProvider.appTheme.cream,
                           backgroundColor: scoreProvider.appTheme.navy,
+                          fontSize: isSmallScreen ? 10 : 12,
+                          padding: isSmallScreen 
+                              ? const EdgeInsets.symmetric(horizontal: 8, vertical: 2)
+                              : const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         ),
                       ));
                     }
                   }
 
                   return Stack(
+                    clipBehavior: Clip.none,
                     children: [
+                      ...picaMarkers,
                       Column(
                         children: List.generate(numGroups, (groupIndex) {
                           int pointsInThisGroup =
@@ -695,7 +706,6 @@ class _MainScreenState extends State<MainScreen>
                           );
                         }),
                       ),
-                      ...picaMarkers,
                     ],
                   );
                 }),
