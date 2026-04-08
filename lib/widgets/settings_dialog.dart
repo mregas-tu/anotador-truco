@@ -629,6 +629,131 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               },
             ),
           ),
+
+          // Pica Pica Settings - Exclusive to 30 or 40 point modes
+          if (scoreProvider.currentGameMode.totalPoints >= 30) ...[
+            const SizedBox(height: 20),
+            Divider(color: scoreProvider.appTheme.slate.withValues(alpha: 0.2), height: 1),
+            const SizedBox(height: 12),
+            
+            // Checkbox Row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: InkWell(
+                onTap: () => scoreProvider.setPicaPicaEnabled(!scoreProvider.picaPicaEnabled),
+                child: Row(
+                  children: [
+                    // Customized Checkbox
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: scoreProvider.picaPicaEnabled 
+                              ? scoreProvider.appTheme.cream 
+                              : scoreProvider.appTheme.slate.withValues(alpha: 0.3),
+                          width: 2,
+                        ),
+                      ),
+                      child: scoreProvider.picaPicaEnabled 
+                        ? Center(
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: scoreProvider.appTheme.cream,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: scoreProvider.appTheme.cream.withValues(alpha: 0.5),
+                                    blurRadius: 4,
+                                    spreadRadius: 1,
+                                  )
+                                ],
+                              ),
+                            ),
+                          )
+                        : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      "PICA PICA",
+                      style: TextStyle(
+                        fontFamily: AppFonts.oswald,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: scoreProvider.picaPicaEnabled 
+                            ? scoreProvider.appTheme.cream 
+                            : scoreProvider.appTheme.slate.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Range Slider with labels
+            Opacity(
+              opacity: scoreProvider.picaPicaEnabled ? 1.0 : 0.3,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "PUNTOS: ${scoreProvider.picaPicaStart}",
+                          style: TextStyle(
+                            fontFamily: AppFonts.caminito,
+                            fontSize: 14,
+                            color: scoreProvider.appTheme.cream,
+                          ),
+                        ),
+                        Text(
+                          "HASTA: ${scoreProvider.picaPicaEnd}",
+                          style: TextStyle(
+                            fontFamily: AppFonts.caminito,
+                            fontSize: 14,
+                            color: scoreProvider.appTheme.cream,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: scoreProvider.appTheme.cream,
+                      inactiveTrackColor: scoreProvider.appTheme.slate.withValues(alpha: 0.1),
+                      thumbColor: scoreProvider.appTheme.cream,
+                      overlayColor: scoreProvider.appTheme.cream.withValues(alpha: 0.1),
+                      rangeThumbShape: const RoundRangeSliderThumbShape(enabledThumbRadius: 8),
+                      activeTickMarkColor: scoreProvider.appTheme.cream,
+                      inactiveTickMarkColor: Colors.transparent,
+                    ),
+                    child: RangeSlider(
+                      values: RangeValues(
+                        scoreProvider.picaPicaStart.toDouble(),
+                        scoreProvider.picaPicaEnd.toDouble(),
+                      ),
+                      min: 0,
+                      max: scoreProvider.currentGameMode.totalPoints.toDouble(),
+                      divisions: scoreProvider.currentGameMode.totalPoints ~/ 5,
+                      onChanged: scoreProvider.picaPicaEnabled 
+                        ? (RangeValues values) {
+                            scoreProvider.setPicaPicaRange(
+                                values.start.round(), values.end.round());
+                          }
+                        : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ],
     );

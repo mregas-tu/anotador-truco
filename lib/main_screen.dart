@@ -15,6 +15,7 @@ import 'widgets/settings_dialog.dart';
 import 'widgets/tutorial_overlay.dart';
 import 'widgets/game_dialogs.dart';
 import 'widgets/main_screen_widgets.dart';
+import 'widgets/pica_pica_widgets.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -603,45 +604,99 @@ class _MainScreenState extends State<MainScreen>
                       (scoreProvider.currentGameMode.milestone / 5).ceil();
                   double slotSize =
                       (availableHeight / numGroups).clamp(60.0, availableWidth);
+                  
+                  // Pica Pica Markers
+                  List<Widget> picaMarkers = [];
+                  if (scoreProvider.picaPicaEnabled && scoreProvider.currentGameMode.totalPoints >= 30) {
+                    final int milestone = scoreProvider.currentGameMode.milestone;
+                    final double groupHeight = availableHeight / numGroups;
+                    
+                    // Logic: markers disappear when ANY team reaches the score
+                    bool anyoneReachedStart = scoreProvider.nosotros >= scoreProvider.picaPicaStart || 
+                                             scoreProvider.ellos >= scoreProvider.picaPicaStart;
+                    bool anyoneReachedEnd = scoreProvider.nosotros >= scoreProvider.picaPicaEnd || 
+                                           scoreProvider.ellos >= scoreProvider.picaPicaEnd;
 
-                  return Column(
-                    children: List.generate(numGroups, (groupIndex) {
-                      int pointsInThisGroup =
-                          (totalPoints - (groupIndex * 5)).clamp(0, 5);
-
-                      if (pointsInThisGroup == 0 &&
-                          totalPoints < (groupIndex * 5)) {
-                        return const Expanded(child: SizedBox.shrink());
-                      }
-
-                      final int absoluteGroupIndex = isBuenas
-                          ? groupIndex +
-                              (scoreProvider.currentGameMode.milestone ~/ 5)
-                          : groupIndex;
-
-                      final bool isLastActiveGroup =
-                          (totalPoints / 5).ceil() - 1 == groupIndex;
-
-                      return Expanded(
-                        child: Center(
-                          child: pointsInThisGroup > 0
-                              ? ScoreGroup(
-                                  key: ValueKey(
-                                      "group_${isNosotros ? "n" : "e"}_$absoluteGroupIndex"),
-                                  points: pointsInThisGroup,
-                                  size: slotSize * 0.9,
-                                  team: teamKey,
-                                  isDragging: isDraggingBack,
-                                  groupIndex: absoluteGroupIndex,
-                                  animateLast: !isDraggingBack &&
-                                      isLastActiveGroup &&
-                                      scoreProvider.lastPointTeam == teamKey,
-                                  dropOffset: scoreProvider.lastDropOffset,
-                                )
-                              : const SizedBox.shrink(),
+                    // Start Marker
+                    int picaStart = scoreProvider.picaPicaStart;
+                    bool startInThisPhase = isBuenas ? picaStart >= milestone : picaStart < milestone;
+                    if (startInThisPhase && !anyoneReachedStart) {
+                      int localStart = isBuenas ? picaStart - milestone : picaStart;
+                      double top = (localStart / 5) * groupHeight;
+                      picaMarkers.add(Positioned(
+                        top: top,
+                        left: 0,
+                        right: 0,
+                        child: PicaPicaLine(
+                          label: "INICIO PICA PICA",
+                          color: scoreProvider.appTheme.cream,
+                          backgroundColor: scoreProvider.appTheme.navy,
                         ),
-                      );
-                    }),
+                      ));
+                    }
+
+                    // End Marker
+                    int picaEnd = scoreProvider.picaPicaEnd;
+                    bool endInThisPhase = isBuenas ? picaEnd > milestone : picaEnd <= milestone;
+                    if (endInThisPhase && !anyoneReachedEnd) {
+                      int localEnd = isBuenas ? picaEnd - milestone : picaEnd;
+                      double top = (localEnd / 5) * groupHeight;
+                      picaMarkers.add(Positioned(
+                        top: top,
+                        left: 0,
+                        right: 0,
+                        child: PicaPicaLine(
+                          label: "FIN PICA PICA",
+                          color: scoreProvider.appTheme.cream,
+                          backgroundColor: scoreProvider.appTheme.navy,
+                        ),
+                      ));
+                    }
+                  }
+
+                  return Stack(
+                    children: [
+                      Column(
+                        children: List.generate(numGroups, (groupIndex) {
+                          int pointsInThisGroup =
+                              (totalPoints - (groupIndex * 5)).clamp(0, 5);
+
+                          if (pointsInThisGroup == 0 &&
+                              totalPoints < (groupIndex * 5)) {
+                            return const Expanded(child: SizedBox.shrink());
+                          }
+
+                          final int absoluteGroupIndex = isBuenas
+                              ? groupIndex +
+                                  (scoreProvider.currentGameMode.milestone ~/ 5)
+                              : groupIndex;
+
+                          final bool isLastActiveGroup =
+                              (totalPoints / 5).ceil() - 1 == groupIndex;
+
+                          return Expanded(
+                            child: Center(
+                              child: pointsInThisGroup > 0
+                                  ? ScoreGroup(
+                                      key: ValueKey(
+                                          "group_${isNosotros ? "n" : "e"}_$absoluteGroupIndex"),
+                                      points: pointsInThisGroup,
+                                      size: slotSize * 0.9,
+                                      team: teamKey,
+                                      isDragging: isDraggingBack,
+                                      groupIndex: absoluteGroupIndex,
+                                      animateLast: !isDraggingBack &&
+                                          isLastActiveGroup &&
+                                          scoreProvider.lastPointTeam == teamKey,
+                                      dropOffset: scoreProvider.lastDropOffset,
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          );
+                        }),
+                      ),
+                      ...picaMarkers,
+                    ],
                   );
                 }),
               ),

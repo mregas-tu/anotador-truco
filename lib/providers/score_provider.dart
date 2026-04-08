@@ -141,6 +141,9 @@ class ScoreProvider with ChangeNotifier {
   ScoringMode _scoringMode = ScoringMode.drag;
   TrucoTheme _appTheme = TrucoTheme.navyTheme;
   bool _isMuted = false;
+  bool _picaPicaEnabled = false;
+  int _picaPicaStart = 5;
+  int _picaPicaEnd = 20;
   int _nosotros = 0;
   int _ellos = 0;
   String _nosotrosName = "NOSOTROS";
@@ -180,6 +183,9 @@ class ScoreProvider with ChangeNotifier {
   String get nosotrosName => _nosotrosName;
   String get ellosName => _ellosName;
   TrucoTheme get appTheme => _appTheme;
+  bool get picaPicaEnabled => _picaPicaEnabled;
+  int get picaPicaStart => _picaPicaStart;
+  int get picaPicaEnd => _picaPicaEnd;
   int get maxScore => _currentGameMode.totalPoints;
   String? get winner => _winner;
   int get totalRemainingMatchsticks => _totalRemainingMatchsticks;
@@ -222,6 +228,19 @@ class ScoreProvider with ChangeNotifier {
     if (isDragging) {
       if (!_isMuted) _audioService.playStick(); // Play lift sound
     }
+    notifyListeners();
+  }
+
+  void setPicaPicaEnabled(bool enabled) {
+    _picaPicaEnabled = enabled;
+    _saveCurrentSettings();
+    notifyListeners();
+  }
+
+  void setPicaPicaRange(int start, int end) {
+    _picaPicaStart = start;
+    _picaPicaEnd = end;
+    _saveCurrentSettings();
     notifyListeners();
   }
 
@@ -411,6 +430,15 @@ class ScoreProvider with ChangeNotifier {
 
   void setGameMode(GameMode mode) {
     _currentGameMode = mode;
+
+    // Validate Pica Pica range against new total points
+    if (_picaPicaEnd > _currentGameMode.totalPoints) {
+      _picaPicaEnd = _currentGameMode.totalPoints;
+    }
+    if (_picaPicaStart >= _picaPicaEnd) {
+      _picaPicaStart = (_picaPicaEnd - 5).clamp(0, _currentGameMode.totalPoints);
+    }
+
     triggerReset(keepNames: true);
     _saveCurrentSettings();
   }
@@ -466,6 +494,9 @@ class ScoreProvider with ChangeNotifier {
       scoringMode: _scoringMode.name,
       isMuted: _isMuted,
       pointType: _pointType.name,
+      picaPicaEnabled: _picaPicaEnabled,
+      picaPicaStart: _picaPicaStart,
+      picaPicaEnd: _picaPicaEnd,
     );
   }
 
@@ -523,6 +554,10 @@ class ScoreProvider with ChangeNotifier {
     if (data[PersistenceService.keyEllosName] != null) {
       _ellosName = data[PersistenceService.keyEllosName];
     }
+
+    _picaPicaEnabled = data[PersistenceService.keyPicaPicaEnabled] ?? false;
+    _picaPicaStart = data[PersistenceService.keyPicaPicaStart] ?? 5;
+    _picaPicaEnd = data[PersistenceService.keyPicaPicaEnd] ?? 20;
 
     notifyListeners();
   }

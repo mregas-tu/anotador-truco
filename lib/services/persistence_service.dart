@@ -14,7 +14,9 @@ class PersistenceService {
   static const String keyFinishedMalasEllos = 'finished_malas_ellos';
   static const String keyTutorialDone = 'tutorial_done';
   static const String keyPointType = 'point_type';
-
+  static const String keyPicaPicaEnabled = 'pica_pica_enabled';
+  static const String keyPicaPicaStart = 'pica_pica_start';
+  static const String keyPicaPicaEnd = 'pica_pica_end';
   static const String keyBeanPaletteIndex = 'bean_palette_index';
 
   static Future<bool> getTutorialDone() async {
@@ -61,6 +63,9 @@ class PersistenceService {
     required String scoringMode,
     required bool isMuted,
     required String pointType,
+    required bool picaPicaEnabled,
+    required int picaPicaStart,
+    required int picaPicaEnd,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(keyGameModeIndex, gameModeIndex);
@@ -70,6 +75,9 @@ class PersistenceService {
     await prefs.setString(keyScoringMode, scoringMode);
     await prefs.setBool(keyIsMuted, isMuted);
     await prefs.setString(keyPointType, pointType);
+    await prefs.setBool(keyPicaPicaEnabled, picaPicaEnabled);
+    await prefs.setInt(keyPicaPicaStart, picaPicaStart);
+    await prefs.setInt(keyPicaPicaEnd, picaPicaEnd);
   }
 
   static Future<Map<String, dynamic>> loadAll() async {
@@ -88,6 +96,9 @@ class PersistenceService {
       keyFinishedMalasNosotros: prefs.getBool(keyFinishedMalasNosotros),
       keyFinishedMalasEllos: prefs.getBool(keyFinishedMalasEllos),
       keyPointType: prefs.getString(keyPointType),
+      keyPicaPicaEnabled: prefs.getBool(keyPicaPicaEnabled),
+      keyPicaPicaStart: prefs.getInt(keyPicaPicaStart),
+      keyPicaPicaEnd: prefs.getInt(keyPicaPicaEnd),
     };
   }
 }
