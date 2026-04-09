@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
@@ -49,19 +50,52 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
 
   void _scrollToSelectedMode(ScoreProvider scoreProvider) {
     if (!mounted) return;
-    final index = availableModes.indexWhere(
-        (m) => m.label == scoreProvider.currentGameMode.label);
+    final index = availableModes
+        .indexWhere((m) => m.label == scoreProvider.currentGameMode.label);
     if (index != -1) {
       // ListTile height with internal padding is approx 48-52
-      const double itemHeight = 48.0; 
+      const double itemHeight = 48.0;
       final double offset = index * (itemHeight + 1.0);
-      
+
       _gameModeScrollController.animateTo(
         offset,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     }
+  }
+
+  Future<void> _sendFeedbackEmail() async {
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'martoregas@gmail.com', // EMAIL DEL USUARIO
+      query: _encodeQueryParameters(<String, String>{
+        'subject': 'Puro Truco - Dudas y sugerencias',
+      }),
+    );
+
+    try {
+      if (await canLaunchUrl(emailLaunchUri)) {
+        await launchUrl(emailLaunchUri);
+      } else {
+        throw 'Could not launch $emailLaunchUri';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content:
+                  Text('No se pudo abrir el correo: martoregas@gmail.com')),
+        );
+      }
+    }
+  }
+
+  String? _encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((MapEntry<String, String> e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
   }
 
   @override
@@ -71,9 +105,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     final bool isSmallScreen = MediaQuery.of(context).size.height < 700;
 
     String title = "AJUSTES";
-    if (currentPane == 1) title = "DISEÑO (FÓSFOROS)";
+    if (currentPane == 1) title = "DISEÑO";
     if (currentPane == 2) title = "MODO DE JUEGO";
-
+    if (currentPane == 3) title = "AYUDA Y SOPORTE";
+    if (currentPane == 4) title = "ACERCA DE";
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -185,6 +220,14 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
 
+          _buildMenuNavigationItem(
+            label: "AYUDA Y SOPORTE",
+            onTap: () => setState(() => currentPane = 3),
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+          ),
+          Divider(color: scoreProvider.appTheme.slate, height: 1),
+
           if (!premiumProvider.isPremium) ...[
             _buildMenuNavigationItem(
               label: "HACERME PREMIUM",
@@ -206,16 +249,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                     content: Text("Buscando compras anteriores...")));
               }
-            },
-            scoreProvider: scoreProvider,
-            isSmallScreen: isSmallScreen,
-          ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
-          _buildMenuNavigationItem(
-            label: "REPETIR TUTORIAL",
-            onTap: () {
-              Navigator.pop(context);
-              widget.onRepeatTutorial();
             },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
@@ -324,7 +357,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                                 child: Image.asset(theme.backgroundAsset!,
                                     fit: BoxFit.cover),
                               ),
-
                             if (isLocked)
                               Container(
                                 color: Colors.black45,
@@ -371,7 +403,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                 },
               ),
               const SizedBox(height: 24),
-
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text("TIPO DE FICHAS",
@@ -386,12 +417,14 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => scoreProvider.setPointType(PointType.matches),
+                      onTap: () =>
+                          scoreProvider.setPointType(PointType.matches),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
                           color: scoreProvider.pointType == PointType.matches
-                              ? scoreProvider.appTheme.cream.withValues(alpha: 0.2)
+                              ? scoreProvider.appTheme.cream
+                                  .withValues(alpha: 0.2)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
@@ -421,7 +454,8 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
                           color: scoreProvider.pointType == PointType.beans
-                              ? scoreProvider.appTheme.cream.withValues(alpha: 0.2)
+                              ? scoreProvider.appTheme.cream
+                                  .withValues(alpha: 0.2)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
@@ -445,12 +479,13 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                   ),
                 ],
               ),
-              
               const SizedBox(height: 24),
-
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: Text(scoreProvider.pointType == PointType.matches ? "DISEÑO DE FÓSFOROS" : "DISEÑO DE POROTOS",
+                child: Text(
+                    scoreProvider.pointType == PointType.matches
+                        ? "DISEÑO DE FÓSFOROS"
+                        : "DISEÑO DE POROTOS",
                     style: TextStyle(
                         fontFamily: AppFonts.oswald,
                         fontSize: 12,
@@ -458,7 +493,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         color: scoreProvider.appTheme.slate,
                         letterSpacing: 0)),
               ),
-              
               if (scoreProvider.pointType == PointType.matches)
                 Wrap(
                   spacing: isSmallScreen ? 12 : 16,
@@ -471,7 +505,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                     final isLocked = !premiumProvider.isPaletteUnlocked(index);
                     final timeLeft =
                         premiumProvider.getRemainingTime('palette_$index');
-  
+
                     return GestureDetector(
                       onTap: () {
                         if (isLocked) {
@@ -495,7 +529,8 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                                 ],
                               ),
                               border: Border.all(
-                                color: isSelected ? Colors.white : Colors.white10,
+                                color:
+                                    isSelected ? Colors.white : Colors.white10,
                                 width: isSelected ? 3 : 1,
                               ),
                               boxShadow: isSelected
@@ -510,11 +545,13 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                             ),
                           ),
                           if (isLocked)
-                            const Icon(Icons.lock, color: Colors.white, size: 18),
+                            const Icon(Icons.lock,
+                                color: Colors.white, size: 18),
                           if (timeLeft != null)
                             Container(
                               decoration: const BoxDecoration(
-                                  shape: BoxShape.circle, color: Colors.black45),
+                                  shape: BoxShape.circle,
+                                  color: Colors.black45),
                               padding: const EdgeInsets.all(4),
                               child: Text(
                                 timeLeft,
@@ -537,23 +574,34 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                   runSpacing: isSmallScreen ? 12 : 16,
                   children: availableBeanPalettes.asMap().entries.map((entry) {
                     final palette = entry.value;
-                    final isSelected = scoreProvider.currentBeanPalette.name == palette.name;
-                    
+                    final isSelected =
+                        scoreProvider.currentBeanPalette.name == palette.name;
+
                     Color getBeanPreviewColor(BeanType type) {
                       switch (type) {
-                        case BeanType.alubia: return const Color(0xFFF9F6F0);
-                        case BeanType.negro: return const Color(0xFF2E2E2E);
-                        case BeanType.fideo: return const Color(0xFF8B0000);
-                        case BeanType.pinto: return const Color(0xFFD2B48C);
-                        case BeanType.manteca: return const Color(0xFFEBEBD3);
-                        case BeanType.bandera: return const Color(0xFF5A1A40);
-                        case BeanType.cisne: return const Color(0xFFF9F6F0);
-                        case BeanType.borlotto: return const Color(0xFFCBA37E);
-                        case BeanType.magnum: return const Color(0xFF4B5121);
-                        case BeanType.frutilla: return const Color(0xFF9E2A2B);
+                        case BeanType.alubia:
+                          return const Color(0xFFF9F6F0);
+                        case BeanType.negro:
+                          return const Color(0xFF2E2E2E);
+                        case BeanType.fideo:
+                          return const Color(0xFF8B0000);
+                        case BeanType.pinto:
+                          return const Color(0xFFD2B48C);
+                        case BeanType.manteca:
+                          return const Color(0xFFEBEBD3);
+                        case BeanType.bandera:
+                          return const Color(0xFF5A1A40);
+                        case BeanType.cisne:
+                          return const Color(0xFFF9F6F0);
+                        case BeanType.borlotto:
+                          return const Color(0xFFCBA37E);
+                        case BeanType.magnum:
+                          return const Color(0xFF4B5121);
+                        case BeanType.frutilla:
+                          return const Color(0xFF9E2A2B);
                       }
                     }
-                    
+
                     return GestureDetector(
                       onTap: () {
                         scoreProvider.setBeanPalette(palette);
@@ -633,14 +681,17 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           // Pica Pica Settings - Exclusive to 30 or 40 point modes
           if (scoreProvider.currentGameMode.totalPoints >= 30) ...[
             const SizedBox(height: 20),
-            Divider(color: scoreProvider.appTheme.slate.withValues(alpha: 0.2), height: 1),
+            Divider(
+                color: scoreProvider.appTheme.slate.withValues(alpha: 0.2),
+                height: 1),
             const SizedBox(height: 12),
-            
+
             // Checkbox Row
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: InkWell(
-                onTap: () => scoreProvider.setPicaPicaEnabled(!scoreProvider.picaPicaEnabled),
+                onTap: () => scoreProvider
+                    .setPicaPicaEnabled(!scoreProvider.picaPicaEnabled),
                 child: Row(
                   children: [
                     // Customized Checkbox
@@ -650,31 +701,33 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: scoreProvider.picaPicaEnabled 
-                              ? scoreProvider.appTheme.cream 
-                              : scoreProvider.appTheme.slate.withValues(alpha: 0.3),
+                          color: scoreProvider.picaPicaEnabled
+                              ? scoreProvider.appTheme.cream
+                              : scoreProvider.appTheme.slate
+                                  .withValues(alpha: 0.3),
                           width: 2,
                         ),
                       ),
-                      child: scoreProvider.picaPicaEnabled 
-                        ? Center(
-                            child: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: scoreProvider.appTheme.cream,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: scoreProvider.appTheme.cream.withValues(alpha: 0.5),
-                                    blurRadius: 4,
-                                    spreadRadius: 1,
-                                  )
-                                ],
+                      child: scoreProvider.picaPicaEnabled
+                          ? Center(
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: scoreProvider.appTheme.cream,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: scoreProvider.appTheme.cream
+                                          .withValues(alpha: 0.5),
+                                      blurRadius: 4,
+                                      spreadRadius: 1,
+                                    )
+                                  ],
+                                ),
                               ),
-                            ),
-                          )
-                        : null,
+                            )
+                          : null,
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -683,9 +736,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         fontFamily: AppFonts.oswald,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: scoreProvider.picaPicaEnabled 
-                            ? scoreProvider.appTheme.cream 
-                            : scoreProvider.appTheme.slate.withValues(alpha: 0.5),
+                        color: scoreProvider.picaPicaEnabled
+                            ? scoreProvider.appTheme.cream
+                            : scoreProvider.appTheme.slate
+                                .withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -727,10 +781,13 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                   SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       activeTrackColor: scoreProvider.appTheme.cream,
-                      inactiveTrackColor: scoreProvider.appTheme.slate.withValues(alpha: 0.1),
+                      inactiveTrackColor:
+                          scoreProvider.appTheme.slate.withValues(alpha: 0.1),
                       thumbColor: scoreProvider.appTheme.cream,
-                      overlayColor: scoreProvider.appTheme.cream.withValues(alpha: 0.1),
-                      rangeThumbShape: const RoundRangeSliderThumbShape(enabledThumbRadius: 8),
+                      overlayColor:
+                          scoreProvider.appTheme.cream.withValues(alpha: 0.1),
+                      rangeThumbShape: const RoundRangeSliderThumbShape(
+                          enabledThumbRadius: 8),
                       activeTickMarkColor: scoreProvider.appTheme.cream,
                       inactiveTickMarkColor: Colors.transparent,
                     ),
@@ -742,37 +799,107 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                       min: 0,
                       max: scoreProvider.currentGameMode.totalPoints.toDouble(),
                       divisions: scoreProvider.currentGameMode.totalPoints ~/ 5,
-                      onChanged: scoreProvider.picaPicaEnabled 
-                        ? (RangeValues values) {
-                            int start = values.start.round();
-                            int end = values.end.round();
-                            
-                            // Enforce 5 point minimum difference
-                            if (end - start < 5) {
-                              if (start != scoreProvider.picaPicaStart) {
-                                // Start was moved up
-                                start = end - 5;
-                              } else {
-                                // End was moved down
-                                end = start + 5;
+                      onChanged: scoreProvider.picaPicaEnabled
+                          ? (RangeValues values) {
+                              int start = values.start.round();
+                              int end = values.end.round();
+
+                              // Enforce 5 point minimum difference
+                              if (end - start < 5) {
+                                if (start != scoreProvider.picaPicaStart) {
+                                  // Start was moved up
+                                  start = end - 5;
+                                } else {
+                                  // End was moved down
+                                  end = start + 5;
+                                }
                               }
-                            }
-                            
-                            if (start < 0) start = 0;
-                            if (end > scoreProvider.currentGameMode.totalPoints) {
+
+                              if (start < 0) start = 0;
+                              if (end >
+                                  scoreProvider.currentGameMode.totalPoints) {
                                 end = scoreProvider.currentGameMode.totalPoints;
                                 if (end - start < 5) start = end - 5;
-                            }
+                              }
 
-                            scoreProvider.setPicaPicaRange(start, end);
-                          }
-                        : null,
+                              scoreProvider.setPicaPicaRange(start, end);
+                            }
+                          : null,
                     ),
                   ),
                 ],
               ),
             ),
           ],
+        ] else if (currentPane == 3) ...[
+          // --- PANE 3: HELP & SUPPORT ---
+          _buildMenuNavigationItem(
+            label: "REPETIR TUTORIAL",
+            onTap: () {
+              Navigator.pop(context);
+              widget.onRepeatTutorial();
+            },
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+          ),
+          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          _buildMenuNavigationItem(
+            label: "DUDAS Y SUGERENCIAS",
+            onTap: _sendFeedbackEmail,
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+          ),
+          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          _buildMenuNavigationItem(
+            label: "ACERCA DE",
+            onTap: () => setState(() => currentPane = 4),
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+          ),
+          Divider(color: scoreProvider.appTheme.slate, height: 1),
+        ] else if (currentPane == 4) ...[
+          // --- PANE 4: ABOUT ---
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              children: [
+                Image.asset(
+                  'assets/images/about.png',
+                  height: 200,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 20), // Standarized to 20
+                Text(
+                  "Versión 1.1.4",
+                  style: TextStyle(
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 14,
+                    color: scoreProvider.appTheme.slate,
+                  ),
+                ),
+                const SizedBox(height: 20), // Standarized to 20
+                Text(
+                  "Falta envido y truco. La forma más práctica de anotar los puntos en cada asado.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 16,
+                    color: scoreProvider.appTheme.cream,
+                  ),
+                ),
+                const SizedBox(height: 20), // Standarized to 20
+                Text(
+                  "Desarrollado con ❤️ en Argentina",
+                  style: TextStyle(
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: scoreProvider.appTheme.slate,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ],
     );

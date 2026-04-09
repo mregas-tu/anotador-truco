@@ -44,6 +44,7 @@ dependencies:
   in_app_purchase: ^3.2.0
   firebase_core: ^3.1.1
   firebase_analytics: ^11.2.0
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -104,6 +105,7 @@ flutter:
     - assets/images/share_icon.svg
     - assets/images/undo_icon.svg
     - assets/images/plate.svg
+    - assets/images/about.png
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
