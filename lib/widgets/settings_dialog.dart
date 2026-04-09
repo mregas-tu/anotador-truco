@@ -844,7 +844,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
-            label: "DUDAS Y SUGERENCIAS",
+            label: "ESCRIBINOS",
             onTap: _sendFeedbackEmail,
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
