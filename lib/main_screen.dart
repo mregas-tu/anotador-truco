@@ -538,181 +538,198 @@ class _MainScreenState extends State<MainScreen>
       {bool highlight = false}) {
     final String teamKey = isNosotros ? "nosotros" : "ellos";
 
-    return Padding(
-      padding: EdgeInsets.only(
-        right: isNosotros ? scoreProvider.appTheme.nosotrosMarginRight : 0.0,
-        left: !isNosotros ? scoreProvider.appTheme.ellosMarginLeft : 0.0,
-      ),
-      child: Container(
-        color: highlight ? Colors.white.withOpacity(0.05) : Colors.transparent,
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: () => _showNameEditDialog(context, teamKey, name),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                width: double.infinity,
-                color: Colors.transparent, // Expand hit area
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    name,
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontFamily: AppFonts.oswald,
-                      fontSize: 20,
-                      color: scoreProvider.appTheme.slate,
-                      letterSpacing: 0,
-                      fontWeight: FontWeight.bold,
-                      shadows: scoreProvider.appTheme.teamNameShadow,
+    return Container(
+      color: highlight ? Colors.white.withOpacity(0.05) : Colors.transparent,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 1. Header with theme margin
+          Padding(
+            padding: EdgeInsets.only(
+              right: isNosotros ? scoreProvider.appTheme.nosotrosMarginRight : 0.0,
+              left: !isNosotros ? scoreProvider.appTheme.ellosMarginLeft : 0.0,
+            ),
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: () => _showNameEditDialog(context, teamKey, name),
+                  child: Container(
+                    height: 30, // Fixed height to prevent shifting when text scales
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    width: double.infinity,
+                    color: Colors.transparent,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.center,
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontFamily: AppFonts.oswald,
+                          fontSize: 20,
+                          color: scoreProvider.appTheme.slate,
+                          letterSpacing: 0,
+                          fontWeight: FontWeight.bold,
+                          shadows: scoreProvider.appTheme.teamNameShadow,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                Text(
+                  totalPoints.toString().padLeft(2, '0'),
+                  style: TextStyle(
+                    fontFamily: AppFonts.caminito,
+                    fontSize: 32,
+                    color: scoreProvider.appTheme.teamScoreColor,
+                    shadows: scoreProvider.appTheme.teamNameShadow,
+                  ),
+                ),
+                Text(
+                  scoreProvider.getLabel(teamKey),
+                  style: TextStyle(
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 16,
+                    color: isBuenas
+                        ? scoreProvider.appTheme.buenas
+                        : scoreProvider.appTheme.malas,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
             ),
+          ),
 
-            Text(
-              totalPoints.toString().padLeft(2, '0'),
-              style: TextStyle(
-                fontFamily: AppFonts.caminito,
-                fontSize: 32,
-                color: scoreProvider.appTheme.teamScoreColor,
-                shadows: scoreProvider.appTheme.teamNameShadow,
-              ),
-            ),
+          // 2. Scoring Area
+          Expanded(
+            child: LayoutBuilder(builder: (context, constraints) {
+              double availableHeight = constraints.maxHeight;
+              double availableWidth = constraints.maxWidth;
+              final int numGroups =
+                  (scoreProvider.currentGameMode.milestone / 5).ceil();
+              
+              // We calculate slotSize based on the width MINUS the margin, 
+              // to keep the sticks exactly the same size and position as before.
+              final double effectiveWidth = availableWidth - 
+                  (isNosotros ? scoreProvider.appTheme.nosotrosMarginRight : scoreProvider.appTheme.ellosMarginLeft);
+              
+              double slotSize =
+                  (availableHeight / numGroups).clamp(60.0, effectiveWidth);
+              
+              // Pica Pica Markers
+              List<Widget> picaMarkers = [];
+              if (scoreProvider.picaPicaEnabled && scoreProvider.currentGameMode.totalPoints >= 30) {
+                final int milestone = scoreProvider.currentGameMode.milestone;
+                final double groupHeight = availableHeight / numGroups;
+                
+                bool anyoneReachedStart = scoreProvider.nosotros >= scoreProvider.picaPicaStart || 
+                                         scoreProvider.ellos >= scoreProvider.picaPicaStart;
+                bool anyoneReachedEnd = scoreProvider.nosotros >= scoreProvider.picaPicaEnd || 
+                                       scoreProvider.ellos >= scoreProvider.picaPicaEnd;
 
-            // Status Label (Buenas/Malas)
-            Text(
-              scoreProvider.getLabel(teamKey),
-              style: TextStyle(
-                fontFamily: AppFonts.oswald,
-                fontSize: 16,
-                color: isBuenas
-                    ? scoreProvider.appTheme.buenas
-                    : scoreProvider.appTheme.malas,
-                letterSpacing: 0,
-              ),
-            ),
-
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.zero,
-                child: LayoutBuilder(builder: (context, constraints) {
-                  double availableHeight = constraints.maxHeight;
-                  double availableWidth = constraints.maxWidth;
-                  final int numGroups =
-                      (scoreProvider.currentGameMode.milestone / 5).ceil();
-                  double slotSize =
-                      (availableHeight / numGroups).clamp(60.0, availableWidth);
+                // Start Marker
+                int picaStart = scoreProvider.picaPicaStart;
+                bool startInThisPhase = isBuenas ? picaStart >= milestone : picaStart <= milestone;
+                if (startInThisPhase && !anyoneReachedStart) {
+                  int localStart = isBuenas ? picaStart - milestone : picaStart;
+                  double top = (localStart / 5) * groupHeight;
                   
-                  // Pica Pica Markers
-                  List<Widget> picaMarkers = [];
-                  if (scoreProvider.picaPicaEnabled && scoreProvider.currentGameMode.totalPoints >= 30) {
-                    final int milestone = scoreProvider.currentGameMode.milestone;
-                    final double groupHeight = availableHeight / numGroups;
-                    
-                    // Logic: markers disappear when ANY team reaches the score
-                    bool anyoneReachedStart = scoreProvider.nosotros >= scoreProvider.picaPicaStart || 
-                                             scoreProvider.ellos >= scoreProvider.picaPicaStart;
-                    bool anyoneReachedEnd = scoreProvider.nosotros >= scoreProvider.picaPicaEnd || 
-                                           scoreProvider.ellos >= scoreProvider.picaPicaEnd;
+                  picaMarkers.add(Positioned(
+                    top: (localStart == milestone) ? null : top,
+                    bottom: (localStart == milestone) ? -8 : null,
+                    left: 0,
+                    right: 0,
+                    child: PicaPicaLine(
+                      label: "INICIO PICA PICA",
+                      color: scoreProvider.appTheme.cream,
+                      backgroundColor: scoreProvider.appTheme.navy,
+                    ),
+                  ));
+                }
 
-                    // Start Marker
-                    int picaStart = scoreProvider.picaPicaStart;
-                    bool startInThisPhase = isBuenas ? picaStart >= milestone : picaStart <= milestone;
-                    if (startInThisPhase && !anyoneReachedStart) {
-                      int localStart = isBuenas ? picaStart - milestone : picaStart;
-                      double top = (localStart / 5) * groupHeight;
-                      
-                      picaMarkers.add(Positioned(
-                        top: (localStart == milestone) ? null : top,
-                        bottom: (localStart == milestone) ? -8 : null,
-                        left: 0,
-                        right: 0,
-                        child: PicaPicaLine(
-                          label: "INICIO PICA PICA",
-                          color: scoreProvider.appTheme.cream,
-                          backgroundColor: scoreProvider.appTheme.navy,
-                        ),
-                      ));
-                    }
+                // End Marker
+                int picaEnd = scoreProvider.picaPicaEnd;
+                bool endInThisPhase = isBuenas ? picaEnd >= milestone : picaEnd <= milestone;
+                if (endInThisPhase && !anyoneReachedEnd) {
+                  int localEnd = isBuenas ? picaEnd - milestone : picaEnd;
+                  double top = (localEnd / 5) * groupHeight;
+                  final bool isSmallScreen = availableHeight < 500;
 
-                    // End Marker
-                    int picaEnd = scoreProvider.picaPicaEnd;
-                    bool endInThisPhase = isBuenas ? picaEnd >= milestone : picaEnd <= milestone;
-                    if (endInThisPhase && !anyoneReachedEnd) {
-                      int localEnd = isBuenas ? picaEnd - milestone : picaEnd;
-                      double top = (localEnd / 5) * groupHeight;
-                      final bool isSmallScreen = availableHeight < 500;
+                  picaMarkers.add(Positioned(
+                    top: (localEnd == milestone) ? null : top,
+                    bottom: (localEnd == milestone) ? -8 : null,
+                    left: 0,
+                    right: 0,
+                    child: PicaPicaLine(
+                      label: "FIN PICA PICA",
+                      color: scoreProvider.appTheme.cream,
+                      backgroundColor: scoreProvider.appTheme.navy,
+                      fontSize: isSmallScreen ? 10 : 12,
+                      padding: isSmallScreen 
+                          ? const EdgeInsets.symmetric(horizontal: 8, vertical: 2)
+                          : const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    ),
+                  ));
+                }
+              }
 
-                      picaMarkers.add(Positioned(
-                        top: (localEnd == milestone) ? null : top,
-                        bottom: (localEnd == milestone) ? -8 : null,
-                        left: 0,
-                        right: 0,
-                        child: PicaPicaLine(
-                          label: "FIN PICA PICA",
-                          color: scoreProvider.appTheme.cream,
-                          backgroundColor: scoreProvider.appTheme.navy,
-                          fontSize: isSmallScreen ? 10 : 12,
-                          padding: isSmallScreen 
-                              ? const EdgeInsets.symmetric(horizontal: 8, vertical: 2)
-                              : const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        ),
-                      ));
-                    }
-                  }
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Full width for Pica Pica
+                  ...picaMarkers,
+                  
+                  // Constrained width for Sticks (keeps them in place)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      right: isNosotros ? scoreProvider.appTheme.nosotrosMarginRight : 0.0,
+                      left: !isNosotros ? scoreProvider.appTheme.ellosMarginLeft : 0.0,
+                    ),
+                    child: Column(
+                      children: List.generate(numGroups, (groupIndex) {
+                        int pointsInThisGroup =
+                            (totalPoints - (groupIndex * 5)).clamp(0, 5);
 
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      ...picaMarkers,
-                      Column(
-                        children: List.generate(numGroups, (groupIndex) {
-                          int pointsInThisGroup =
-                              (totalPoints - (groupIndex * 5)).clamp(0, 5);
+                        if (pointsInThisGroup == 0 &&
+                            totalPoints < (groupIndex * 5)) {
+                          return const Expanded(child: SizedBox.shrink());
+                        }
 
-                          if (pointsInThisGroup == 0 &&
-                              totalPoints < (groupIndex * 5)) {
-                            return const Expanded(child: SizedBox.shrink());
-                          }
+                        final int absoluteGroupIndex = isBuenas
+                            ? groupIndex +
+                                (scoreProvider.currentGameMode.milestone ~/ 5)
+                            : groupIndex;
 
-                          final int absoluteGroupIndex = isBuenas
-                              ? groupIndex +
-                                  (scoreProvider.currentGameMode.milestone ~/ 5)
-                              : groupIndex;
+                        final bool isLastActiveGroup =
+                            (totalPoints / 5).ceil() - 1 == groupIndex;
 
-                          final bool isLastActiveGroup =
-                              (totalPoints / 5).ceil() - 1 == groupIndex;
-
-                          return Expanded(
-                            child: Center(
-                              child: pointsInThisGroup > 0
-                                  ? ScoreGroup(
-                                      key: ValueKey(
-                                          "group_${isNosotros ? "n" : "e"}_$absoluteGroupIndex"),
-                                      points: pointsInThisGroup,
-                                      size: slotSize * 0.9,
-                                      team: teamKey,
-                                      isDragging: isDraggingBack,
-                                      groupIndex: absoluteGroupIndex,
-                                      animateLast: !isDraggingBack &&
-                                          isLastActiveGroup &&
-                                          scoreProvider.lastPointTeam == teamKey,
-                                      dropOffset: scoreProvider.lastDropOffset,
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          );
-                        }),
-                      ),
-                    ],
-                  );
-                }),
-              ),
-            ),
-          ],
-        ),
+                        return Expanded(
+                          child: Center(
+                            child: pointsInThisGroup > 0
+                                ? ScoreGroup(
+                                    key: ValueKey(
+                                        "group_${isNosotros ? "n" : "e"}_$absoluteGroupIndex"),
+                                    points: pointsInThisGroup,
+                                    size: slotSize * 0.9,
+                                    team: teamKey,
+                                    isDragging: isDraggingBack,
+                                    groupIndex: absoluteGroupIndex,
+                                    animateLast: !isDraggingBack &&
+                                        isLastActiveGroup &&
+                                        scoreProvider.lastPointTeam == teamKey,
+                                    dropOffset: scoreProvider.lastDropOffset,
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+        ],
       ),
     );
   }

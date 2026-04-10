@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/ad_service.dart';
 import 'services/analytics_service.dart';
+import 'services/version_checker.dart';
 import 'providers/score_provider.dart';
 import 'providers/premium_provider.dart';
+import 'widgets/force_update_screen.dart';
 import 'main_screen.dart';
 
 void main() async {
@@ -14,6 +16,10 @@ void main() async {
   await Firebase.initializeApp();
   await AnalyticsService.logAppOpen();
   
+  // Nuevo: Chequeo de versión
+  final versionChecker = VersionChecker();
+  await versionChecker.checkVersion();
+
   await AdService.initialize();
   AdService.loadInterstitial();
   AdService.loadRewardedAd();
@@ -24,13 +30,23 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ScoreProvider()),
         ChangeNotifierProvider(create: (_) => PremiumProvider()),
       ],
-      child: const TrucoProApp(),
+      child: TrucoProApp(
+        isUpdateRequired: versionChecker.isUpdateRequired,
+        storeUrl: versionChecker.storeUrl ?? '',
+      ),
     ),
   );
 }
 
 class TrucoProApp extends StatelessWidget {
-  const TrucoProApp({super.key});
+  final bool isUpdateRequired;
+  final String storeUrl;
+
+  const TrucoProApp({
+    super.key, 
+    required this.isUpdateRequired,
+    required this.storeUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +58,9 @@ class TrucoProApp extends StatelessWidget {
         primarySwatch: Colors.brown,
         useMaterial3: true,
       ),
-      home: const MainScreen(),
+      home: isUpdateRequired 
+          ? ForceUpdateScreen(storeUrl: storeUrl) 
+          : const MainScreen(),
     );
   }
 }

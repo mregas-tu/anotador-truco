@@ -10,6 +10,7 @@ class PrimaryButton extends StatelessWidget {
   final double? width;
   final double height;
   final String? iconAsset;
+  final double fontSize;
 
   const PrimaryButton({
     super.key,
@@ -18,6 +19,7 @@ class PrimaryButton extends StatelessWidget {
     this.width,
     this.height = 40.0,
     this.iconAsset,
+    this.fontSize = 14.0,
   });
 
   @override
@@ -51,9 +53,9 @@ class PrimaryButton extends StatelessWidget {
               ],
               Text(
                 text.toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: AppFonts.oswald,
-                  fontSize: 14,
+                  fontSize: fontSize,
                 ),
               ),
             ],
