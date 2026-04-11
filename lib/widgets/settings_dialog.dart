@@ -109,6 +109,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     if (currentPane == 2) title = "MODO DE JUEGO";
     if (currentPane == 3) title = "AYUDA Y SOPORTE";
     if (currentPane == 4) title = "ACERCA DE";
+    if (currentPane == 5) title = "VALORES Y SEÑAS";
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -122,7 +123,15 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               Positioned(
                 left: 0,
                 child: IconButton(
-                  onPressed: () => setState(() => currentPane = 0),
+                  onPressed: () {
+                    setState(() {
+                      if (currentPane == 4 || currentPane == 5) {
+                        currentPane = 3;
+                      } else {
+                        currentPane = 0;
+                      }
+                    });
+                  },
                   icon: Icon(Icons.arrow_back,
                       color: scoreProvider.appTheme.cream),
                   padding: EdgeInsets.zero,
@@ -156,6 +165,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           // --- PANE 0: MAIN SETTINGS ---
           _buildMenuActionItem(
             label: "SONIDO",
+            iconAsset: 'assets/images/menu_icons/sound_icon.svg',
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
             trailing: Switch(
@@ -172,6 +182,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuActionItem(
             label: "MODO DE CONTROL",
+            iconAsset: 'assets/images/menu_icons/control_mode_icon.svg',
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
             trailing: TextButton(
@@ -202,6 +213,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
             label: "MODO DE JUEGO",
+            iconAsset: 'assets/images/menu_icons/game_mode_icon.svg',
             onTap: () {
               setState(() => currentPane = 2);
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -214,23 +226,24 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
             label: "DISEÑO",
+            iconAsset: 'assets/images/menu_icons/design_icon.svg',
             onTap: () => setState(() => currentPane = 1),
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
-
           _buildMenuNavigationItem(
             label: "AYUDA Y SOPORTE",
+            iconAsset: 'assets/images/menu_icons/support_icon.svg',
             onTap: () => setState(() => currentPane = 3),
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
-
           if (!premiumProvider.isPremium) ...[
             _buildMenuNavigationItem(
               label: "HACERME PREMIUM",
+              iconAsset: 'assets/images/menu_icons/premium_icon.svg',
               onTap: () {
                 Navigator.pop(context);
                 premiumProvider.buyPremium();
@@ -240,9 +253,9 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             ),
             Divider(color: scoreProvider.appTheme.slate, height: 1),
           ],
-
           _buildMenuNavigationItem(
             label: "RESTAURAR COMPRAS",
+            iconAsset: 'assets/images/menu_icons/restauring_icon.svg',
             onTap: () async {
               await premiumProvider.restorePurchases();
               if (mounted) {
@@ -832,6 +845,13 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             ),
           ],
         ] else if (currentPane == 3) ...[
+          _buildMenuNavigationItem(
+            label: "VALORES Y SEÑAS",
+            onTap: () => setState(() => currentPane = 5),
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+          ),
+          Divider(color: scoreProvider.appTheme.slate, height: 1),
           // --- PANE 3: HELP & SUPPORT ---
           _buildMenuNavigationItem(
             label: "REPETIR TUTORIAL",
@@ -900,6 +920,84 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               ],
             ),
           ),
+        ] else if (currentPane == 5) ...[
+          // --- PANE 5: CARD VALUES & SIGNS ---
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 450),
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: trucoCardHierarchy.length,
+              itemBuilder: (context, index) {
+                final item = trucoCardHierarchy[index];
+                final cardGroup = item['assets'] as List<String>;
+                final signAsset = item['sign'] as String?;
+
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(
+                          left: 32, right: 32, top: 4, bottom: 4),
+                      child: Row(
+                        children: [
+                          // Cards (Left)
+                          SizedBox(
+                            height: 66,
+                            width: 100,
+                            child: Stack(
+                              children: cardGroup.asMap().entries.map((entry) {
+                                final idx = entry.key;
+                                final asset = entry.value;
+                                return Positioned(
+                                  left: idx * 16.0,
+                                  child: _buildSmallCard(asset),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          const Spacer(),
+                          if (signAsset != null) ...[
+                            // Sign (Right)
+                            Column(
+                              children: [
+                                Container(
+                                  width: 75,
+                                  height: 75,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withOpacity(0.05),
+                                    border: Border.all(
+                                        color: Colors.white.withOpacity(0.1)),
+                                  ),
+                                  child: ClipOval(
+                                    child: Image.asset(
+                                      signAsset,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  item['signName'] ?? "",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: AppFonts.oswald,
+                                    fontSize: 10,
+                                    color: scoreProvider.appTheme.slate,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ] else
+                            const SizedBox(width: 75), // Mantener alineación
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
         ],
       ],
     );
@@ -907,6 +1005,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
 
   Widget _buildMenuActionItem({
     required String label,
+    String? iconAsset,
     required Widget trailing,
     required ScoreProvider scoreProvider,
     required bool isSmallScreen,
@@ -916,13 +1015,30 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
       visualDensity:
           isSmallScreen ? VisualDensity.compact : VisualDensity.standard,
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontFamily: AppFonts.oswald,
-          fontSize: 16,
-          color: scoreProvider.appTheme.cream,
-        ),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (iconAsset != null) ...[
+            SvgPicture.asset(
+              iconAsset,
+              height: 20,
+              width: 20,
+              colorFilter: ColorFilter.mode(
+                scoreProvider.appTheme.cream,
+                BlendMode.srcIn,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppFonts.oswald,
+              fontSize: 16,
+              color: scoreProvider.appTheme.cream,
+            ),
+          ),
+        ],
       ),
       trailing: trailing,
     );
@@ -930,6 +1046,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
 
   Widget _buildMenuNavigationItem({
     required String label,
+    String? iconAsset,
     required VoidCallback onTap,
     required ScoreProvider scoreProvider,
     required bool isSmallScreen,
@@ -939,16 +1056,167 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
       visualDensity:
           isSmallScreen ? VisualDensity.compact : VisualDensity.standard,
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontFamily: AppFonts.oswald,
-          fontSize: 16,
-          color: scoreProvider.appTheme.cream,
-        ),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (iconAsset != null) ...[
+            SvgPicture.asset(
+              iconAsset,
+              height: 20,
+              width: 20,
+              colorFilter: ColorFilter.mode(
+                scoreProvider.appTheme.cream,
+                BlendMode.srcIn,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppFonts.oswald,
+              fontSize: 16,
+              color: scoreProvider.appTheme.cream,
+            ),
+          ),
+        ],
       ),
       trailing: Icon(Icons.chevron_right, color: scoreProvider.appTheme.cream),
       onTap: onTap,
     );
   }
+
+  Widget _buildSmallCard(String asset) {
+    return Container(
+      width: 44,
+      height: 66,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 3,
+            offset: const Offset(1, 1),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(3),
+        child: Image.asset(
+          asset,
+          fit: BoxFit.fill,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: Colors.white12,
+            child: const Icon(Icons.error, color: Colors.white24, size: 16),
+          ),
+        ),
+      ),
+    );
+  }
 }
+
+final List<Map<String, dynamic>> trucoCardHierarchy = [
+  {
+    'assets': ['assets/images/cards/espada_1.png'],
+    'sign': 'assets/images/signs/1_espada_sign.png',
+    'signName': 'Levantar cejas'
+  },
+  {
+    'assets': ['assets/images/cards/basto_1.png'],
+    'sign': 'assets/images/signs/1_basto_sign.png',
+    'signName': 'Guiñar un ojo'
+  },
+  {
+    'assets': ['assets/images/cards/espada_7.png'],
+    'sign': 'assets/images/signs/7_espada_sign.png',
+    'signName': 'Boca a la derecha'
+  },
+  {
+    'assets': ['assets/images/cards/oro_7.png'],
+    'sign': 'assets/images/signs/7_oro_sign.png',
+    'signName': 'Boca a la izquierda'
+  },
+  {
+    'assets': [
+      'assets/images/cards/oro_3.png',
+      'assets/images/cards/copa_3.png',
+      'assets/images/cards/espada_3.png',
+      'assets/images/cards/basto_3.png'
+    ],
+    'sign': 'assets/images/signs/3_sign.png',
+    'signName': 'Morder el labio'
+  },
+  {
+    'assets': [
+      'assets/images/cards/oro_2.png',
+      'assets/images/cards/copa_2.png',
+      'assets/images/cards/espada_2.png',
+      'assets/images/cards/basto_2.png'
+    ],
+    'sign': 'assets/images/signs/2_sign.png',
+    'signName': 'Hacer pico / beso'
+  },
+  {
+    'assets': ['assets/images/cards/oro_1.png', 'assets/images/cards/copa_1.png'],
+    'sign': 'assets/images/signs/1_sign.png',
+    'signName': 'Abrir la boca'
+  },
+  {
+    'assets': [
+      'assets/images/cards/oro_12.png',
+      'assets/images/cards/copa_12.png',
+      'assets/images/cards/espada_12.png',
+      'assets/images/cards/basto_12.png'
+    ],
+    'sign': null
+  },
+  {
+    'assets': [
+      'assets/images/cards/oro_11.png',
+      'assets/images/cards/copa_11.png',
+      'assets/images/cards/espada_11.png',
+      'assets/images/cards/basto_11.png'
+    ],
+    'sign': null
+  },
+  {
+    'assets': [
+      'assets/images/cards/oro_10.png',
+      'assets/images/cards/copa_10.png',
+      'assets/images/cards/espada_10.png',
+      'assets/images/cards/basto_10.png'
+    ],
+    'sign': null
+  },
+  {
+    'assets': ['assets/images/cards/copa_7.png', 'assets/images/cards/basto_7.png'],
+    'sign': null
+  },
+  {
+    'assets': [
+      'assets/images/cards/oro_6.png',
+      'assets/images/cards/copa_6.png',
+      'assets/images/cards/espada_6.png',
+      'assets/images/cards/basto_6.png'
+    ],
+    'sign': null
+  },
+  {
+    'assets': [
+      'assets/images/cards/oro_5.png',
+      'assets/images/cards/copa_5.png',
+      'assets/images/cards/espada_5.png',
+      'assets/images/cards/basto_5.png'
+    ],
+    'sign': null
+  },
+  {
+    'assets': [
+      'assets/images/cards/oro_4.png',
+      'assets/images/cards/copa_4.png',
+      'assets/images/cards/espada_4.png',
+      'assets/images/cards/basto_4.png'
+    ],
+    'sign': null
+  },
+];

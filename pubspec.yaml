@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.4+15
+version: 1.1.5+16
 
 environment:
   sdk: '>=3.2.3 <4.0.0'
@@ -101,13 +101,17 @@ flutter:
     - assets/images/dibu.svg
     - assets/images/hand.svg
     - assets/images/wood.svg
-    - assets/sounds/stick.wav
+    - assets/sounds/stick.mp3
+    - assets/sounds/bean.wav
     - assets/sounds/clear.wav
     - assets/sounds/buenas.wav
     - assets/images/share_icon.svg
     - assets/images/undo_icon.svg
     - assets/images/plate.svg
     - assets/images/about.png
+    - assets/images/menu_icons/
+    - assets/images/cards/
+    - assets/images/signs/
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a

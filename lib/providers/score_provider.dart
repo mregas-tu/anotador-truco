@@ -226,7 +226,7 @@ class ScoreProvider with ChangeNotifier {
       _isDraggingBackEllos = isDragging;
     }
     if (isDragging) {
-      if (!_isMuted) _audioService.playStick(); // Play lift sound
+      if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans); // Play lift sound
     }
     notifyListeners();
   }
@@ -264,7 +264,7 @@ class ScoreProvider with ChangeNotifier {
     if (team == "nosotros") _isDraggingBackNosotros = false;
     else _isDraggingBackEllos = false;
     
-    _audioService.playStick(); // Play return/click sound
+    if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans); // Play return/click sound
     notifyListeners();
   }
 
@@ -306,9 +306,9 @@ class ScoreProvider with ChangeNotifier {
         _nosotrosFinishedMalas = true;
       } else if (_nosotros == _currentGameMode.totalPoints) {
         _winner = "nosotros";
-        if (!_isMuted) _audioService.playStick();
+        if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans);
       } else {
-        if (!_isMuted) _audioService.playStick();
+        if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans);
       }
       notifyListeners();
       _saveCurrentState();
@@ -340,9 +340,9 @@ class ScoreProvider with ChangeNotifier {
         _ellosFinishedMalas = true;
       } else if (_ellos == _currentGameMode.totalPoints) {
         _winner = "ellos";
-        if (!_isMuted) _audioService.playStick();
+        if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans);
       } else {
-        if (!_isMuted) _audioService.playStick();
+        if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans);
       }
       notifyListeners();
       _saveCurrentState();
@@ -418,7 +418,7 @@ class ScoreProvider with ChangeNotifier {
       removePointEllos();
     }
     
-    if (!_isMuted) _audioService.playStick();
+    if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans);
     notifyListeners();
   }
 

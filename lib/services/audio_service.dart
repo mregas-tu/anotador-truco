@@ -5,13 +5,14 @@ class AudioService {
   factory AudioService() => _instance;
   AudioService._internal();
 
-  final AudioPlayer _stickPlayer = AudioPlayer();
+  final AudioPlayer _markerPlayer = AudioPlayer();
   final AudioPlayer _clearPlayer = AudioPlayer();
   final AudioPlayer _milestonePlayer = AudioPlayer();
 
-  Future<void> playStick() async {
-    await _stickPlayer.stop();
-    await _stickPlayer.play(AssetSource('sounds/stick.wav'));
+  Future<void> playMarker(bool isBean) async {
+    await _markerPlayer.stop();
+    final String source = isBean ? 'sounds/bean.wav' : 'sounds/stick.mp3';
+    await _markerPlayer.play(AssetSource(source));
   }
 
   Future<void> playClear() async {
@@ -25,7 +26,7 @@ class AudioService {
   }
 
   void dispose() {
-    _stickPlayer.dispose();
+    _markerPlayer.dispose();
     _clearPlayer.dispose();
     _milestonePlayer.dispose();
   }
