@@ -115,148 +115,154 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ScoreProvider>(
-      builder: (context, scoreProvider, child) {
-        // Handle winner dialog
-        if (scoreProvider.winner != null) {
-          if (_lastWinnerShown != scoreProvider.winner) {
-            _lastWinnerShown = scoreProvider.winner;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _showWinnerDialog(context, scoreProvider);
-            });
-          }
-        } else {
-          _lastWinnerShown = null;
-        }
+    // Listen to theme changes separately (rare events)
+    final theme = context.select<ScoreProvider, TrucoTheme>((p) => p.appTheme);
 
-        return Scaffold(
-          resizeToAvoidBottomInset: false,
-          backgroundColor: scoreProvider.appTheme.navy,
-          body: Stack(
-            children: [
-              // 0. Global Background Image
-              if (scoreProvider.appTheme.backgroundAsset != null)
-                Positioned.fill(
-                  child: Image.asset(
-                    scoreProvider.appTheme.backgroundAsset!,
-                    fit: BoxFit.cover,
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      backgroundColor: theme.navy,
+      body: Stack(
+        children: [
+          // 0. Global Background Image (Now static!)
+          if (theme.backgroundAsset != null)
+            Positioned.fill(
+              child: Image.asset(
+                theme.backgroundAsset!,
+                fit: BoxFit.cover,
+              ),
+            ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+
+                // 1. Header (Static during points)
+                MainHeader(
+                  restartKey: _restartKey,
+                  settingsKey: _settingsKey,
+                  onRestart: () => _showResetConfirmationDialog(
+                      context, Provider.of<ScoreProvider>(context, listen: false)),
+                  onSettings: _showSettingsDialog,
+                ),
+
+                const SizedBox(height: 10),
+
+                // 2. Main Scoring Table (Granular Rebuilds)
+                Expanded(
+                  child: Stack(
+                    alignment: Alignment.topCenter,
+                    children: [
+                      Row(
+                        children: [
+                          _buildTeamSectionGranular(context, true, key: _nosotrosKey),
+                          _buildVerticalDivider(theme),
+                          _buildTeamSectionGranular(context, false, key: _ellosKey),
+                        ],
+                      ),
+
+                      // Floating Score Circle
+                      CenterScoreCircle(
+                        limitScoreKey: _limitScoreKey,
+                      ),
+                    ],
                   ),
                 ),
 
-              SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
+                const SizedBox(height: 10),
 
-                    // 1. Header (Buttons & Ornament Aligned)
-                    MainHeader(
-                      restartKey: _restartKey,
-                      settingsKey: _settingsKey,
-                      onRestart: () =>
-                          _showResetConfirmationDialog(context, scoreProvider),
-                      onSettings: _showSettingsDialog,
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    // 2. Main Scoring Table
-                    Expanded(
-                      child: Stack(
-                        alignment: Alignment.topCenter,
-                        children: [
-                          // Scoring Table (Background)
-                          Row(
-                            children: [
-                              _buildTeamSection(
-                                context,
-                                scoreProvider.nosotrosName,
-                                scoreProvider.nosotros,
-                                true,
-                                key: _nosotrosKey,
-                              ),
-                              _buildVerticalDivider(scoreProvider),
-                              _buildTeamSection(
-                                context,
-                                scoreProvider.ellosName,
-                                scoreProvider.ellos,
-                                false,
-                                key: _ellosKey,
-                              ),
-                            ],
+                // 4. Footer Ornament
+                if (theme.footerAsset != null)
+                  SvgPicture.asset(
+                    theme.footerAsset!,
+                    height: theme.footerHeight,
+                    colorFilter: theme.footerAsset!.contains('dibu')
+                        ? null
+                        : ColorFilter.mode(
+                            Colors.white.withOpacity(0.8),
+                            BlendMode.srcIn,
                           ),
+                  ),
 
-                          // Floating Score Circle (Top overlap)
-                          CenterScoreCircle(
-                            limitScoreKey: _limitScoreKey,
-                          ),
-                        ],
-                      ),
-                    ),
+                const SizedBox(height: 20),
 
-                    const SizedBox(height: 10),
-
-                    // 4. Footer Ornament
-                    if (scoreProvider.appTheme.footerAsset != null)
-                      SvgPicture.asset(
-                        scoreProvider.appTheme.footerAsset!,
-                        height: scoreProvider.appTheme.footerHeight,
-                        colorFilter:
-                            scoreProvider.appTheme.footerAsset!.contains('dibu')
-                                ? null
-                                : ColorFilter.mode(
-                                    Colors.white.withOpacity(0.8),
-                                    BlendMode.srcIn,
-                                  ),
-                      ),
-
-                    const SizedBox(height: 20),
-
-                    // 5. Matchstick Box
-                    _buildFooter(context, scoreProvider),
-
-                    const SizedBox(height: 20),
-                  ],
+                // 5. Matchstick Box
+                Consumer<ScoreProvider>(
+                  builder: (context, sp, _) => _buildFooter(context, sp),
                 ),
-              ),
 
-              // 6. GHOST HAND OVERLAY
-              if (_showGhostHand)
-                GhostHandOverlay(
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+
+          // 6. GHOST HAND OVERLAY
+          Consumer<ScoreProvider>(
+            builder: (context, sp, _) {
+              // Only show ghost hand logic if needed
+              if (_showGhostHand) {
+                return GhostHandOverlay(
                   controller: _handController,
                   moveAnimation: _handMoveAnimation,
                   opacityAnimation: _handOpacityAnimation,
                   scaleAnimation: _handScaleAnimation,
                   useScale: _tutorialStep >= 2,
-                ),
-
-              // 7. TUTORIAL NAVIGATION OVERLAY
-              if (_isTutorialActive)
-                TutorialOverlay(
-                  currentStep: _tutorialStep,
-                  onSkip: _skipTutorial,
-                  onNext: () {
-                    if (_tutorialStep < kTutorialSteps.length - 1) {
-                      setState(() {
-                        _tutorialStep++;
-                        _startGhostHandTutorial();
-                      });
-                    } else {
-                      _skipTutorial();
-                    }
-                  },
-                ),
-            ],
+                );
+              }
+              return const SizedBox.shrink();
+            },
           ),
-        );
-      },
+
+          // 7. TUTORIAL NAVIGATION OVERLAY
+          if (_isTutorialActive)
+            TutorialOverlay(
+              currentStep: _tutorialStep,
+              onSkip: _skipTutorial,
+              onNext: () {
+                if (_tutorialStep < kTutorialSteps.length - 1) {
+                  setState(() {
+                    _tutorialStep++;
+                    _startGhostHandTutorial();
+                  });
+                } else {
+                  _skipTutorial();
+                }
+              },
+            ),
+
+          // 8. WINNER DIALOG HANDLER (Invisible listener)
+          Consumer<ScoreProvider>(
+            builder: (context, sp, _) {
+              if (sp.winner != null) {
+                if (_lastWinnerShown != sp.winner) {
+                  _lastWinnerShown = sp.winner;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _showWinnerDialog(context, sp);
+                  });
+                }
+              } else {
+                _lastWinnerShown = null;
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildVerticalDivider(ScoreProvider scoreProvider) {
+  Widget _buildTeamSectionGranular(BuildContext context, bool isNosotros, {Key? key}) {
+    return Consumer<ScoreProvider>(
+      builder: (context, scoreProvider, _) => 
+          _buildTeamSection(context, isNosotros ? scoreProvider.nosotrosName : scoreProvider.ellosName, isNosotros ? scoreProvider.nosotros : scoreProvider.ellos, isNosotros, key: key),
+    );
+  }
+
+  Widget _buildVerticalDivider(TrucoTheme theme) {
     return Container(
       width: 1,
       height: double.infinity,
-      color: scoreProvider.appTheme.dividerColor.withOpacity(0.15),
+      color: theme.dividerColor.withOpacity(0.15),
       margin: EdgeInsets.zero,
     );
   }

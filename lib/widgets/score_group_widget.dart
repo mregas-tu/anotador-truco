@@ -57,22 +57,25 @@ class _ScoreGroupState extends State<ScoreGroup> {
     }
     
     // 2. Report global position of the last stick for potential drag-back
+    // ONLY in drag mode to save a ton of performance in tap mode
     if (widget.points > 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final RenderBox? renderBox = _key.currentContext?.findRenderObject() as RenderBox?;
-        if (renderBox != null) {
-          final Offset localPos = _getStickLocalOffset(widget.points);
-          final Offset globalPos = renderBox.localToGlobal(localPos);
-          final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
-          
-          final int teamPoints = widget.team == "nosotros" ? scoreProvider.nosotros : scoreProvider.ellos;
-          final int groupBase = widget.groupIndex * 5;
-          if (teamPoints == groupBase + widget.points) {
-            scoreProvider.updateLastStickPos(widget.team, globalPos);
+      final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
+      if (scoreProvider.scoringMode == ScoringMode.drag) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final RenderBox? renderBox = _key.currentContext?.findRenderObject() as RenderBox?;
+          if (renderBox != null) {
+            final Offset localPos = _getStickLocalOffset(widget.points);
+            final Offset globalPos = renderBox.localToGlobal(localPos);
+            
+            final int teamPoints = widget.team == "nosotros" ? scoreProvider.nosotros : scoreProvider.ellos;
+            final int groupBase = widget.groupIndex * 5;
+            if (teamPoints == groupBase + widget.points) {
+              scoreProvider.updateLastStickPos(widget.team, globalPos);
+            }
           }
-        }
-      });
+        });
+      }
     }
   }
 

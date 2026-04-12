@@ -19,13 +19,20 @@ class PersistenceService {
   static const String keyPicaPicaEnd = 'pica_pica_end';
   static const String keyBeanPaletteIndex = 'bean_palette_index';
 
+  static SharedPreferences? _prefs;
+
+  static Future<SharedPreferences> _getPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
+
   static Future<bool> getTutorialDone() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return prefs.getBool(keyTutorialDone) ?? false;
   }
 
   static Future<void> setTutorialDone(bool done) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.setBool(keyTutorialDone, done);
   }
 
@@ -37,7 +44,7 @@ class PersistenceService {
     required bool finishedMalasNosotros,
     required bool finishedMalasEllos,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.setInt(keyNosotrosScore, nosotros);
     await prefs.setInt(keyEllosScore, ellos);
     await prefs.setString(keyNosotrosName, nosotrosName);
@@ -47,7 +54,7 @@ class PersistenceService {
   }
 
   static Future<void> clearGameState() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.remove(keyNosotrosScore);
     await prefs.remove(keyEllosScore);
     await prefs.remove(keyFinishedMalasNosotros);
@@ -67,7 +74,7 @@ class PersistenceService {
     required int picaPicaStart,
     required int picaPicaEnd,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.setInt(keyGameModeIndex, gameModeIndex);
     await prefs.setString(keyThemeId, themeId);
     await prefs.setInt(keyPaletteIndex, paletteIndex);
@@ -81,7 +88,7 @@ class PersistenceService {
   }
 
   static Future<Map<String, dynamic>> loadAll() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return {
       keyNosotrosScore: prefs.getInt(keyNosotrosScore),
       keyEllosScore: prefs.getInt(keyEllosScore),
