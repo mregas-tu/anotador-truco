@@ -366,59 +366,34 @@ class _MainScreenState extends State<MainScreen>
             totalPoints = scoreProvider.currentGameMode.milestone;
           }
 
-          return Listener(
-            onPointerDown: (event) => _lastPointerDownPos = event.position,
-            child: Draggable<String>(
-              data: isNosotros ? "nosotros" : "ellos",
-              dragAnchorStrategy: pointerDragAnchorStrategy,
-              maxSimultaneousDrags: _isTutorialActive
-                  ? 0
-                  : (isNosotros
-                              ? scoreProvider.nosotros
-                              : scoreProvider.ellos) >
-                          0
-                      ? 1
-                      : 0,
-              onDragStarted: () => scoreProvider.setDraggingBack(
-                  isNosotros ? "nosotros" : "ellos", true),
-              onDraggableCanceled: (velocity, offset) {
-                scoreProvider.triggerRevert(
-                    isNosotros ? "nosotros" : "ellos", offset);
-              },
-              onDragEnd: (details) {
-                if (!details.wasAccepted) {
-                  scoreProvider.setDraggingBack(
-                      isNosotros ? "nosotros" : "ellos", false);
-                }
-              },
-              feedback: TweenAnimationBuilder<Offset>(
-                key: ValueKey("fb_${isNosotros ? "n" : "e"}_$totalPoints"),
-                tween: Tween(
-                  begin: ((isNosotros
-                              ? scoreProvider.lastStickPosNosotros
-                              : scoreProvider.lastStickPosEllos) ??
-                          _lastPointerDownPos) -
-                      _lastPointerDownPos,
-                  end: Offset.zero,
-                ),
-                duration: const Duration(milliseconds: 350),
-                curve: Curves.easeOutCubic,
-                builder: (context, offset, child) {
-                  return Transform.translate(
-                    offset: offset,
-                    child: child,
-                  );
-                },
-                child: scoreProvider.pointType == PointType.beans
-                    ? BeanWidget(size: 48, seed: totalPoints, beanType: scoreProvider.currentBeanPalette.type)
-                    : MatchstickWidget(height: 100),
-              ),
-              childWhenDragging: _buildTeamColumnContent(
-                  name, totalPoints, isBuenas, isNosotros, scoreProvider, true),
-              child: _buildTeamColumnContent(
-                  name, totalPoints, isBuenas, isNosotros, scoreProvider, false,
-                  highlight: candidateData.isNotEmpty),
+          final bool canDrag = _isTutorialActive 
+              ? false 
+              : (isNosotros ? scoreProvider.nosotros : scoreProvider.ellos) > 0;
+
+          return Draggable<String>(
+            data: isNosotros ? "nosotros" : "ellos",
+            dragAnchorStrategy: pointerDragAnchorStrategy,
+            maxSimultaneousDrags: canDrag ? 1 : 0,
+            onDragStarted: () {
+              scoreProvider.setDraggingBack(isNosotros ? "nosotros" : "ellos", true);
+            },
+            onDraggableCanceled: (velocity, offset) {
+              scoreProvider.triggerRevert(isNosotros ? "nosotros" : "ellos", offset);
+            },
+            onDragEnd: (details) {
+              scoreProvider.setDraggingBack(isNosotros ? "nosotros" : "ellos", false);
+            },
+            feedback: Material(
+              color: Colors.transparent,
+              child: scoreProvider.pointType == PointType.beans
+                ? BeanWidget(size: 40, seed: totalPoints, beanType: scoreProvider.currentBeanPalette.type)
+                : MatchstickWidget(height: 100),
             ),
+            childWhenDragging: _buildTeamColumnContent(
+              name, totalPoints, isBuenas, isNosotros, scoreProvider, true),
+            child: _buildTeamColumnContent(
+              name, totalPoints, isBuenas, isNosotros, scoreProvider, false,
+              highlight: candidateData.isNotEmpty),
           );
         },
       ),

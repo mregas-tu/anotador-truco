@@ -134,7 +134,7 @@ enum ScoringMode { drag, tap }
 enum PointType { matches, beans }
 
 class ScoreProvider with ChangeNotifier {
-  final AudioService _audioService = AudioService();
+  final AudioService audioService = AudioService();
   GameMode _currentGameMode = availableModes[4]; // Default to 30 pts (15/15)
   MatchstickPalette _currentPalette = availablePalettes[1]; // Default to BORDÓ
   BeanPalette _currentBeanPalette = availableBeanPalettes[0]; // Default to ALUBIA
@@ -226,7 +226,7 @@ class ScoreProvider with ChangeNotifier {
       _isDraggingBackEllos = isDragging;
     }
     if (isDragging) {
-      if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans); // Play lift sound
+      if (!_isMuted) audioService.playMarker(_pointType == PointType.beans); // Play lift sound
     }
     notifyListeners();
   }
@@ -249,8 +249,8 @@ class ScoreProvider with ChangeNotifier {
     _revertOffset = fromOffset;
     _isReverting = true;
     
-    if (team == "nosotros") _isDraggingBackNosotros = true;
-    else _isDraggingBackEllos = true;
+    if (team == "nosotros") _isDraggingBackNosotros = false;
+    else _isDraggingBackEllos = false;
     
     notifyListeners();
     
@@ -264,7 +264,7 @@ class ScoreProvider with ChangeNotifier {
     if (team == "nosotros") _isDraggingBackNosotros = false;
     else _isDraggingBackEllos = false;
     
-    if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans); // Play return/click sound
+    if (!_isMuted) audioService.playMarker(_pointType == PointType.beans); // Play return/click sound
     notifyListeners();
   }
 
@@ -302,13 +302,13 @@ class ScoreProvider with ChangeNotifier {
       _lastPointTeam = "nosotros";
 
       if (_currentGameMode.hasBuenas && _nosotros == _currentGameMode.milestone) {
-        if (!_isMuted) _audioService.playBuenas();
+        if (!_isMuted) audioService.playBuenas();
         _nosotrosFinishedMalas = true;
       } else if (_nosotros == _currentGameMode.totalPoints) {
         _winner = "nosotros";
-        if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans);
+        if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       } else {
-        if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans);
+        if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       }
       notifyListeners();
       _saveCurrentState();
@@ -336,13 +336,13 @@ class ScoreProvider with ChangeNotifier {
       _lastPointTeam = "ellos";
 
       if (_currentGameMode.hasBuenas && _ellos == _currentGameMode.milestone) {
-        if (!_isMuted) _audioService.playBuenas();
+        if (!_isMuted) audioService.playBuenas();
         _ellosFinishedMalas = true;
       } else if (_ellos == _currentGameMode.totalPoints) {
         _winner = "ellos";
-        if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans);
+        if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       } else {
-        if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans);
+        if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       }
       notifyListeners();
       _saveCurrentState();
@@ -374,7 +374,7 @@ class ScoreProvider with ChangeNotifier {
 
   Future<void> triggerReset({bool keepNames = true}) async {
     _isResetting = true;
-    if (!_isMuted) _audioService.playClear();
+    if (!_isMuted) audioService.playClear();
     notifyListeners();
     // Wait for animation to finish
     await Future.delayed(const Duration(milliseconds: 600));
@@ -418,7 +418,7 @@ class ScoreProvider with ChangeNotifier {
       removePointEllos();
     }
     
-    if (!_isMuted) _audioService.playMarker(_pointType == PointType.beans);
+    if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
     notifyListeners();
   }
 
