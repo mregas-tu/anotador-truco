@@ -92,6 +92,31 @@ class BeanPainter extends CustomPainter {
         eyeBase = const Color(0xFFE8E8E8);
         eyeInner = const Color(0xFFC0C0C0);
         break;
+      case BeanType.arveja:
+        gradientColors = [const Color(0xFF8DB600), const Color(0xFF4B6F44), const Color(0xFF2E4624)];
+        eyeBase = const Color(0xFF6B8E23);
+        eyeInner = const Color(0xFF3F4E23);
+        break;
+      case BeanType.lenteja:
+        gradientColors = [const Color(0xFFFF8C69), const Color(0xFFE97451), const Color(0xFF8B4513)];
+        eyeBase = const Color(0xFFD2691E);
+        eyeInner = const Color(0xFF5C4033);
+        break;
+      case BeanType.ojonegro:
+        gradientColors = [const Color(0xFFFFFFFF), const Color(0xFFF7F4E9), const Color(0xFFD3C8B3)];
+        eyeBase = const Color(0xFF2E2E2E); // Dark base for the black eye effect
+        eyeInner = const Color(0xFF0D0D0D);
+        break;
+      case BeanType.garbanzo:
+        gradientColors = [const Color(0xFFF5DEB3), const Color(0xFFDEB887), const Color(0xFFB8860B)];
+        eyeBase = const Color(0xFFCD853F);
+        eyeInner = const Color(0xFF8B4513);
+        break;
+      case BeanType.soja:
+        gradientColors = [const Color(0xFFFFFACD), const Color(0xFFFAFAD2), const Color(0xFFEEE8AA)];
+        eyeBase = const Color(0xFFE6E6FA);
+        eyeInner = const Color(0xFFD8BFD8);
+        break;
     }
 
     // Main Body Volume
@@ -187,6 +212,19 @@ class BeanPainter extends CustomPainter {
           width: w * 0.4, height: h * 0.25));
 
       canvas.drawPath(path, patchPaint);
+    } else if (beanType == BeanType.ojonegro) {
+      // Ojo Negro: A clean dark oval right in the center around the eye
+      final patchPaint = Paint()
+        ..color = const Color(0xFF0F0F0F).withValues(alpha: 0.95);
+      
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(w * 0.5, h * 0.34), 
+          width: w * 0.35, 
+          height: h * 0.22,
+        ),
+        patchPaint,
+      );
     }
 
     // 4. Subtle Eye (Hilum)

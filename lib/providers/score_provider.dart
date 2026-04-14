@@ -100,6 +100,11 @@ enum BeanType {
   borlotto,
   magnum,
   frutilla,
+  arveja,
+  lenteja,
+  ojonegro,
+  garbanzo,
+  soja,
 }
 
 class BeanPalette {
@@ -120,6 +125,11 @@ const List<BeanPalette> availableBeanPalettes = [
   BeanPalette(name: "BORLOTTO", type: BeanType.borlotto),
   BeanPalette(name: "MAGNUM", type: BeanType.magnum),
   BeanPalette(name: "FRUTILLA", type: BeanType.frutilla),
+  BeanPalette(name: "ARVEJA", type: BeanType.arveja),
+  BeanPalette(name: "LENTEJA", type: BeanType.lenteja),
+  BeanPalette(name: "OJO NEGRO", type: BeanType.ojonegro),
+  BeanPalette(name: "GARBANZO", type: BeanType.garbanzo),
+  BeanPalette(name: "SOJA", type: BeanType.soja),
 ];
 
 const List<GameMode> availableModes = [

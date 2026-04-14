@@ -844,7 +844,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "PUNTOS: ${scoreProvider.picaPicaStart}",
+                          "DESDE: ${scoreProvider.picaPicaStart}",
                           style: TextStyle(
                             fontFamily: AppFonts.caminito,
                             fontSize: 14,
