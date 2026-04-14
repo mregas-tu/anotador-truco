@@ -25,6 +25,10 @@ const List<Map<String, String>> kTutorialSteps = [
     "desc": "Para sacar el último punto mantené el dedo sobre la mesa."
   },
   {
+    "title": "MODO CLÁSICO",
+    "desc": "Para agregar y sacar puntos utilizá los botones + y -."
+  },
+  {
     "title": "CAMBIAR NOMBRES",
     "desc": "Tocá “Nosotros” o “Ellos” para editar el nombre del equipo."
   },
@@ -60,7 +64,7 @@ class TutorialOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
-    final isTop = currentStep < 4;
+    final isTop = currentStep <= 4;
     final isSmallScreen = MediaQuery.of(context).size.height < 700;
     final offset = isSmallScreen ? 80.0 : 150.0;
 

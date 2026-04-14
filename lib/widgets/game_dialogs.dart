@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -139,7 +140,7 @@ abstract class GameDialogs {
 
                           // Compartir el archivo generado
                           final message =
-                              "¡Gané al Truco! $winnerName venció ${scoreProvider.nosotros} a ${scoreProvider.ellos}. #AnotadorDeTruco";
+                              "#AnotadorDeTruco\n${Platform.isAndroid ? 'https://play.google.com/store/apps/details?id=com.mregas.truco.anotador' : 'https://apps.apple.com/app/idYOUR_APP_ID'}";
                           await Share.shareXFiles(
                             [XFile(path)],
                             text: message,

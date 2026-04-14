@@ -32,6 +32,10 @@ class _MainScreenState extends State<MainScreen>
   final GlobalKey _limitScoreKey = GlobalKey();
   final GlobalKey _restartKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
+  final GlobalKey _nosPlusKey = GlobalKey();
+  final GlobalKey _nosMinusKey = GlobalKey();
+  final GlobalKey _ellPlusKey = GlobalKey();
+  final GlobalKey _ellMinusKey = GlobalKey();
 
   late AnimationController _handController;
   late Animation<Offset> _handMoveAnimation;
@@ -749,8 +753,10 @@ class _MainScreenState extends State<MainScreen>
         if (team == "ellos") scoreProvider.removePointEllos();
       },
       builder: (context, candidateData, rejectedData) {
-        final bool isClassicMode = scoreProvider.scoringMode == ScoringMode.classic;
-        final bool isDragMode = scoreProvider.scoringMode == ScoringMode.drag;
+        final bool isClassicMode = scoreProvider.scoringMode == ScoringMode.classic ||
+            (_isTutorialActive && _tutorialStep == 4);
+        final bool isDragMode = scoreProvider.scoringMode == ScoringMode.drag &&
+            !(_isTutorialActive && _tutorialStep == 4);
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -758,19 +764,24 @@ class _MainScreenState extends State<MainScreen>
           children: [
             // Nosotros Buttons
             if (isClassicMode) ...[
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ScoreCircleButton(
-                    onPressed: () => scoreProvider.addPointNosotros(),
-                  ),
-                  const SizedBox(height: 16),
-                  ScoreCircleButton(
-                    isMinus: true,
-                    isEnabled: scoreProvider.nosotros > 0,
-                    onPressed: () => scoreProvider.removePointNosotros(),
-                  ),
-                ],
+              AbsorbPointer(
+                absorbing: _isTutorialActive,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ScoreCircleButton(
+                      key: _nosPlusKey,
+                      onPressed: () => scoreProvider.addPointNosotros(),
+                    ),
+                    const SizedBox(height: 16),
+                    ScoreCircleButton(
+                      key: _nosMinusKey,
+                      isMinus: true,
+                      isEnabled: scoreProvider.nosotros > 0,
+                      onPressed: () => scoreProvider.removePointNosotros(),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(width: 24),
             ],
@@ -812,19 +823,24 @@ class _MainScreenState extends State<MainScreen>
             // Ellos Buttons
             if (isClassicMode) ...[
               const SizedBox(width: 24),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ScoreCircleButton(
-                    onPressed: () => scoreProvider.addPointEllos(),
-                  ),
-                  const SizedBox(height: 16),
-                  ScoreCircleButton(
-                    isMinus: true,
-                    isEnabled: scoreProvider.ellos > 0,
-                    onPressed: () => scoreProvider.removePointEllos(),
-                  ),
-                ],
+              AbsorbPointer(
+                absorbing: _isTutorialActive,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ScoreCircleButton(
+                      key: _ellPlusKey,
+                      onPressed: () => scoreProvider.addPointEllos(),
+                    ),
+                    const SizedBox(height: 16),
+                    ScoreCircleButton(
+                      key: _ellMinusKey,
+                      isMinus: true,
+                      isEnabled: scoreProvider.ellos > 0,
+                      onPressed: () => scoreProvider.removePointEllos(),
+                    ),
+                  ],
+                ),
               ),
             ],
           ],
@@ -841,16 +857,19 @@ class _MainScreenState extends State<MainScreen>
   void _startGhostHandTutorial() {
     if (!mounted) return;
 
-    final RenderBox? boxRender =
-        _boxKey.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? targetRender =
-        _nosotrosKey.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? restartRender =
-        _restartKey.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? settingsRender =
-        _settingsKey.currentContext?.findRenderObject() as RenderBox?;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
 
-    if (boxRender == null || targetRender == null) return;
+      final RenderBox? boxRender =
+          _boxKey.currentContext?.findRenderObject() as RenderBox?;
+      final RenderBox? targetRender =
+          _nosotrosKey.currentContext?.findRenderObject() as RenderBox?;
+      final RenderBox? restartRender =
+          _restartKey.currentContext?.findRenderObject() as RenderBox?;
+      final RenderBox? settingsRender =
+          _settingsKey.currentContext?.findRenderObject() as RenderBox?;
+
+      if (boxRender == null || targetRender == null) return;
 
     final boxPos = boxRender.localToGlobal(Offset.zero);
     final targetPos = targetRender.localToGlobal(Offset.zero);
@@ -902,6 +921,45 @@ class _MainScreenState extends State<MainScreen>
       ]).animate(_handController);
       _handController.repeat(reverse: false);
     } else if (_tutorialStep == 4) {
+      // Classic Buttons (Tap sequence)
+      final nPlus = _nosPlusKey.currentContext?.findRenderObject() as RenderBox?;
+      final nMinus = _nosMinusKey.currentContext?.findRenderObject() as RenderBox?;
+      final ePlus = _ellPlusKey.currentContext?.findRenderObject() as RenderBox?;
+      final eMinus = _ellMinusKey.currentContext?.findRenderObject() as RenderBox?;
+
+      if (nPlus != null && nMinus != null && ePlus != null && eMinus != null) {
+        final pos1 = nPlus.localToGlobal(nPlus.size.center(Offset.zero));
+        final pos2 = nMinus.localToGlobal(nMinus.size.center(Offset.zero));
+        final pos3 = ePlus.localToGlobal(ePlus.size.center(Offset.zero));
+        final pos4 = eMinus.localToGlobal(eMinus.size.center(Offset.zero));
+
+        _handController.duration = const Duration(milliseconds: 3200);
+        _handMoveAnimation = TweenSequence<Offset>([
+          TweenSequenceItem(tween: ConstantTween(pos1), weight: 25),
+          TweenSequenceItem(tween: ConstantTween(pos2), weight: 25),
+          TweenSequenceItem(tween: ConstantTween(pos3), weight: 25),
+          TweenSequenceItem(tween: ConstantTween(pos4), weight: 25),
+        ]).animate(_handController);
+
+        _handScaleAnimation = TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
+          TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
+          TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
+          TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
+          TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
+        ]).animate(_handController);
+
+        setState(() {
+          _showGhostHand = true;
+          _isTutorialActive = true;
+        });
+        _handController.repeat(reverse: false);
+        return;
+      }
+    } else if (_tutorialStep == 5) {
       // Team names (Alternating pulse)
       final RenderBox? ellosRender =
           _ellosKey.currentContext?.findRenderObject() as RenderBox?;
@@ -928,8 +986,8 @@ class _MainScreenState extends State<MainScreen>
         _isTutorialActive = true;
       });
       _handController.repeat(reverse: false);
-      return; // Salteo el setState de abajo que pisa el MoveAnimation
-    } else if (_tutorialStep == 5 && _limitScoreKey.currentContext != null) {
+      return;
+    } else if (_tutorialStep == 6 && _limitScoreKey.currentContext != null) {
       // Limit Score
       final RenderBox? limitRender =
           _limitScoreKey.currentContext?.findRenderObject() as RenderBox?;
@@ -944,7 +1002,7 @@ class _MainScreenState extends State<MainScreen>
           TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 50),
         ]).animate(_handController);
       }
-    } else if (_tutorialStep == 6 && restartRender != null) {
+    } else if (_tutorialStep == 7 && restartRender != null) {
       // Reset Button
       final pos = restartRender.localToGlobal(Offset.zero);
       start = pos.translate(
@@ -955,7 +1013,7 @@ class _MainScreenState extends State<MainScreen>
         TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 50),
         TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 50),
       ]).animate(_handController);
-    } else if (_tutorialStep == 7 && settingsRender != null) {
+    } else if (_tutorialStep == 8 && settingsRender != null) {
       // Settings Button
       final pos = settingsRender.localToGlobal(Offset.zero);
       start = pos.translate(
@@ -986,6 +1044,7 @@ class _MainScreenState extends State<MainScreen>
     });
 
     _handController.repeat(reverse: false);
+    });
   }
 
   void _skipTutorial() async {

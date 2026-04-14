@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +11,7 @@ import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
 import '../theme/app_theme.dart';
 import 'truco_buttons.dart';
+import 'bean_widget.dart';
 
 class SettingsDialogContent extends StatefulWidget {
   final Function(String) onThemeLockedTap;
@@ -314,7 +316,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             iconAsset: 'assets/images/share_icon.svg',
             onPressed: () {
               Share.share(
-                  "¡Mirá este anotador de Truco premium! Bajalo acá: [LINK]");
+                  "#AnotadorDeTruco\n${Platform.isAndroid ? 'https://play.google.com/store/apps/details?id=com.mregas.truco.anotador' : 'https://apps.apple.com/app/idYOUR_APP_ID'}");
             },
           ),
         ] else if (currentPane == 1) ...[
@@ -633,31 +635,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                     final timeLeft =
                         premiumProvider.getRemainingTime('bean_palette_$index');
 
-                    Color getBeanPreviewColor(BeanType type) {
-                      switch (type) {
-                        case BeanType.alubia:
-                          return const Color(0xFFF9F6F0);
-                        case BeanType.negro:
-                          return const Color(0xFF2E2E2E);
-                        case BeanType.fideo:
-                          return const Color(0xFF8B0000);
-                        case BeanType.pinto:
-                          return const Color(0xFFD2B48C);
-                        case BeanType.manteca:
-                          return const Color(0xFFEBEBD3);
-                        case BeanType.bandera:
-                          return const Color(0xFF5A1A40);
-                        case BeanType.cisne:
-                          return const Color(0xFFF9F6F0);
-                        case BeanType.borlotto:
-                          return const Color(0xFFCBA37E);
-                        case BeanType.magnum:
-                          return const Color(0xFF4B5121);
-                        case BeanType.frutilla:
-                          return const Color(0xFF9E2A2B);
-                      }
-                    }
-
                     return GestureDetector(
                       onTap: () {
                         if (isLocked) {
@@ -674,7 +651,9 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                             height: isSmallScreen ? 44 : 48,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: getBeanPreviewColor(palette.type),
+                              color: isSelected 
+                                  ? Colors.white.withValues(alpha: 0.15) 
+                                  : Colors.white.withValues(alpha: 0.05),
                               border: Border.all(
                                 color: isSelected ? Colors.white : Colors.white10,
                                 width: isSelected ? 3 : 1,
@@ -682,30 +661,51 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                          color: getBeanPreviewColor(palette.type)
-                                              .withValues(alpha: 0.4),
+                                          color: Colors.white.withValues(alpha: 0.2),
                                           blurRadius: 10,
                                           spreadRadius: 2)
                                     ]
                                   : null,
                             ),
+                            child: Center(
+                              child: BeanWidget(
+                                size: isSmallScreen ? 18 : 20,
+                                beanType: palette.type,
+                                seed: index,
+                              ),
+                            ),
                           ),
                           if (isLocked)
-                            const Icon(Icons.lock,
-                                color: Colors.white, size: 18),
-                          if (timeLeft != null)
-                            Container(
-                              decoration: const BoxDecoration(
+                            Positioned.fill(
+                              child: Container(
+                                decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.black45),
-                              padding: const EdgeInsets.all(4),
-                              child: Text(
-                                timeLeft,
-                                style: const TextStyle(
-                                  fontFamily: AppFonts.oswald,
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black45,
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.lock,
+                                      color: Colors.white70, size: 20),
+                                ),
+                              ),
+                            ),
+                          if (timeLeft != null)
+                            Positioned(
+                              bottom: -4,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  timeLeft,
+                                  style: const TextStyle(
+                                    fontFamily: AppFonts.oswald,
+                                    fontSize: 10,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),

@@ -91,7 +91,7 @@ class VictoryShareCard extends StatelessWidget {
                         fontFamily: AppFonts.oswald,
                         fontSize: 54,
                         fontWeight: FontWeight.bold,
-                        color: theme.slate,
+                        color: theme.shareWinnerColor,
                         letterSpacing: -1,
                       ),
                     ),

@@ -13,6 +13,7 @@ class TrucoTheme {
   final Color buenas;
   final Color malas;
   final Color centerCircleColor;
+  final Color shareWinnerColor;
 
   // New Button specific colors
   final Color primaryBackgroundButton;
@@ -97,6 +98,7 @@ class TrucoTheme {
     required this.matchstickBoxType,
     required this.classicButtonColor,
     required this.classicButtonShadowColor,
+    required this.shareWinnerColor,
   });
 
   // PRESETS
@@ -130,6 +132,7 @@ class TrucoTheme {
     scoreVerticalOffset: 5.0,
     centerSectionOffset: 10.0,
     matchstickBoxType: MatchstickBoxType.classic,
+    shareWinnerColor: Color(0xFFACCBD8),
   );
 
   static const TrucoTheme argentinaTheme = TrucoTheme(
@@ -163,6 +166,7 @@ class TrucoTheme {
     scoreVerticalOffset: 2.0,
     centerSectionOffset: 35.0,
     matchstickBoxType: MatchstickBoxType.classic,
+    shareWinnerColor: Colors.white,
   );
 
   static const TrucoTheme soccerTheme = TrucoTheme(
@@ -184,6 +188,7 @@ class TrucoTheme {
     classicButtonShadowColor: Colors.black38,
     headerAsset: null,
     footerAsset: 'assets/images/dibu.svg',
+    shareWinnerColor: Color(0xFF07007A),
     footerHeight: 75,
     dividerColor: Colors.transparent,
     scoreColor: Color(0xFF07007A),
@@ -227,6 +232,7 @@ class TrucoTheme {
     centerCircleDecoration: null,
     headerAsset: null,
     footerAsset: null,
+    shareWinnerColor: Color(0xFFEFEBE2),
     dividerColor: Colors.transparent,
     scoreColor: Color(0xFFEFEBE2), // Fully opaque again
     teamScoreColor: Color(0xFFEFEBE2), // Fully opaque again
