@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
@@ -13,6 +14,7 @@ import 'truco_buttons.dart';
 class SettingsDialogContent extends StatefulWidget {
   final Function(String) onThemeLockedTap;
   final Function(int) onPaletteLockedTap;
+  final Function(int) onBeanPaletteLockedTap;
   final VoidCallback onPremiumTap;
   final VoidCallback onRepeatTutorial;
 
@@ -20,6 +22,7 @@ class SettingsDialogContent extends StatefulWidget {
     super.key,
     required this.onThemeLockedTap,
     required this.onPaletteLockedTap,
+    required this.onBeanPaletteLockedTap,
     required this.onPremiumTap,
     required this.onRepeatTutorial,
   });
@@ -32,13 +35,28 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   int currentPane = 0; // 0: Main, 1: Customization, 2: Game Mode
   Timer? _timer;
   final ScrollController _gameModeScrollController = ScrollController();
+  String _appVersion = "1.1.4"; // Initial fallback
 
   @override
   void initState() {
     super.initState();
+    _loadVersion();
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) setState(() {});
     });
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _appVersion = packageInfo.version;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading version: $e");
+    }
   }
 
   @override
@@ -608,8 +626,12 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                   runSpacing: isSmallScreen ? 12 : 16,
                   children: availableBeanPalettes.asMap().entries.map((entry) {
                     final palette = entry.value;
+                    final index = entry.key;
                     final isSelected =
                         scoreProvider.currentBeanPalette.name == palette.name;
+                    final isLocked = !premiumProvider.isBeanPaletteUnlocked(index);
+                    final timeLeft =
+                        premiumProvider.getRemainingTime('bean_palette_$index');
 
                     Color getBeanPreviewColor(BeanType type) {
                       switch (type) {
@@ -638,28 +660,56 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
 
                     return GestureDetector(
                       onTap: () {
-                        scoreProvider.setBeanPalette(palette);
+                        if (isLocked) {
+                          widget.onBeanPaletteLockedTap(index);
+                        } else {
+                          scoreProvider.setBeanPalette(palette);
+                        }
                       },
-                      child: Container(
-                        width: isSmallScreen ? 44 : 48,
-                        height: isSmallScreen ? 44 : 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: getBeanPreviewColor(palette.type),
-                          border: Border.all(
-                            color: isSelected ? Colors.white : Colors.white10,
-                            width: isSelected ? 3 : 1,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: isSmallScreen ? 44 : 48,
+                            height: isSmallScreen ? 44 : 48,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: getBeanPreviewColor(palette.type),
+                              border: Border.all(
+                                color: isSelected ? Colors.white : Colors.white10,
+                                width: isSelected ? 3 : 1,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                          color: getBeanPreviewColor(palette.type)
+                                              .withValues(alpha: 0.4),
+                                          blurRadius: 10,
+                                          spreadRadius: 2)
+                                    ]
+                                  : null,
+                            ),
                           ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                      color: getBeanPreviewColor(palette.type)
-                                          .withValues(alpha: 0.4),
-                                      blurRadius: 10,
-                                      spreadRadius: 2)
-                                ]
-                              : null,
-                        ),
+                          if (isLocked)
+                            const Icon(Icons.lock,
+                                color: Colors.white, size: 18),
+                          if (timeLeft != null)
+                            Container(
+                              decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black45),
+                              padding: const EdgeInsets.all(4),
+                              child: Text(
+                                timeLeft,
+                                style: const TextStyle(
+                                  fontFamily: AppFonts.oswald,
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     );
                   }).toList(),
@@ -911,7 +961,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                 ),
                 const SizedBox(height: 20), // Standarized to 20
                 Text(
-                  "Versión 1.1.4",
+                  "Versión $_appVersion",
                   style: TextStyle(
                     fontFamily: AppFonts.oswald,
                     fontSize: 14,

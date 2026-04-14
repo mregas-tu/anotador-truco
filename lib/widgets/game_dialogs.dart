@@ -8,6 +8,11 @@ import '../services/ad_service.dart';
 import '../theme/app_theme.dart';
 import 'truco_buttons.dart';
 import 'truco_dialog.dart';
+import 'victory_share_card.dart';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:path_provider/path_provider.dart';
+import 'package:screenshot/screenshot.dart';
 
 abstract class GameDialogs {
   static void showWinner(
@@ -109,10 +114,37 @@ abstract class GameDialogs {
                       text: "Compartir",
                       toUpperCase: false,
                       iconAsset: 'assets/images/share_icon.svg',
-                      onPressed: () {
-                        final message =
-                            "¡Gané al Truco! $winnerName venció ${scoreProvider.nosotros} a ${scoreProvider.ellos}. #AnotadorDeTruco";
-                        Share.share(message);
+                      onPressed: () async {
+                        final screenshotController = ScreenshotController();
+
+                        // Capturar el widget estilizado en memoria (sin mostrarlo en pantalla)
+                        final Uint8List? imageBytes =
+                            await screenshotController.captureFromWidget(
+                          VictoryShareCard(
+                            winnerName: winnerName,
+                            scoreNosotros: scoreProvider.nosotros,
+                            scoreEllos: scoreProvider.ellos,
+                            theme: scoreProvider.appTheme,
+                          ),
+                          delay: const Duration(milliseconds: 100),
+                        );
+
+                        if (imageBytes != null) {
+                          // Guardar en un archivo temporal
+                          final directory = await getTemporaryDirectory();
+                          final String path =
+                              '${directory.path}/resultado_truco.png';
+                          final File file = File(path);
+                          await file.writeAsBytes(imageBytes);
+
+                          // Compartir el archivo generado
+                          final message =
+                              "¡Gané al Truco! $winnerName venció ${scoreProvider.nosotros} a ${scoreProvider.ellos}. #AnotadorDeTruco";
+                          await Share.shareXFiles(
+                            [XFile(path)],
+                            text: message,
+                          );
+                        }
                       },
                     ),
                   ),
@@ -203,6 +235,34 @@ abstract class GameDialogs {
                     AdService.showRewardedAd(
                       onUserEarnedReward: () {
                         premiumProvider.unlockTemporarily(id);
+
+                        // Auto-selection logic after unlocking via video
+                        if (id.startsWith('theme_')) {
+                          final themeName = id.replaceFirst('theme_', '');
+                          try {
+                            final theme = TrucoTheme.allThemes
+                                .firstWhere((t) => t.name == themeName);
+                            scoreProvider.setAppTheme(theme);
+                          } catch (_) {}
+                        } else if (id.startsWith('palette_')) {
+                          try {
+                            final index =
+                                int.parse(id.replaceFirst('palette_', ''));
+                            if (index >= 0 && index < availablePalettes.length) {
+                              scoreProvider.setPalette(availablePalettes[index]);
+                            }
+                          } catch (_) {}
+                        } else if (id.startsWith('bean_palette_')) {
+                          try {
+                            final index =
+                                int.parse(id.replaceFirst('bean_palette_', ''));
+                            if (index >= 0 &&
+                                index < availableBeanPalettes.length) {
+                              scoreProvider
+                                  .setBeanPalette(availableBeanPalettes[index]);
+                            }
+                          } catch (_) {}
+                        }
                       },
                       onAdNotReady: () {
                         ScaffoldMessenger.of(context).showSnackBar(

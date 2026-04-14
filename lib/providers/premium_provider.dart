@@ -105,6 +105,11 @@ class PremiumProvider with ChangeNotifier {
     return isUnlocked('palette_$index');
   }
 
+  bool isBeanPaletteUnlocked(int index) {
+    if (index < 5) return true; // First 5 are free
+    return isUnlocked('bean_palette_$index');
+  }
+
   @override
   void dispose() {
     _billingService.dispose();

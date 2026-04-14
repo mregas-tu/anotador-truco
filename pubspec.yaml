@@ -47,6 +47,8 @@ dependencies:
   url_launcher: ^6.3.2
   firebase_remote_config: ^5.5.0
   package_info_plus: ^9.0.1
+  screenshot: ^3.0.0
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:
@@ -111,6 +113,7 @@ flutter:
     - assets/images/about.png
     - assets/images/add.svg
     - assets/images/subtract.svg
+    - assets/images/markwatter.png
     - assets/images/menu_icons/
     - assets/images/cards/
     - assets/images/signs/

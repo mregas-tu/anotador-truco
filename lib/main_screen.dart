@@ -724,6 +724,8 @@ class _MainScreenState extends State<MainScreen>
               _showUnlockDialog(context, 'theme_$themeName', 'tema'),
           onPaletteLockedTap: (index) =>
               _showUnlockDialog(context, 'palette_$index', 'fósforo'),
+          onBeanPaletteLockedTap: (index) =>
+              _showUnlockDialog(context, 'bean_palette_$index', 'poroto'),
           onPremiumTap: () => _showUnlockDialog(context, 'premium', 'premium'),
           onRepeatTutorial: () {
             setState(() {
