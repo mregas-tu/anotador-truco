@@ -19,6 +19,8 @@ class TrucoTheme {
   final Color primaryTextButton;
   final Color secondaryButtonBorder;
   final Color secondaryButtonText;
+  final Color classicButtonColor;
+  final Color classicButtonShadowColor;
 
   // Aesthetic Enhancements
   final List<Shadow>? teamNameShadow;
@@ -93,6 +95,8 @@ class TrucoTheme {
     this.nosotrosMarginRight = 0.0,
     this.ellosMarginLeft = 0.0,
     required this.matchstickBoxType,
+    required this.classicButtonColor,
+    required this.classicButtonShadowColor,
   });
 
   // PRESETS
@@ -111,6 +115,8 @@ class TrucoTheme {
     primaryTextButton: Color(0xFFEFEBE2),
     secondaryButtonBorder: Color(0xFFEFEBE2),
     secondaryButtonText: Color(0xFFEFEBE2),
+    classicButtonColor: Color(0xFF718C9C),
+    classicButtonShadowColor: Colors.black26,
     headerAsset: 'assets/images/header.svg',
     footerAsset: 'assets/images/footer.svg',
     dividerColor: Color(0xFFEFEBE2),
@@ -141,6 +147,8 @@ class TrucoTheme {
     primaryTextButton: Colors.white,
     secondaryButtonBorder: Colors.white,
     secondaryButtonText: Colors.white,
+    classicButtonColor: Color(0xFF5A91C5),
+    classicButtonShadowColor: Color(0x14000000), // black with 0.08 opacity
     headerAsset: 'assets/images/header.svg',
     footerAsset: 'assets/images/footer.svg',
     dividerColor: Colors.white,
@@ -172,6 +180,8 @@ class TrucoTheme {
     primaryTextButton: Colors.white,
     secondaryButtonBorder: Colors.white,
     secondaryButtonText: Colors.white,
+    classicButtonColor: Color(0xFF07007A),
+    classicButtonShadowColor: Colors.black38,
     headerAsset: null,
     footerAsset: 'assets/images/dibu.svg',
     footerHeight: 75,
@@ -206,6 +216,8 @@ class TrucoTheme {
     primaryTextButton: Color(0xFFEFEBE2),
     secondaryButtonBorder: Color(0xFFFFF3E0),
     secondaryButtonText: Color(0xFFFFF3E0),
+    classicButtonColor: Color(0xFFA48C83),
+    classicButtonShadowColor: Colors.black45,
     teamNameShadow: [
       Shadow(offset: Offset(-1.0, -1.0), blurRadius: 1.0, color: Colors.black),
       Shadow(offset: Offset(1.0, 1.0), blurRadius: 1.0, color: Colors.white10),

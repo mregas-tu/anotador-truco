@@ -18,6 +18,7 @@ class PersistenceService {
   static const String keyPicaPicaStart = 'pica_pica_start';
   static const String keyPicaPicaEnd = 'pica_pica_end';
   static const String keyBeanPaletteIndex = 'bean_palette_index';
+  static const String keyVibrationEnabled = 'vibration_enabled';
 
   static SharedPreferences? _prefs;
 
@@ -73,6 +74,7 @@ class PersistenceService {
     required bool picaPicaEnabled,
     required int picaPicaStart,
     required int picaPicaEnd,
+    required bool vibrationEnabled,
   }) async {
     final prefs = await _getPrefs();
     await prefs.setInt(keyGameModeIndex, gameModeIndex);
@@ -85,6 +87,7 @@ class PersistenceService {
     await prefs.setBool(keyPicaPicaEnabled, picaPicaEnabled);
     await prefs.setInt(keyPicaPicaStart, picaPicaStart);
     await prefs.setInt(keyPicaPicaEnd, picaPicaEnd);
+    await prefs.setBool(keyVibrationEnabled, vibrationEnabled);
   }
 
   static Future<Map<String, dynamic>> loadAll() async {
@@ -106,6 +109,7 @@ class PersistenceService {
       keyPicaPicaEnabled: prefs.getBool(keyPicaPicaEnabled),
       keyPicaPicaStart: prefs.getInt(keyPicaPicaStart),
       keyPicaPicaEnd: prefs.getInt(keyPicaPicaEnd),
+      keyVibrationEnabled: prefs.getBool(keyVibrationEnabled),
     };
   }
 }

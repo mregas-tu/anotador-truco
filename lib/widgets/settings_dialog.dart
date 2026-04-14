@@ -181,6 +181,23 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuActionItem(
+            label: "VIBRACIÓN",
+            iconAsset: 'assets/images/menu_icons/vibration.svg',
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+            trailing: Switch(
+              value: scoreProvider.vibrationEnabled,
+              onChanged: (val) {
+                scoreProvider.setVibrationEnabled(val);
+              },
+              activeColor: Colors.white,
+              activeTrackColor: scoreProvider.appTheme.accentColor,
+              inactiveThumbColor: Colors.white70,
+              inactiveTrackColor: Colors.white12,
+            ),
+          ),
+          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          _buildMenuActionItem(
             label: "MODO DE CONTROL",
             iconAsset: 'assets/images/menu_icons/control_mode_icon.svg',
             scoreProvider: scoreProvider,
@@ -192,15 +209,19 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                     scoreProvider.appTheme.slate.withValues(alpha: 0.1),
               ),
               onPressed: () {
-                scoreProvider.setScoringMode(
-                    scoreProvider.scoringMode == ScoringMode.drag
-                        ? ScoringMode.tap
-                        : ScoringMode.drag);
+                final nextMode = scoreProvider.scoringMode == ScoringMode.drag
+                    ? ScoringMode.tap
+                    : scoreProvider.scoringMode == ScoringMode.tap
+                        ? ScoringMode.classic
+                        : ScoringMode.drag;
+                scoreProvider.setScoringMode(nextMode);
               },
               child: Text(
                 scoreProvider.scoringMode == ScoringMode.drag
                     ? "ARRASTRAR"
-                    : "TOQUE",
+                    : scoreProvider.scoringMode == ScoringMode.tap
+                        ? "TOQUE"
+                        : "CLÁSICO",
                 style: TextStyle(
                   fontFamily: AppFonts.oswald,
                   fontSize: 14,

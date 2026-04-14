@@ -366,7 +366,7 @@ class _MainScreenState extends State<MainScreen>
             totalPoints = scoreProvider.currentGameMode.milestone;
           }
 
-          final bool canDrag = _isTutorialActive 
+          final bool canDrag = (_isTutorialActive || scoreProvider.scoringMode == ScoringMode.classic)
               ? false 
               : (isNosotros ? scoreProvider.nosotros : scoreProvider.ellos) > 0;
 
@@ -747,10 +747,33 @@ class _MainScreenState extends State<MainScreen>
         if (team == "ellos") scoreProvider.removePointEllos();
       },
       builder: (context, candidateData, rejectedData) {
+        final bool isClassicMode = scoreProvider.scoringMode == ScoringMode.classic;
         final bool isDragMode = scoreProvider.scoringMode == ScoringMode.drag;
 
-        return Column(
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Nosotros Buttons
+            if (isClassicMode) ...[
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ScoreCircleButton(
+                    onPressed: () => scoreProvider.addPointNosotros(),
+                  ),
+                  const SizedBox(height: 16),
+                  ScoreCircleButton(
+                    isMinus: true,
+                    isEnabled: scoreProvider.nosotros > 0,
+                    onPressed: () => scoreProvider.removePointNosotros(),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 24),
+            ],
+
+            // Center Box
             if (scoreProvider.totalRemainingMatchsticks > 0)
               isDragMode
                   ? Draggable<int>(
@@ -758,13 +781,16 @@ class _MainScreenState extends State<MainScreen>
                       data: 1,
                       maxSimultaneousDrags: _isTutorialActive ? 0 : 1,
                       dragAnchorStrategy: pointerDragAnchorStrategy,
-                      feedback: Transform.rotate(
-                        angle: 0.1,
-                        child: Transform.translate(
-                          offset: const Offset(-5, -50),
-                          child: scoreProvider.pointType == PointType.beans
-                              ? BeanWidget(size: 48, seed: 1, beanType: scoreProvider.currentBeanPalette.type)
-                              : MatchstickWidget(height: 100),
+                      feedback: Material(
+                        color: Colors.transparent,
+                        child: Transform.rotate(
+                          angle: 0.1,
+                          child: Transform.translate(
+                            offset: const Offset(-5, -50),
+                            child: scoreProvider.pointType == PointType.beans
+                                ? BeanWidget(size: 48, seed: 1, beanType: scoreProvider.currentBeanPalette.type)
+                                : MatchstickWidget(height: 100),
+                          ),
                         ),
                       ),
                       childWhenDragging: MatchstickBox(
@@ -780,6 +806,25 @@ class _MainScreenState extends State<MainScreen>
                     )
             else
               MatchstickBox(key: _boxKey, count: 0),
+
+            // Ellos Buttons
+            if (isClassicMode) ...[
+              const SizedBox(width: 24),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ScoreCircleButton(
+                    onPressed: () => scoreProvider.addPointEllos(),
+                  ),
+                  const SizedBox(height: 16),
+                  ScoreCircleButton(
+                    isMinus: true,
+                    isEnabled: scoreProvider.ellos > 0,
+                    onPressed: () => scoreProvider.removePointEllos(),
+                  ),
+                ],
+              ),
+            ],
           ],
         );
       },
@@ -948,5 +993,58 @@ class _MainScreenState extends State<MainScreen>
     });
     _handController.stop();
     await PersistenceService.setTutorialDone(true);
+  }
+}
+
+class ScoreCircleButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final bool isMinus;
+  final bool isEnabled;
+
+  const ScoreCircleButton({
+    super.key,
+    required this.onPressed,
+    this.isMinus = false,
+    this.isEnabled = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Provider.of<ScoreProvider>(context).appTheme;
+    final primaryColor = theme.classicButtonColor;
+
+    return GestureDetector(
+      onTap: isEnabled ? onPressed : null,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: isEnabled ? 1.0 : 0.3,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isMinus ? Colors.transparent : primaryColor,
+            border: isMinus ? Border.all(color: primaryColor, width: 2.5) : null,
+            boxShadow: !isMinus && isEnabled
+                ? [
+                    BoxShadow(
+                      color: theme.classicButtonShadowColor,
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: SvgPicture.asset(
+              isMinus ? 'assets/images/subtract.svg' : 'assets/images/add.svg',
+              width: 32,
+              height: 32,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

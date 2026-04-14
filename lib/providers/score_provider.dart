@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/audio_service.dart';
 import '../services/analytics_service.dart';
 import '../services/persistence_service.dart';
@@ -130,7 +131,7 @@ const List<GameMode> availableModes = [
   GameMode(label: "40 puntos - 20/20", totalPoints: 40, hasBuenas: true),
 ];
 
-enum ScoringMode { drag, tap }
+enum ScoringMode { drag, tap, classic }
 enum PointType { matches, beans }
 
 class ScoreProvider with ChangeNotifier {
@@ -141,6 +142,7 @@ class ScoreProvider with ChangeNotifier {
   ScoringMode _scoringMode = ScoringMode.drag;
   TrucoTheme _appTheme = TrucoTheme.navyTheme;
   bool _isMuted = false;
+  bool _vibrationEnabled = true;
   bool _picaPicaEnabled = false;
   int _picaPicaStart = 5;
   int _picaPicaEnd = 20;
@@ -178,6 +180,7 @@ class ScoreProvider with ChangeNotifier {
   BeanPalette get currentBeanPalette => _currentBeanPalette;
   ScoringMode get scoringMode => _scoringMode;
   bool get isMuted => _isMuted;
+  bool get vibrationEnabled => _vibrationEnabled;
   int get nosotros => _nosotros;
   int get ellos => _ellos;
   String get nosotrosName => _nosotrosName;
@@ -244,6 +247,12 @@ class ScoreProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void _vibrate() {
+    if (_vibrationEnabled) {
+      HapticFeedback.lightImpact();
+    }
+  }
+
   Future<void> triggerRevert(String team, Offset fromOffset) async {
     _revertTeam = team;
     _revertOffset = fromOffset;
@@ -265,6 +274,7 @@ class ScoreProvider with ChangeNotifier {
     else _isDraggingBackEllos = false;
     
     if (!_isMuted) audioService.playMarker(_pointType == PointType.beans); // Play return/click sound
+    _vibrate();
     notifyListeners();
   }
 
@@ -310,6 +320,7 @@ class ScoreProvider with ChangeNotifier {
       } else {
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       }
+      _vibrate();
       notifyListeners();
       _saveCurrentState();
     }
@@ -323,6 +334,7 @@ class ScoreProvider with ChangeNotifier {
       _nosotros--;
       _winner = null; // Clear winner if score decreased
       _totalRemainingMatchsticks++;
+      _vibrate();
       notifyListeners();
       _saveCurrentState();
     }
@@ -344,6 +356,7 @@ class ScoreProvider with ChangeNotifier {
       } else {
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       }
+      _vibrate();
       notifyListeners();
       _saveCurrentState();
     }
@@ -357,6 +370,7 @@ class ScoreProvider with ChangeNotifier {
       _ellos--;
       _winner = null; // Clear winner if score decreased
       _totalRemainingMatchsticks++;
+      _vibrate();
       notifyListeners();
       _saveCurrentState();
     }
@@ -449,6 +463,12 @@ class ScoreProvider with ChangeNotifier {
     _saveCurrentSettings();
   }
 
+  void setVibrationEnabled(bool enabled) {
+    _vibrationEnabled = enabled;
+    notifyListeners();
+    _saveCurrentSettings();
+  }
+
   void setAppTheme(TrucoTheme theme) {
     _appTheme = theme;
     AnalyticsService.logThemeChanged(theme.name);
@@ -497,6 +517,7 @@ class ScoreProvider with ChangeNotifier {
       picaPicaEnabled: _picaPicaEnabled,
       picaPicaStart: _picaPicaStart,
       picaPicaEnd: _picaPicaEnd,
+      vibrationEnabled: _vibrationEnabled,
     );
   }
 
@@ -534,12 +555,16 @@ class ScoreProvider with ChangeNotifier {
       _currentBeanPalette = availableBeanPalettes[data[PersistenceService.keyBeanPaletteIndex]];
     }
     if (data[PersistenceService.keyScoringMode] != null) {
-      _scoringMode = data[PersistenceService.keyScoringMode] == ScoringMode.tap.name 
-          ? ScoringMode.tap 
-          : ScoringMode.drag;
+      _scoringMode = ScoringMode.values.firstWhere(
+        (mode) => mode.name == data[PersistenceService.keyScoringMode],
+        orElse: () => ScoringMode.drag,
+      );
     }
     if (data[PersistenceService.keyIsMuted] != null) {
       _isMuted = data[PersistenceService.keyIsMuted];
+    }
+    if (data[PersistenceService.keyVibrationEnabled] != null) {
+      _vibrationEnabled = data[PersistenceService.keyVibrationEnabled];
     }
     if (data[PersistenceService.keyPointType] != null) {
       _pointType = data[PersistenceService.keyPointType] == PointType.beans.name
