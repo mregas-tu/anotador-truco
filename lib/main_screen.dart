@@ -169,26 +169,30 @@ class _MainScreenState extends State<MainScreen>
                       CenterScoreCircle(
                         limitScoreKey: _limitScoreKey,
                       ),
+
+                      // 4. Footer Ornament Overlaid
+                      if (theme.footerAsset != null)
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: IgnorePointer(
+                              child: SvgPicture.asset(
+                                theme.footerAsset!,
+                                height: theme.footerHeight,
+                                colorFilter: theme.footerAsset!.contains('dibu')
+                                    ? null
+                                    : ColorFilter.mode(
+                                        Colors.white.withOpacity(0.8),
+                                        BlendMode.srcIn,
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 10),
-
-                // 4. Footer Ornament
-                if (theme.footerAsset != null)
-                  SvgPicture.asset(
-                    theme.footerAsset!,
-                    height: theme.footerHeight,
-                    colorFilter: theme.footerAsset!.contains('dibu')
-                        ? null
-                        : ColorFilter.mode(
-                            Colors.white.withOpacity(0.8),
-                            BlendMode.srcIn,
-                          ),
-                  ),
-
-                const SizedBox(height: 20),
 
                 // 5. Matchstick Box
                 Consumer<ScoreProvider>(
@@ -714,6 +718,9 @@ class _MainScreenState extends State<MainScreen>
               );
             }),
           ),
+          
+          if (scoreProvider.appTheme.footerAsset != null)
+            SizedBox(height: 10 + scoreProvider.appTheme.footerHeight + 20),
         ],
       ),
     );
