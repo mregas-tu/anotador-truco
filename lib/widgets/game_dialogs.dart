@@ -125,7 +125,6 @@ abstract class GameDialogs {
                             winnerName: winnerName,
                             scoreNosotros: scoreProvider.nosotros,
                             scoreEllos: scoreProvider.ellos,
-                            theme: scoreProvider.appTheme,
                           ),
                           delay: const Duration(milliseconds: 100),
                         );

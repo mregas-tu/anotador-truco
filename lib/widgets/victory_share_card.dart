@@ -5,18 +5,18 @@ class VictoryShareCard extends StatelessWidget {
   final String winnerName;
   final int scoreNosotros;
   final int scoreEllos;
-  final TrucoTheme theme;
 
   const VictoryShareCard({
     super.key,
     required this.winnerName,
     required this.scoreNosotros,
     required this.scoreEllos,
-    required this.theme,
   });
 
   @override
   Widget build(BuildContext context) {
+    const theme = TrucoTheme.navyTheme;
+
     return Container(
       width: 400,
       height: 550,
@@ -91,7 +91,7 @@ class VictoryShareCard extends StatelessWidget {
                         fontFamily: AppFonts.oswald,
                         fontSize: 54,
                         fontWeight: FontWeight.bold,
-                        color: theme.shareWinnerColor,
+                        color: theme.cream,
                         letterSpacing: -1,
                       ),
                     ),

@@ -158,7 +158,7 @@ class CenterScoreCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
+    final scoreProvider = Provider.of<ScoreProvider>(context);
 
     return Padding(
       padding: EdgeInsets.only(
