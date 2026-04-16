@@ -281,8 +281,6 @@ class ScoreProvider with ChangeNotifier {
     if (team == "nosotros") _isDraggingBackNosotros = false;
     else _isDraggingBackEllos = false;
     
-    if (!_isMuted) audioService.playMarker(_pointType == PointType.beans); // Play return/click sound
-    _vibrate();
     notifyListeners();
   }
 

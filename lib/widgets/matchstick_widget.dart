@@ -163,6 +163,7 @@ class MatchstickWidget extends StatelessWidget {
   final bool horizontal;
   final bool diagonal;
   final bool flipped;
+  final bool animateOnReset;
 
   const MatchstickWidget({
     super.key,
@@ -171,6 +172,7 @@ class MatchstickWidget extends StatelessWidget {
     this.horizontal = false,
     this.diagonal = false,
     this.flipped = false,
+    this.animateOnReset = true,
   });
 
   @override
@@ -191,16 +193,21 @@ class MatchstickWidget extends StatelessWidget {
         return SizedBox(
           width: boxWidth,
           height: boxHeight,
-          child: RepaintBoundary(
-            child: CustomPaint(
-              painter: MatchstickPainter(
-                horizontal: horizontal,
-                diagonal: diagonal,
-                flipped: flipped,
-                headColors: scoreProvider.currentPalette.headColors,
-                woodLight: TrucoTheme.woodLight,
-                woodMedium: TrucoTheme.woodMedium,
-                woodDark: TrucoTheme.woodDark,
+          child: AnimatedScale(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInBack,
+            scale: (animateOnReset && scoreProvider.isResetting) ? 0.0 : 1.0,
+            child: RepaintBoundary(
+              child: CustomPaint(
+                painter: MatchstickPainter(
+                  horizontal: horizontal,
+                  diagonal: diagonal,
+                  flipped: flipped,
+                  headColors: scoreProvider.currentPalette.headColors,
+                  woodLight: TrucoTheme.woodLight,
+                  woodMedium: TrucoTheme.woodMedium,
+                  woodDark: TrucoTheme.woodDark,
+                ),
               ),
             ),
           ),

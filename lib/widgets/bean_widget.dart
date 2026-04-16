@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+import 'package:provider/provider.dart';
 import '../providers/score_provider.dart';
 
 class BeanPainter extends CustomPainter {
@@ -267,11 +268,14 @@ class BeanWidget extends StatelessWidget {
   final int seed;
   final BeanType beanType;
 
+  final bool animateOnReset;
+
   const BeanWidget({
     super.key, 
     this.size = 24, 
     this.seed = 0, 
     this.beanType = BeanType.alubia,
+    this.animateOnReset = true,
   });
 
   @override
@@ -280,12 +284,21 @@ class BeanWidget extends StatelessWidget {
     // Beans are somewhat elongated.
     final widthFactor = 1.45 + (r.nextDouble() * 0.15);
 
-    return SizedBox(
-      width: size * widthFactor,
-      height: size,
-      child: CustomPaint(
-        painter: BeanPainter(seed: seed, beanType: beanType),
-      ),
+    return Consumer<ScoreProvider>(
+      builder: (context, scoreProvider, child) {
+        return SizedBox(
+          width: size * widthFactor,
+          height: size,
+          child: AnimatedScale(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInBack,
+            scale: (animateOnReset && scoreProvider.isResetting) ? 0.0 : 1.0,
+            child: CustomPaint(
+              painter: BeanPainter(seed: seed, beanType: beanType),
+            ),
+          ),
+        );
+      },
     );
   }
 }
