@@ -267,11 +267,17 @@ class _MainScreenState extends State<MainScreen>
   }
 
   Widget _buildVerticalDivider(TrucoTheme theme) {
-    return Container(
-      width: 1,
-      height: double.infinity,
-      color: theme.dividerColor.withOpacity(0.15),
-      margin: EdgeInsets.zero,
+    return Column(
+      children: [
+        Expanded(
+          child: Container(
+            width: 1,
+            color: theme.dividerColor.withOpacity(0.15),
+          ),
+        ),
+        if (theme.footerAsset != null)
+          SizedBox(height: 10 + theme.footerHeight + 20),
+      ],
     );
   }
 
