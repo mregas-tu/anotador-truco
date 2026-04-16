@@ -4,6 +4,7 @@ import '../services/audio_service.dart';
 import '../services/analytics_service.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
+import '../services/bean_image_manager.dart';
 import 'premium_provider.dart';
 
 class GameMode {
@@ -491,7 +492,10 @@ class ScoreProvider with ChangeNotifier {
 
   void setBeanPalette(BeanPalette beanPalette) {
     _currentBeanPalette = beanPalette;
-    notifyListeners();
+    // Cachear la imagen del nuevo poroto (24 es el tamaño estándar en la mesa)
+    BeanImageManager().cacheBean(beanPalette.type, 24).then((_) {
+      notifyListeners();
+    });
     _saveCurrentSettings();
   }
 
@@ -590,6 +594,9 @@ class ScoreProvider with ChangeNotifier {
     _picaPicaEnabled = data[PersistenceService.keyPicaPicaEnabled] ?? false;
     _picaPicaStart = data[PersistenceService.keyPicaPicaStart] ?? 5;
     _picaPicaEnd = data[PersistenceService.keyPicaPicaEnd] ?? 20;
+
+    // Cachear el poroto actual si estamos usando porotos
+    await BeanImageManager().cacheBean(_currentBeanPalette.type, 24);
 
     notifyListeners();
   }

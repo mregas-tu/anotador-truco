@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:provider/provider.dart';
 import '../providers/score_provider.dart';
+import '../services/bean_image_manager.dart';
 
 class BeanPainter extends CustomPainter {
   final int seed;
@@ -28,14 +29,6 @@ class BeanPainter extends CustomPainter {
     // Bottom -> Left lobe
     path.cubicTo(w * 0.3, h * 0.95, w * 0.05, h * 0.9, w * 0.05, h * 0.5);
     path.close();
-
-    // 2. Drop Shadow
-    canvas.drawPath(
-      path.shift(const Offset(1.0, 2.5)),
-      Paint()
-        ..color = Colors.black.withOpacity(0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5),
-    );
 
     // 3. Define Colors Based on BeanType
     List<Color> gradientColors;
@@ -284,21 +277,40 @@ class BeanWidget extends StatelessWidget {
     // Beans are somewhat elongated.
     final widthFactor = 1.45 + (r.nextDouble() * 0.15);
 
-    return Consumer<ScoreProvider>(
-      builder: (context, scoreProvider, child) {
-        return SizedBox(
-          width: size * widthFactor,
-          height: size,
-          child: AnimatedScale(
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInBack,
-            scale: (animateOnReset && scoreProvider.isResetting) ? 0.0 : 1.0,
-            child: CustomPaint(
-              painter: BeanPainter(seed: seed, beanType: beanType),
-            ),
+    final isResetting = context.select<ScoreProvider, bool>((p) => p.isResetting);
+    final image = BeanImageManager().cachedImage;
+    final cachedType = BeanImageManager().cachedType;
+
+    // Si tenemos la imagen y es la correcta, es 100 veces más rápido que dibujar curvas
+    if (image != null && cachedType == beanType) {
+      return SizedBox(
+        width: size * widthFactor,
+        height: size,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInBack,
+          scale: (animateOnReset && isResetting) ? 0.0 : 1.0,
+          child: RawImage(
+            image: image,
+            width: size * widthFactor,
+            height: size,
+            fit: BoxFit.fill,
           ),
-        );
-      },
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: size * widthFactor,
+      height: size,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInBack,
+        scale: (animateOnReset && isResetting) ? 0.0 : 1.0,
+        child: CustomPaint(
+          painter: BeanPainter(seed: seed, beanType: beanType),
+        ),
+      ),
     );
   }
 }

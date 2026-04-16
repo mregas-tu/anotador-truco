@@ -188,31 +188,28 @@ class MatchstickWidget extends StatelessWidget {
       boxHeight = width;
     }
 
-    return Consumer<ScoreProvider>(
-      builder: (context, scoreProvider, child) {
-        return SizedBox(
-          width: boxWidth,
-          height: boxHeight,
-          child: AnimatedScale(
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInBack,
-            scale: (animateOnReset && scoreProvider.isResetting) ? 0.0 : 1.0,
-            child: RepaintBoundary(
-              child: CustomPaint(
-                painter: MatchstickPainter(
-                  horizontal: horizontal,
-                  diagonal: diagonal,
-                  flipped: flipped,
-                  headColors: scoreProvider.currentPalette.headColors,
-                  woodLight: TrucoTheme.woodLight,
-                  woodMedium: TrucoTheme.woodMedium,
-                  woodDark: TrucoTheme.woodDark,
-                ),
-              ),
-            ),
+    final isResetting = context.select<ScoreProvider, bool>((p) => p.isResetting);
+    final headColors = context.select<ScoreProvider, List<Color>>((p) => p.currentPalette.headColors);
+
+    return SizedBox(
+      width: boxWidth,
+      height: boxHeight,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInBack,
+        scale: (animateOnReset && isResetting) ? 0.0 : 1.0,
+        child: CustomPaint(
+          painter: MatchstickPainter(
+            horizontal: horizontal,
+            diagonal: diagonal,
+            flipped: flipped,
+            headColors: headColors,
+            woodLight: TrucoTheme.woodLight,
+            woodMedium: TrucoTheme.woodMedium,
+            woodDark: TrucoTheme.woodDark,
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

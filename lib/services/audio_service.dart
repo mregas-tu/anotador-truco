@@ -9,6 +9,18 @@ class AudioService {
   final AudioPlayer _clearPlayer = AudioPlayer();
   final AudioPlayer _milestonePlayer = AudioPlayer();
 
+  Future<void> preload() async {
+    // Pre-set sources to minimize first-play delay
+    await Future.wait([
+      _markerPlayer.setSource(AssetSource('sounds/stick.wav')),
+      _markerPlayer.setSource(AssetSource('sounds/bean.wav')),
+      _markerPlayer.setSource(AssetSource('sounds/pack.wav')),
+      _markerPlayer.setSource(AssetSource('sounds/bean_pack.wav')),
+      _clearPlayer.setSource(AssetSource('sounds/clear.wav')),
+      _milestonePlayer.setSource(AssetSource('sounds/buenas.wav')),
+    ]);
+  }
+
   Future<void> playMarker(bool isBean) async {
     await _markerPlayer.stop();
     final String source = isBean ? 'sounds/bean.wav' : 'sounds/stick.wav';

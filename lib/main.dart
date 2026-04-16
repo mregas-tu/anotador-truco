@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/ad_service.dart';
 import 'services/analytics_service.dart';
+import 'services/audio_service.dart';
 import 'services/version_checker.dart';
 import 'providers/score_provider.dart';
 import 'providers/premium_provider.dart';
@@ -23,6 +24,9 @@ void main() async {
   await AdService.initialize();
   AdService.loadInterstitial();
   AdService.loadRewardedAd();
+  
+  // Pre-cargar audios
+  AudioService().preload();
 
   runApp(
     MultiProvider(
