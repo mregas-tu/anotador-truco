@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/billing_service.dart';
@@ -10,6 +11,7 @@ class PremiumProvider with ChangeNotifier {
 
   bool _isPremium = false;
   Map<String, DateTime> _tempUnlocks = {};
+  final Map<String, Timer> _expirationTimers = {};
   SharedPreferences? _prefs;
   late BillingService _billingService;
 
@@ -36,8 +38,9 @@ class PremiumProvider with ChangeNotifier {
         final Map<String, dynamic> decoded = jsonDecode(tempUnlocksJson);
         _tempUnlocks = decoded.map((key, value) => MapEntry(key, DateTime.parse(value)));
         
-        // Clean up expired unlocks
+        // Clean up expired unlocks and schedule active ones
         _tempUnlocks.removeWhere((key, expiry) => expiry.isBefore(DateTime.now()));
+        _tempUnlocks.forEach((key, expiry) => _scheduleExpiration(key, expiry));
       } catch (e) {
         debugPrint('Error loading temp unlocks: $e');
       }
@@ -61,9 +64,27 @@ class PremiumProvider with ChangeNotifier {
     await _billingService.restorePurchases();
   }
 
+  void _scheduleExpiration(String id, DateTime expiry) {
+    _expirationTimers[id]?.cancel();
+    final diff = expiry.difference(DateTime.now());
+    if (diff.isNegative) {
+      _tempUnlocks.remove(id);
+      _saveTempUnlocks();
+      notifyListeners();
+    } else {
+      _expirationTimers[id] = Timer(diff, () {
+        _tempUnlocks.remove(id);
+        _saveTempUnlocks();
+        notifyListeners();
+      });
+    }
+  }
+
   Future<void> unlockTemporarily(String id) async {
-    _tempUnlocks[id] = DateTime.now().add(const Duration(hours: 24));
+    final expiry = DateTime.now().add(const Duration(hours: 24));
+    _tempUnlocks[id] = expiry;
     await _saveTempUnlocks();
+    _scheduleExpiration(id, expiry);
     notifyListeners();
   }
 
@@ -112,6 +133,9 @@ class PremiumProvider with ChangeNotifier {
 
   @override
   void dispose() {
+    for (var timer in _expirationTimers.values) {
+      timer.cancel();
+    }
     _billingService.dispose();
     super.dispose();
   }

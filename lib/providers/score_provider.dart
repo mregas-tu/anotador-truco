@@ -4,6 +4,7 @@ import '../services/audio_service.dart';
 import '../services/analytics_service.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
+import 'premium_provider.dart';
 
 class GameMode {
   final String label;
@@ -238,9 +239,6 @@ class ScoreProvider with ChangeNotifier {
     } else {
       _isDraggingBackEllos = isDragging;
     }
-    if (isDragging) {
-      if (!_isMuted) audioService.playMarker(_pointType == PointType.beans); // Play lift sound
-    }
     notifyListeners();
   }
 
@@ -341,6 +339,7 @@ class ScoreProvider with ChangeNotifier {
       if (_currentGameMode.hasBuenas && _nosotros == _currentGameMode.milestone) {
         _nosotrosFinishedMalas = false;
       }
+      if (!_isMuted) audioService.playPack(_pointType == PointType.beans);
       _nosotros--;
       _winner = null; // Clear winner if score decreased
       _totalRemainingMatchsticks++;
@@ -377,6 +376,7 @@ class ScoreProvider with ChangeNotifier {
       if (_currentGameMode.hasBuenas && _ellos == _currentGameMode.milestone) {
         _ellosFinishedMalas = false;
       }
+      if (!_isMuted) audioService.playPack(_pointType == PointType.beans);
       _ellos--;
       _winner = null; // Clear winner if score decreased
       _totalRemainingMatchsticks++;
@@ -435,14 +435,13 @@ class ScoreProvider with ChangeNotifier {
     _flyOutTeam = null;
     _flyOutTarget = null;
     
-    // Actually remove the point after animation
+    // Actually remove the point after animation (this will trigger playPack)
     if (team == "nosotros") {
       removePointNosotros();
     } else {
       removePointEllos();
     }
     
-    if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
     notifyListeners();
   }
 
@@ -595,6 +594,32 @@ class ScoreProvider with ChangeNotifier {
     _picaPicaEnd = data[PersistenceService.keyPicaPicaEnd] ?? 20;
 
     notifyListeners();
+  }
+
+  void validatePremiumSelection(PremiumProvider premium) {
+    bool changed = false;
+
+    if (!premium.isThemeUnlocked(_appTheme.name)) {
+      _appTheme = TrucoTheme.allThemes[0];
+      changed = true;
+    }
+
+    int pIndex = availablePalettes.indexOf(_currentPalette);
+    if (!premium.isPaletteUnlocked(pIndex)) {
+      _currentPalette = availablePalettes[1]; // default 1 based on what they have
+      changed = true;
+    }
+
+    int bpIndex = availableBeanPalettes.indexOf(_currentBeanPalette);
+    if (!premium.isBeanPaletteUnlocked(bpIndex)) {
+      _currentBeanPalette = availableBeanPalettes[0];
+      changed = true;
+    }
+
+    if (changed) {
+      _saveCurrentSettings();
+      Future.microtask(() => notifyListeners());
+    }
   }
 
   void reset() {

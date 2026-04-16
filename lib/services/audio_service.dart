@@ -11,7 +11,13 @@ class AudioService {
 
   Future<void> playMarker(bool isBean) async {
     await _markerPlayer.stop();
-    final String source = isBean ? 'sounds/bean.wav' : 'sounds/stick.mp3';
+    final String source = isBean ? 'sounds/bean.wav' : 'sounds/stick.wav';
+    await _markerPlayer.play(AssetSource(source));
+  }
+
+  Future<void> playPack(bool isBean) async {
+    await _markerPlayer.stop();
+    final String source = isBean ? 'sounds/bean_pack.wav' : 'sounds/pack.wav';
     await _markerPlayer.play(AssetSource(source));
   }
 

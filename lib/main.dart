@@ -27,8 +27,11 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ScoreProvider()),
         ChangeNotifierProvider(create: (_) => PremiumProvider()),
+        ChangeNotifierProxyProvider<PremiumProvider, ScoreProvider>(
+          create: (_) => ScoreProvider(),
+          update: (_, premium, score) => score!..validatePremiumSelection(premium),
+        ),
       ],
       child: TrucoProApp(
         isUpdateRequired: versionChecker.isUpdateRequired,

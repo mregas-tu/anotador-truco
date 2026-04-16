@@ -103,8 +103,10 @@ flutter:
     - assets/images/dibu.svg
     - assets/images/hand.svg
     - assets/images/wood.svg
-    - assets/sounds/stick.mp3
+    - assets/sounds/stick.wav
+    - assets/sounds/pack.wav
     - assets/sounds/bean.wav
+    - assets/sounds/bean_pack.wav
     - assets/sounds/clear.wav
     - assets/sounds/buenas.wav
     - assets/images/share_icon.svg
