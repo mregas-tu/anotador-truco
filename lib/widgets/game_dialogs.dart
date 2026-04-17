@@ -342,7 +342,7 @@ abstract class GameDialogs {
                   style: TextStyle(
                     fontFamily: AppFonts.oswald,
                     fontSize: 14,
-                    color: scoreProvider.appTheme.slate.withValues(alpha: 0.8),
+                    color: Colors.white,
                   ),
                 ),
               ),
