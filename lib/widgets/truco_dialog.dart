@@ -14,6 +14,7 @@ class TrucoDialog extends StatelessWidget {
   final double titleFontSize;
   final Color? titleColor;
   final double? marginHorizontal;
+  final bool showBanner;
 
   const TrucoDialog({
     super.key,
@@ -26,6 +27,7 @@ class TrucoDialog extends StatelessWidget {
     this.titleFontSize = 20,
     this.titleColor,
     this.marginHorizontal,
+    this.showBanner = true,
   });
 
   @override
@@ -106,12 +108,13 @@ class TrucoDialog extends StatelessWidget {
           ),
 
           // Banner fijo al pie de la pantalla
-          const Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: TrucoBannerAd(),
-          ),
+          if (showBanner)
+            const Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: TrucoBannerAd(),
+            ),
         ],
       ),
     );

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:in_app_review/in_app_review.dart';
 import 'providers/score_provider.dart';
 import 'widgets/score_group_widget.dart';
 import 'widgets/matchstick_widget.dart';
@@ -527,8 +528,53 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
-  void _showWinnerDialog(BuildContext context, ScoreProvider scoreProvider) {
-    GameDialogs.showWinner(context, scoreProvider);
+  void _showWinnerDialog(BuildContext context, ScoreProvider scoreProvider) async {
+    bool shouldShowRating = false;
+
+    // Evaluamos si corresponde mostrar el diálogo de valoración
+    if (scoreProvider.winner == "nosotros") {
+      final hasRated = await PersistenceService.getHasRatedApp();
+      if (!hasRated) {
+        final matchesCount =
+            await PersistenceService.getMatchesCompletedCount();
+        final lastRequestMatch =
+            await PersistenceService.getLastRateRequestMatchCount();
+
+        // Primera vez al nro 3, luego cada 10 partidos finalizados
+        if (matchesCount >= 3 &&
+            (lastRequestMatch == 0 || (matchesCount - lastRequestMatch >= 10))) {
+          shouldShowRating = true;
+        }
+      }
+    }
+
+    if (shouldShowRating && mounted) {
+      // Registramos que preguntamos en este partido
+      final matchesCount = await PersistenceService.getMatchesCompletedCount();
+      PersistenceService.setLastRateRequestMatchCount(matchesCount);
+
+      GameDialogs.showRatingDialog(
+        context,
+        scoreProvider,
+        onRate: () async {
+          await PersistenceService.setHasRatedApp(true);
+          final inAppReview = InAppReview.instance;
+          if (await inAppReview.isAvailable()) {
+            inAppReview.requestReview();
+          }
+        },
+        onLater: () {},
+        onFeedback: () async {
+          await PersistenceService.setHasRatedApp(true);
+        },
+      );
+
+      // Mostramos ganador SIN anuncio para no saturar al usuario
+      GameDialogs.showWinner(context, scoreProvider, silenceAd: true);
+    } else {
+      // Flujo original
+      GameDialogs.showWinner(context, scoreProvider);
+    }
   }
 
 

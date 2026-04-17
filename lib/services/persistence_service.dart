@@ -19,6 +19,9 @@ class PersistenceService {
   static const String keyPicaPicaEnd = 'pica_pica_end';
   static const String keyBeanPaletteIndex = 'bean_palette_index';
   static const String keyVibrationEnabled = 'vibration_enabled';
+  static const String keyMatchesCompletedCount = 'matches_completed_count';
+  static const String keyHasRatedApp = 'has_rated_app';
+  static const String keyLastRateRequestMatchCount = 'last_rate_request_match_count';
 
   static SharedPreferences? _prefs;
 
@@ -35,6 +38,37 @@ class PersistenceService {
   static Future<void> setTutorialDone(bool done) async {
     final prefs = await _getPrefs();
     await prefs.setBool(keyTutorialDone, done);
+  }
+
+  static Future<int> getMatchesCompletedCount() async {
+    final prefs = await _getPrefs();
+    return prefs.getInt(keyMatchesCompletedCount) ?? 0;
+  }
+
+  static Future<void> incrementMatchesCompletedCount() async {
+    final prefs = await _getPrefs();
+    final current = prefs.getInt(keyMatchesCompletedCount) ?? 0;
+    await prefs.setInt(keyMatchesCompletedCount, current + 1);
+  }
+
+  static Future<bool> getHasRatedApp() async {
+    final prefs = await _getPrefs();
+    return prefs.getBool(keyHasRatedApp) ?? false;
+  }
+
+  static Future<void> setHasRatedApp(bool rated) async {
+    final prefs = await _getPrefs();
+    await prefs.setBool(keyHasRatedApp, rated);
+  }
+
+  static Future<int> getLastRateRequestMatchCount() async {
+    final prefs = await _getPrefs();
+    return prefs.getInt(keyLastRateRequestMatchCount) ?? 0;
+  }
+
+  static Future<void> setLastRateRequestMatchCount(int count) async {
+    final prefs = await _getPrefs();
+    await prefs.setInt(keyLastRateRequestMatchCount, count);
   }
 
   static Future<void> saveGameState({

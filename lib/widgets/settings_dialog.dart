@@ -10,6 +10,7 @@ import 'package:in_app_review/in_app_review.dart';
 
 import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
+import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
 import 'truco_buttons.dart';
 import 'bean_widget.dart';
@@ -114,6 +115,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
 
   Future<void> _rateApp() async {
     final InAppReview inAppReview = InAppReview.instance;
+    await PersistenceService.setHasRatedApp(true);
     try {
       if (await inAppReview.isAvailable()) {
         await inAppReview.requestReview();

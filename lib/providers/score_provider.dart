@@ -323,6 +323,7 @@ class ScoreProvider with ChangeNotifier {
         _nosotrosFinishedMalas = true;
       } else if (_nosotros == _currentGameMode.totalPoints) {
         _winner = "nosotros";
+        PersistenceService.incrementMatchesCompletedCount();
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       } else {
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
@@ -360,6 +361,7 @@ class ScoreProvider with ChangeNotifier {
         _ellosFinishedMalas = true;
       } else if (_ellos == _currentGameMode.totalPoints) {
         _winner = "ellos";
+        PersistenceService.incrementMatchesCompletedCount();
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       } else {
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);

@@ -18,15 +18,16 @@ import 'package:screenshot/screenshot.dart';
 abstract class GameDialogs {
   static void showWinner(
     BuildContext context,
-    ScoreProvider scoreProvider,
-  ) {
+    ScoreProvider scoreProvider, {
+    bool silenceAd = false,
+  }) {
     final String winnerKey = scoreProvider.winner!;
     final String winnerName = winnerKey == "nosotros"
         ? scoreProvider.nosotrosName
         : scoreProvider.ellosName;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!Provider.of<PremiumProvider>(context, listen: false).isPremium) {
+      if (!silenceAd && !Provider.of<PremiumProvider>(context, listen: false).isPremium) {
         AdService.showInterstitial();
       }
     });
@@ -286,6 +287,63 @@ abstract class GameDialogs {
                   style: TextStyle(
                       color: scoreProvider.appTheme.white.withValues(alpha: 0.5),
                       fontFamily: AppFonts.oswald),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  static void showRatingDialog(
+    BuildContext context,
+    ScoreProvider scoreProvider, {
+    required VoidCallback onRate,
+    required VoidCallback onLater,
+    required VoidCallback onFeedback,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => TrucoDialog(
+        showBanner: false,
+        title: "¡GRACIAS POR JUGAR!",
+        contentText:
+            "¿Te está gustando Puro Truco?\nTu opinión nos ayuda mucho a seguir mejorando.",
+        actions: [
+          Column(
+            children: [
+              PrimaryButton(
+                text: "ME ENCANTA",
+                width: double.infinity,
+                onPressed: () {
+                  Navigator.pop(context);
+                  onRate();
+                },
+              ),
+              const SizedBox(height: 12),
+              SecondaryButton(
+                text: "Ahora no",
+                width: double.infinity,
+                toUpperCase: false,
+                onPressed: () {
+                  Navigator.pop(context);
+                  onLater();
+                },
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  onFeedback();
+                },
+                child: Text(
+                  "Podría mejorar...",
+                  style: TextStyle(
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 14,
+                    color: scoreProvider.appTheme.slate.withValues(alpha: 0.8),
+                  ),
                 ),
               ),
             ],
