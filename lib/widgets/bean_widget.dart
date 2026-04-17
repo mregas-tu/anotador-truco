@@ -260,29 +260,30 @@ class BeanWidget extends StatelessWidget {
   final double size;
   final int seed;
   final BeanType beanType;
-
   final bool animateOnReset;
+  final bool useCache;
 
   const BeanWidget({
-    super.key, 
-    this.size = 24, 
-    this.seed = 0, 
+    super.key,
+    this.size = 24,
+    this.seed = 0,
     this.beanType = BeanType.alubia,
     this.animateOnReset = true,
+    this.useCache = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final r = math.Random(seed);
     // Beans are somewhat elongated.
-    final widthFactor = 1.45 + (r.nextDouble() * 0.15);
-
-    final isResetting = context.select<ScoreProvider, bool>((p) => p.isResetting);
+    final double widthFactor = 1.6;
     final image = BeanImageManager().cachedImage;
     final cachedType = BeanImageManager().cachedType;
 
-    // Si tenemos la imagen y es la correcta, es 100 veces más rápido que dibujar curvas
-    if (image != null && cachedType == beanType) {
+    final isResetting = context.select<ScoreProvider, bool>((p) => p.isResetting);
+
+    // Solo usamos la cache si está habilitada y es el tipo correcto
+    if (useCache && image != null && cachedType == beanType) {
       return SizedBox(
         width: size * widthFactor,
         height: size,
@@ -307,8 +308,10 @@ class BeanWidget extends StatelessWidget {
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInBack,
         scale: (animateOnReset && isResetting) ? 0.0 : 1.0,
-        child: CustomPaint(
-          painter: BeanPainter(seed: seed, beanType: beanType),
+        child: RepaintBoundary(
+          child: CustomPaint(
+            painter: BeanPainter(seed: seed, beanType: beanType),
+          ),
         ),
       ),
     );

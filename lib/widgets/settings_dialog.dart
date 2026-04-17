@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:in_app_review/in_app_review.dart';
 
 import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
@@ -108,6 +109,20 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                   Text('No se pudo abrir el correo: martoregas@gmail.com')),
         );
       }
+    }
+  }
+
+  Future<void> _rateApp() async {
+    final InAppReview inAppReview = InAppReview.instance;
+    try {
+      if (await inAppReview.isAvailable()) {
+        await inAppReview.requestReview();
+      } else {
+        await inAppReview.openStoreListing();
+      }
+    } catch (e) {
+      debugPrint("Error requesting review: $e");
+      await inAppReview.openStoreListing();
     }
   }
 
@@ -631,7 +646,8 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                     final index = entry.key;
                     final isSelected =
                         scoreProvider.currentBeanPalette.name == palette.name;
-                    final isLocked = !premiumProvider.isBeanPaletteUnlocked(index);
+                    final isLocked =
+                        !premiumProvider.isBeanPaletteUnlocked(index);
                     final timeLeft =
                         premiumProvider.getRemainingTime('bean_palette_$index');
 
@@ -651,17 +667,19 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                             height: isSmallScreen ? 44 : 48,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: isSelected 
-                                  ? Colors.white.withValues(alpha: 0.15) 
+                              color: isSelected
+                                  ? Colors.white.withValues(alpha: 0.15)
                                   : Colors.white.withValues(alpha: 0.05),
                               border: Border.all(
-                                color: isSelected ? Colors.white : Colors.white10,
+                                color:
+                                    isSelected ? Colors.white : Colors.white10,
                                 width: isSelected ? 3 : 1,
                               ),
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                          color: Colors.white.withValues(alpha: 0.2),
+                                          color: Colors.white
+                                              .withValues(alpha: 0.2),
                                           blurRadius: 10,
                                           spreadRadius: 2)
                                     ]
@@ -672,6 +690,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                                 size: isSmallScreen ? 18 : 20,
                                 beanType: palette.type,
                                 seed: index,
+                                useCache: false,
                               ),
                             ),
                           ),
@@ -942,6 +961,13 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
+            label: "VALORAR APP",
+            onTap: _rateApp,
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+          ),
+          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          _buildMenuNavigationItem(
             label: "ACERCA DE",
             onTap: () => setState(() => currentPane = 4),
             scoreProvider: scoreProvider,
@@ -1118,6 +1144,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   Widget _buildMenuNavigationItem({
     required String label,
     String? iconAsset,
+    IconData? iconData,
     required VoidCallback onTap,
     required ScoreProvider scoreProvider,
     required bool isSmallScreen,
@@ -1139,6 +1166,13 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                 scoreProvider.appTheme.cream,
                 BlendMode.srcIn,
               ),
+            ),
+            const SizedBox(width: 8),
+          ] else if (iconData != null) ...[
+            Icon(
+              iconData,
+              size: 20,
+              color: scoreProvider.appTheme.cream,
             ),
             const SizedBox(width: 8),
           ],
@@ -1228,7 +1262,10 @@ final List<Map<String, dynamic>> trucoCardHierarchy = [
     'signName': 'Hacer pico / beso'
   },
   {
-    'assets': ['assets/images/cards/oro_1.png', 'assets/images/cards/copa_1.png'],
+    'assets': [
+      'assets/images/cards/oro_1.png',
+      'assets/images/cards/copa_1.png'
+    ],
     'sign': 'assets/images/signs/1_sign.png',
     'signName': 'Abrir la boca'
   },
@@ -1260,7 +1297,10 @@ final List<Map<String, dynamic>> trucoCardHierarchy = [
     'sign': null
   },
   {
-    'assets': ['assets/images/cards/copa_7.png', 'assets/images/cards/basto_7.png'],
+    'assets': [
+      'assets/images/cards/copa_7.png',
+      'assets/images/cards/basto_7.png'
+    ],
     'sign': null
   },
   {

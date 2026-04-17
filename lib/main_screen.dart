@@ -130,9 +130,11 @@ class _MainScreenState extends State<MainScreen>
           // 0. Global Background Image (Now static!)
           if (theme.backgroundAsset != null)
             Positioned.fill(
-              child: Image.asset(
-                theme.backgroundAsset!,
-                fit: BoxFit.cover,
+              child: RepaintBoundary(
+                child: Image.asset(
+                  theme.backgroundAsset!,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
 
@@ -177,15 +179,17 @@ class _MainScreenState extends State<MainScreen>
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 20),
                             child: IgnorePointer(
-                              child: SvgPicture.asset(
-                                theme.footerAsset!,
-                                height: theme.footerHeight,
-                                colorFilter: theme.footerAsset!.contains('dibu')
-                                    ? null
-                                    : ColorFilter.mode(
-                                        Colors.white.withOpacity(0.8),
-                                        BlendMode.srcIn,
-                                      ),
+                              child: RepaintBoundary(
+                                child: SvgPicture.asset(
+                                  theme.footerAsset!,
+                                  height: theme.footerHeight,
+                                  colorFilter: theme.footerAsset!.contains('dibu')
+                                      ? null
+                                      : ColorFilter.mode(
+                                          Colors.white.withOpacity(0.8),
+                                          BlendMode.srcIn,
+                                        ),
+                                ),
                               ),
                             ),
                           ),
