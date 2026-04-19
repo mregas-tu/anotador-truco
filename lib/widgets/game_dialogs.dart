@@ -7,6 +7,7 @@ import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
 import '../services/ad_service.dart';
 import '../theme/app_theme.dart';
+import '../services/analytics_service.dart';
 import 'truco_buttons.dart';
 import 'truco_dialog.dart';
 import 'victory_share_card.dart';
@@ -35,11 +36,13 @@ abstract class GameDialogs {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => TrucoDialog(
-        title: "¡Partida finalizada!",
-        toUpperCaseTitle: false,
-        titleFontSize: 20,
-        titleColor: scoreProvider.appTheme.cream,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: TrucoDialog(
+          title: "¡Partida finalizada!",
+          toUpperCaseTitle: false,
+          titleFontSize: 20,
+          titleColor: scoreProvider.appTheme.cream,
         marginHorizontal: 50,
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -88,6 +91,7 @@ abstract class GameDialogs {
                 width: double.infinity,
                 onPressed: () {
                   scoreProvider.triggerReset();
+                  AnalyticsService.logNewGameFromSummary();
                   Navigator.pop(context);
                 },
               ),
@@ -106,6 +110,7 @@ abstract class GameDialogs {
                         } else {
                           scoreProvider.removePointEllos();
                         }
+                        AnalyticsService.logUndoFromSummary();
                         Navigator.pop(context);
                       },
                     ),
@@ -145,6 +150,7 @@ abstract class GameDialogs {
                             [XFile(path)],
                             text: message,
                           );
+                          AnalyticsService.logShareGameResult();
                         }
                       },
                     ),
@@ -155,8 +161,9 @@ abstract class GameDialogs {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   static void showRecovery(
     BuildContext context,
@@ -166,8 +173,10 @@ abstract class GameDialogs {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => TrucoDialog(
-        title: "Tenés una partida en curso",
+      builder: (context) => PopScope(
+        canPop: false,
+        child: TrucoDialog(
+          title: "Tenés una partida en curso",
         contentText: "¿Querés continuarla o empezar una nueva?",
         actions: [
           Row(
@@ -179,6 +188,7 @@ abstract class GameDialogs {
                   onPressed: () {
                     Navigator.pop(context);
                     provider.triggerReset();
+                    AnalyticsService.logNewGameStarted();
                   },
                 ),
               ),
@@ -189,6 +199,7 @@ abstract class GameDialogs {
                   onPressed: () {
                     Navigator.pop(context);
                     provider.restoreGame(data);
+                    AnalyticsService.logGameRestored();
                   },
                 ),
               ),
@@ -196,8 +207,9 @@ abstract class GameDialogs {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   static void showUnlock(
     BuildContext context,
@@ -305,9 +317,11 @@ abstract class GameDialogs {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => TrucoDialog(
-        showBanner: false,
-        title: "¡GRACIAS POR JUGAR!",
+      builder: (context) => PopScope(
+        canPop: false,
+        child: TrucoDialog(
+          showBanner: false,
+          title: "¡GRACIAS POR JUGAR!",
         contentText:
             "¿Te está gustando Puro Truco?\nTu opinión nos ayuda mucho a seguir mejorando.",
         actions: [
@@ -319,6 +333,7 @@ abstract class GameDialogs {
                 onPressed: () {
                   Navigator.pop(context);
                   onRate();
+                  AnalyticsService.logRateAppAction('rate_now');
                 },
               ),
               const SizedBox(height: 12),
@@ -329,6 +344,7 @@ abstract class GameDialogs {
                 onPressed: () {
                   Navigator.pop(context);
                   onLater();
+                  AnalyticsService.logRateAppAction('later');
                 },
               ),
               const SizedBox(height: 12),
@@ -336,6 +352,7 @@ abstract class GameDialogs {
                 onPressed: () {
                   Navigator.pop(context);
                   onFeedback();
+                  AnalyticsService.logRateAppAction('never_or_feedback');
                 },
                 child: Text(
                   "Podría mejorar...",
@@ -350,6 +367,7 @@ abstract class GameDialogs {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

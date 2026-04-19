@@ -7,7 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:in_app_review/in_app_review.dart';
-
+import '../services/analytics_service.dart';
 import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
 import '../services/persistence_service.dart';
@@ -273,6 +273,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             label: "MODO DE JUEGO",
             iconAsset: 'assets/images/menu_icons/game_mode_icon.svg',
             onTap: () {
+              AnalyticsService.logGameModeMenu();
               setState(() => currentPane = 2);
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _scrollToSelectedMode(scoreProvider);
@@ -285,7 +286,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           _buildMenuNavigationItem(
             label: "DISEÑO",
             iconAsset: 'assets/images/menu_icons/design_icon.svg',
-            onTap: () => setState(() => currentPane = 1),
+            onTap: () {
+              AnalyticsService.logDesignMenu();
+              setState(() => currentPane = 1);
+            },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
@@ -293,7 +297,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           _buildMenuNavigationItem(
             label: "AYUDA Y SOPORTE",
             iconAsset: 'assets/images/menu_icons/support_icon.svg',
-            onTap: () => setState(() => currentPane = 3),
+            onTap: () {
+              AnalyticsService.logSupportMenu();
+              setState(() => currentPane = 3);
+            },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
@@ -334,6 +341,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             onPressed: () {
               Share.share(
                   "#AnotadorDeTruco\n${Platform.isAndroid ? 'https://play.google.com/store/apps/details?id=com.mregas.truco.anotador' : 'https://apps.apple.com/app/idYOUR_APP_ID'}");
+              AnalyticsService.logShareMenu();
             },
           ),
         ] else if (currentPane == 1) ...[
@@ -372,6 +380,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         widget.onThemeLockedTap(theme.name);
                       } else {
                         scoreProvider.setAppTheme(theme);
+                        AnalyticsService.logThemeChanged(theme.name);
                       }
                     },
                     child: Container(
@@ -488,8 +497,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: () =>
-                          scoreProvider.setPointType(PointType.matches),
+                      onTap: () {
+                        scoreProvider.setPointType(PointType.matches);
+                        AnalyticsService.logPieceStyleSelected('fosforos');
+                      },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
@@ -520,7 +531,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => scoreProvider.setPointType(PointType.beans),
+                      onTap: () {
+                        scoreProvider.setPointType(PointType.beans);
+                        AnalyticsService.logPieceStyleSelected('porotos');
+                      },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
@@ -795,8 +809,11 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: InkWell(
-                onTap: () => scoreProvider
-                    .setPicaPicaEnabled(!scoreProvider.picaPicaEnabled),
+                onTap: () {
+                  final bool newValue = !scoreProvider.picaPicaEnabled;
+                  scoreProvider.setPicaPicaEnabled(newValue);
+                  AnalyticsService.logPicaPicaToggled(newValue);
+                },
                 child: Row(
                   children: [
                     // Customized Checkbox
@@ -939,7 +956,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
         ] else if (currentPane == 3) ...[
           _buildMenuNavigationItem(
             label: "VALORES Y SEÑAS",
-            onTap: () => setState(() => currentPane = 5),
+            onTap: () {
+              AnalyticsService.logViewRules();
+              setState(() => currentPane = 5);
+            },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
@@ -950,6 +970,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             onTap: () {
               Navigator.pop(context);
               widget.onRepeatTutorial();
+              AnalyticsService.logTutorialRepeat();
             },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
@@ -957,21 +978,30 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
             label: "ESCRIBINOS",
-            onTap: _sendFeedbackEmail,
+            onTap: () {
+              _sendFeedbackEmail();
+              AnalyticsService.logContactUs();
+            },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
             label: "VALORAR APP",
-            onTap: _rateApp,
+            onTap: () {
+              _rateApp();
+              AnalyticsService.logViewRateApp();
+            },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
             label: "ACERCA DE",
-            onTap: () => setState(() => currentPane = 4),
+            onTap: () {
+              AnalyticsService.logViewAbout();
+              setState(() => currentPane = 4);
+            },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
@@ -1150,6 +1180,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     required VoidCallback onTap,
     required ScoreProvider scoreProvider,
     required bool isSmallScreen,
+    Color? textColor,
   }) {
     return ListTile(
       dense: isSmallScreen,
@@ -1183,7 +1214,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             style: TextStyle(
               fontFamily: AppFonts.oswald,
               fontSize: 16,
-              color: scoreProvider.appTheme.cream,
+              color: textColor ?? scoreProvider.appTheme.cream,
             ),
           ),
         ],

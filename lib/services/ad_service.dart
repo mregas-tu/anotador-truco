@@ -10,7 +10,8 @@ class AdService {
     // Esto te protege de baneos en tu celular al testear con IDs reales
     RequestConfiguration configuration = RequestConfiguration(
       testDeviceIds: [
-        "2543859CEB14286AB7A77C25F687A0A3", // Tu celular (SM A366E)
+        "2543859CEB14286AB7A77C25F687A0A3", // ID Anterior
+        "EC7685C822B403DE73B5E58D9152D7AC", // ID Nuevo (SM A366E)
       ],
     );
     await MobileAds.instance.updateRequestConfiguration(configuration);

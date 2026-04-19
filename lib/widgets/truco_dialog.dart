@@ -107,13 +107,18 @@ class TrucoDialog extends StatelessWidget {
             ),
           ),
 
-          // Banner fijo al pie de la pantalla
+          // Banner fijo al pie de la pantalla (pegado al borde con SafeArea)
           if (showBanner)
             const Positioned(
-              bottom: 20,
+              bottom: 0,
               left: 0,
               right: 0,
-              child: TrucoBannerAd(),
+              child: SafeArea(
+                top: false,
+                left: false,
+                right: false,
+                child: TrucoBannerAd(),
+              ),
             ),
         ],
       ),

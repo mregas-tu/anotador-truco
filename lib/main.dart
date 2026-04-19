@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'dart:ui';
 import 'services/ad_service.dart';
 import 'services/analytics_service.dart';
 import 'services/audio_service.dart';
@@ -13,19 +15,30 @@ import 'main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  await Firebase.initializeApp();
-  await AnalyticsService.logAppOpen();
   
-  // Nuevo: Chequeo de versión
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  
+  await Firebase.initializeApp();
+  
+  // Crashlytics: Capturar errores de Flutter
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  
+  // Crashlytics: Capturar errores fuera de Flutter (errores asíncronos nativos)
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
+  await AnalyticsService.init();
+  await AnalyticsService.logAppOpen();
+
   final versionChecker = VersionChecker();
   await versionChecker.checkVersion();
 
   await AdService.initialize();
   AdService.loadInterstitial();
   AdService.loadRewardedAd();
-  
-  // Pre-cargar audios
+
   AudioService().preload();
 
   runApp(
@@ -34,7 +47,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PremiumProvider()),
         ChangeNotifierProxyProvider<PremiumProvider, ScoreProvider>(
           create: (_) => ScoreProvider(),
-          update: (_, premium, score) => score!..validatePremiumSelection(premium),
+          update: (_, premium, score) =>
+              score!..validatePremiumSelection(premium),
         ),
       ],
       child: TrucoProApp(
@@ -50,7 +64,7 @@ class TrucoProApp extends StatelessWidget {
   final String storeUrl;
 
   const TrucoProApp({
-    super.key, 
+    super.key,
     required this.isUpdateRequired,
     required this.storeUrl,
   });
@@ -65,8 +79,8 @@ class TrucoProApp extends StatelessWidget {
         primarySwatch: Colors.brown,
         useMaterial3: true,
       ),
-      home: isUpdateRequired 
-          ? ForceUpdateScreen(storeUrl: storeUrl) 
+      home: isUpdateRequired
+          ? ForceUpdateScreen(storeUrl: storeUrl)
           : const MainScreen(),
     );
   }

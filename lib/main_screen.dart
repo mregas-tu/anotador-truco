@@ -9,6 +9,7 @@ import 'widgets/matchstick_widget.dart';
 import 'widgets/bean_widget.dart';
 import 'widgets/matchstick_box.dart';
 import 'theme/app_theme.dart';
+import 'services/analytics_service.dart';
 import 'services/persistence_service.dart';
 import 'widgets/truco_dialog.dart';
 import 'widgets/truco_buttons.dart';
@@ -481,6 +482,7 @@ class _MainScreenState extends State<MainScreen>
                     onPressed: () {
                       if (controller.text.trim().isNotEmpty) {
                         scoreProvider.setTeamName(teamKey, controller.text);
+                        AnalyticsService.logTeamNamesChanged();
                       }
                       Navigator.pop(context);
                     },
@@ -517,6 +519,7 @@ class _MainScreenState extends State<MainScreen>
                   text: "COMENZAR",
                   onPressed: () {
                     scoreProvider.triggerReset();
+                    AnalyticsService.logNewGameStarted();
                     Navigator.pop(context);
                   },
                 ),
@@ -547,6 +550,24 @@ class _MainScreenState extends State<MainScreen>
         }
       }
     }
+
+    // Log detailed game finished event (uno solo para todos los flujos)
+    AnalyticsService.logGameFinished(
+      gameMode: scoreProvider.currentGameMode.label,
+      picaPica: scoreProvider.picaPicaEnabled,
+      theme: scoreProvider.appTheme.name,
+      pieceType: scoreProvider.pointType == PointType.beans ? 'porotos' : 'fosforos',
+      pieceDesign: scoreProvider.pointType == PointType.beans 
+          ? scoreProvider.currentBeanPalette.name 
+          : scoreProvider.currentPalette.name,
+      controlMode: scoreProvider.scoringMode == ScoringMode.drag 
+          ? 'drag' 
+          : scoreProvider.scoringMode == ScoringMode.tap ? 'tap' : 'classic',
+      soundEnabled: !scoreProvider.isMuted,
+      vibrationEnabled: scoreProvider.vibrationEnabled,
+      teamNameNos: scoreProvider.nosotrosName,
+      teamNameEllos: scoreProvider.ellosName,
+    );
 
     if (shouldShowRating && mounted) {
       // Registramos que preguntamos en este partido
@@ -1111,6 +1132,7 @@ class _MainScreenState extends State<MainScreen>
   }
 
   void _skipTutorial() async {
+    AnalyticsService.logTutorialSkip(_tutorialStep);
     setState(() {
       _isTutorialActive = false;
       _showGhostHand = false;

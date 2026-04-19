@@ -31,15 +31,17 @@ class PremiumProvider with ChangeNotifier {
   Future<void> _loadFromPrefs() async {
     _prefs = await SharedPreferences.getInstance();
     _isPremium = _prefs?.getBool(_keyIsPremium) ?? false;
-    
+
     final String? tempUnlocksJson = _prefs?.getString(_keyTempUnlocks);
     if (tempUnlocksJson != null) {
       try {
         final Map<String, dynamic> decoded = jsonDecode(tempUnlocksJson);
-        _tempUnlocks = decoded.map((key, value) => MapEntry(key, DateTime.parse(value)));
-        
+        _tempUnlocks =
+            decoded.map((key, value) => MapEntry(key, DateTime.parse(value)));
+
         // Clean up expired unlocks and schedule active ones
-        _tempUnlocks.removeWhere((key, expiry) => expiry.isBefore(DateTime.now()));
+        _tempUnlocks
+            .removeWhere((key, expiry) => expiry.isBefore(DateTime.now()));
         _tempUnlocks.forEach((key, expiry) => _scheduleExpiration(key, expiry));
       } catch (e) {
         debugPrint('Error loading temp unlocks: $e');
@@ -89,7 +91,8 @@ class PremiumProvider with ChangeNotifier {
   }
 
   Future<void> _saveTempUnlocks() async {
-    final Map<String, String> encoded = _tempUnlocks.map((key, value) => MapEntry(key, value.toIso8601String()));
+    final Map<String, String> encoded = _tempUnlocks
+        .map((key, value) => MapEntry(key, value.toIso8601String()));
     await _prefs?.setString(_keyTempUnlocks, jsonEncode(encoded));
   }
 
@@ -107,7 +110,7 @@ class PremiumProvider with ChangeNotifier {
       final expiry = _tempUnlocks[id]!;
       final diff = expiry.difference(DateTime.now());
       if (diff.isNegative) return null;
-      
+
       final hours = diff.inHours.toString().padLeft(2, '0');
       final minutes = (diff.inMinutes % 60).toString().padLeft(2, '0');
       return "$hours:$minutes";
@@ -117,7 +120,7 @@ class PremiumProvider with ChangeNotifier {
 
   // Helper getters for specific logic
   bool isThemeUnlocked(String themeName) {
-    if (themeName == "NAVY PROFUNDO") return true; 
+    if (themeName == "NAVY PROFUNDO") return true;
     return isUnlocked('theme_$themeName');
   }
 

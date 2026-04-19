@@ -7,7 +7,7 @@ class BillingService {
   static const String premiumIdAlt = '33-de-mano';
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   late StreamSubscription<List<PurchaseDetails>> _subscription;
-  
+
   // Callback para avisar a la UI cuando cambia el estado
   final Function(bool) onPremiumStatusChanged;
 
@@ -23,7 +23,8 @@ class BillingService {
     });
   }
 
-  void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) async {
+  void _listenToPurchaseUpdated(
+      List<PurchaseDetails> purchaseDetailsList) async {
     for (var purchaseDetails in purchaseDetailsList) {
       if (purchaseDetails.status == PurchaseStatus.pending) {
         // Mostrar cargando si hace falta
@@ -31,11 +32,11 @@ class BillingService {
         if (purchaseDetails.status == PurchaseStatus.error) {
           // Manejar error de compra
         } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-                   purchaseDetails.status == PurchaseStatus.restored) {
+            purchaseDetails.status == PurchaseStatus.restored) {
           // ¡COMPRA EXITOSA!
           await _deliverProduct(purchaseDetails);
         }
-        
+
         if (purchaseDetails.pendingCompletePurchase) {
           await _inAppPurchase.completePurchase(purchaseDetails);
         }
@@ -44,7 +45,8 @@ class BillingService {
   }
 
   Future<void> _deliverProduct(PurchaseDetails purchaseDetails) async {
-    if (purchaseDetails.productID == premiumId || purchaseDetails.productID == premiumIdAlt) {
+    if (purchaseDetails.productID == premiumId ||
+        purchaseDetails.productID == premiumIdAlt) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_premium', true);
       onPremiumStatusChanged(true);
@@ -65,8 +67,9 @@ class BillingService {
     }
 
     final ProductDetails productDetails = response.productDetails.first;
-    final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
-    
+    final PurchaseParam purchaseParam =
+        PurchaseParam(productDetails: productDetails);
+
     // Iniciar el flujo de compra de Google
     await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
   }
