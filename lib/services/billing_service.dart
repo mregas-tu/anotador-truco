@@ -48,7 +48,7 @@ class BillingService {
     if (purchaseDetails.productID == premiumId ||
         purchaseDetails.productID == premiumIdAlt) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('is_premium', true);
+      await prefs.setBool('33_de_mano_unlocked', true);
       onPremiumStatusChanged(true);
     }
   }

@@ -6,7 +6,7 @@ import '../services/billing_service.dart';
 import '../services/analytics_service.dart';
 
 class PremiumProvider with ChangeNotifier {
-  static const String _keyIsPremium = 'is_premium';
+  static const String _keyIsPremium = '33_de_mano_unlocked';
   static const String _keyTempUnlocks = 'temp_unlocks';
 
   bool _isPremium = false;
