@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:in_app_review/in_app_review.dart';
 import '../services/analytics_service.dart';
+import '../services/support_service.dart';
 import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
 import '../services/persistence_service.dart';
@@ -87,31 +88,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     }
   }
 
-  Future<void> _sendFeedbackEmail() async {
-    final Uri emailLaunchUri = Uri(
-      scheme: 'mailto',
-      path: 'martoregas@gmail.com', // EMAIL DEL USUARIO
-      query: _encodeQueryParameters(<String, String>{
-        'subject': 'Puro Truco - Dudas y sugerencias',
-      }),
-    );
-
-    try {
-      if (await canLaunchUrl(emailLaunchUri)) {
-        await launchUrl(emailLaunchUri);
-      } else {
-        throw 'Could not launch $emailLaunchUri';
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content:
-                  Text('No se pudo abrir el correo: martoregas@gmail.com')),
-        );
-      }
-    }
-  }
 
   Future<void> _rateApp() async {
     final InAppReview inAppReview = InAppReview.instance;
@@ -125,12 +101,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     }
   }
 
-  String? _encodeQueryParameters(Map<String, String> params) {
-    return params.entries
-        .map((MapEntry<String, String> e) =>
-            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-        .join('&');
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -336,8 +306,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             width: double.infinity,
             iconAsset: 'assets/images/share_icon.svg',
             onPressed: () {
-              Share.share(
-                  "#AnotadorDeTruco\n${Platform.isAndroid ? 'https://play.google.com/store/apps/details?id=com.mregas.truco.anotador' : 'https://apps.apple.com/app/idYOUR_APP_ID'}");
+              SupportService.shareApp();
               AnalyticsService.logShareMenu();
             },
           ),
@@ -976,7 +945,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           _buildMenuNavigationItem(
             label: "ESCRIBINOS",
             onTap: () {
-              _sendFeedbackEmail();
+              SupportService.sendFeedbackEmail();
               AnalyticsService.logContactUs();
             },
             scoreProvider: scoreProvider,

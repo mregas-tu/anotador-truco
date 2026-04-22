@@ -9,6 +9,7 @@ import 'widgets/matchstick_widget.dart';
 import 'widgets/bean_widget.dart';
 import 'widgets/matchstick_box.dart';
 import 'theme/app_theme.dart';
+import 'services/support_service.dart';
 import 'services/analytics_service.dart';
 import 'services/persistence_service.dart';
 import 'widgets/truco_dialog.dart';
@@ -49,8 +50,6 @@ class _MainScreenState extends State<MainScreen>
   String? _lastWinnerShown;
   int _tutorialStep = 0;
   bool _isTutorialActive = false;
-
-
 
   late Animation<double> _handScaleAnimation;
 
@@ -149,8 +148,8 @@ class _MainScreenState extends State<MainScreen>
                 MainHeader(
                   restartKey: _restartKey,
                   settingsKey: _settingsKey,
-                  onRestart: () => _showResetConfirmationDialog(
-                      context, Provider.of<ScoreProvider>(context, listen: false)),
+                  onRestart: () => _showResetConfirmationDialog(context,
+                      Provider.of<ScoreProvider>(context, listen: false)),
                   onSettings: _showSettingsDialog,
                 ),
 
@@ -163,9 +162,11 @@ class _MainScreenState extends State<MainScreen>
                     children: [
                       Row(
                         children: [
-                          _buildTeamSectionGranular(context, true, key: _nosotrosKey),
+                          _buildTeamSectionGranular(context, true,
+                              key: _nosotrosKey),
                           _buildVerticalDivider(theme),
-                          _buildTeamSectionGranular(context, false, key: _ellosKey),
+                          _buildTeamSectionGranular(context, false,
+                              key: _ellosKey),
                         ],
                       ),
 
@@ -185,12 +186,13 @@ class _MainScreenState extends State<MainScreen>
                                 child: SvgPicture.asset(
                                   theme.footerAsset!,
                                   height: theme.footerHeight,
-                                  colorFilter: theme.footerAsset!.contains('dibu')
-                                      ? null
-                                      : ColorFilter.mode(
-                                          Colors.white.withOpacity(0.8),
-                                          BlendMode.srcIn,
-                                        ),
+                                  colorFilter:
+                                      theme.footerAsset!.contains('dibu')
+                                          ? null
+                                          : ColorFilter.mode(
+                                              Colors.white.withOpacity(0.8),
+                                              BlendMode.srcIn,
+                                            ),
                                 ),
                               ),
                             ),
@@ -200,26 +202,26 @@ class _MainScreenState extends State<MainScreen>
                   ),
                 ),
 
-                 // Reservamos el espacio para el footer flotante
-                 const SizedBox(height: 140),
-               ],
-             ),
-           ),
+                // Reservamos el espacio para el footer flotante
+                const SizedBox(height: 140),
+              ],
+            ),
+          ),
 
-           // 6. Matchstick Box (Floating shared area)
-           Positioned(
-             bottom: 0,
-             left: 0,
-             right: 0,
-             child: SafeArea(
-               top: false,
-               child: Consumer<ScoreProvider>(
-                 builder: (context, sp, _) => _buildFooter(context, sp),
-               ),
-             ),
-           ),
+          // 6. Matchstick Box (Floating shared area)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              top: false,
+              child: Consumer<ScoreProvider>(
+                builder: (context, sp, _) => _buildFooter(context, sp),
+              ),
+            ),
+          ),
 
-           // 7. GHOST HAND OVERLAY
+          // 7. GHOST HAND OVERLAY
           Consumer<ScoreProvider>(
             builder: (context, sp, _) {
               // Only show ghost hand logic if needed
@@ -274,10 +276,15 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
-  Widget _buildTeamSectionGranular(BuildContext context, bool isNosotros, {Key? key}) {
+  Widget _buildTeamSectionGranular(BuildContext context, bool isNosotros,
+      {Key? key}) {
     return Consumer<ScoreProvider>(
-      builder: (context, scoreProvider, _) => 
-          _buildTeamSection(context, isNosotros ? scoreProvider.nosotrosName : scoreProvider.ellosName, isNosotros ? scoreProvider.nosotros : scoreProvider.ellos, isNosotros, key: key),
+      builder: (context, scoreProvider, _) => _buildTeamSection(
+          context,
+          isNosotros ? scoreProvider.nosotrosName : scoreProvider.ellosName,
+          isNosotros ? scoreProvider.nosotros : scoreProvider.ellos,
+          isNosotros,
+          key: key),
     );
   }
 
@@ -395,8 +402,9 @@ class _MainScreenState extends State<MainScreen>
             totalPoints = scoreProvider.currentGameMode.milestone;
           }
 
-          final bool canDrag = (_isTutorialActive || scoreProvider.scoringMode == ScoringMode.classic)
-              ? false 
+          final bool canDrag = (_isTutorialActive ||
+                  scoreProvider.scoringMode == ScoringMode.classic)
+              ? false
               : (isNosotros ? scoreProvider.nosotros : scoreProvider.ellos) > 0;
 
           return Draggable<String>(
@@ -404,25 +412,31 @@ class _MainScreenState extends State<MainScreen>
             dragAnchorStrategy: pointerDragAnchorStrategy,
             maxSimultaneousDrags: canDrag ? 1 : 0,
             onDragStarted: () {
-              scoreProvider.setDraggingBack(isNosotros ? "nosotros" : "ellos", true);
+              scoreProvider.setDraggingBack(
+                  isNosotros ? "nosotros" : "ellos", true);
             },
             onDraggableCanceled: (velocity, offset) {
-              scoreProvider.triggerRevert(isNosotros ? "nosotros" : "ellos", offset);
+              scoreProvider.triggerRevert(
+                  isNosotros ? "nosotros" : "ellos", offset);
             },
             onDragEnd: (details) {
-              scoreProvider.setDraggingBack(isNosotros ? "nosotros" : "ellos", false);
+              scoreProvider.setDraggingBack(
+                  isNosotros ? "nosotros" : "ellos", false);
             },
             feedback: Material(
               color: Colors.transparent,
               child: scoreProvider.pointType == PointType.beans
-                ? BeanWidget(size: 40, seed: totalPoints, beanType: scoreProvider.currentBeanPalette.type)
-                : MatchstickWidget(height: 100),
+                  ? BeanWidget(
+                      size: 40,
+                      seed: totalPoints,
+                      beanType: scoreProvider.currentBeanPalette.type)
+                  : MatchstickWidget(height: 100),
             ),
             childWhenDragging: _buildTeamColumnContent(
-              name, totalPoints, isBuenas, isNosotros, scoreProvider, true),
+                name, totalPoints, isBuenas, isNosotros, scoreProvider, true),
             child: _buildTeamColumnContent(
-              name, totalPoints, isBuenas, isNosotros, scoreProvider, false,
-              highlight: candidateData.isNotEmpty),
+                name, totalPoints, isBuenas, isNosotros, scoreProvider, false,
+                highlight: candidateData.isNotEmpty),
           );
         },
       ),
@@ -446,6 +460,7 @@ class _MainScreenState extends State<MainScreen>
             "CAMBIAR NOMBRE",
             style: TextStyle(
               fontFamily: AppFonts.oswald,
+              fontSize: 16,
               color: scoreProvider.appTheme.white.withOpacity(0.9),
               letterSpacing: 0,
             ),
@@ -540,7 +555,8 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
-  void _showWinnerDialog(BuildContext context, ScoreProvider scoreProvider) async {
+  void _showWinnerDialog(
+      BuildContext context, ScoreProvider scoreProvider) async {
     bool shouldShowRating = false;
 
     // Evaluamos si corresponde mostrar el diálogo de valoración
@@ -554,7 +570,8 @@ class _MainScreenState extends State<MainScreen>
 
         // Primera vez al nro 3, luego cada 10 partidos finalizados
         if (matchesCount >= 3 &&
-            (lastRequestMatch == 0 || (matchesCount - lastRequestMatch >= 10))) {
+            (lastRequestMatch == 0 ||
+                (matchesCount - lastRequestMatch >= 10))) {
           shouldShowRating = true;
         }
       }
@@ -565,13 +582,16 @@ class _MainScreenState extends State<MainScreen>
       gameMode: scoreProvider.currentGameMode.label,
       picaPica: scoreProvider.picaPicaEnabled,
       theme: scoreProvider.appTheme.name,
-      pieceType: scoreProvider.pointType == PointType.beans ? 'porotos' : 'fosforos',
-      pieceDesign: scoreProvider.pointType == PointType.beans 
-          ? scoreProvider.currentBeanPalette.name 
+      pieceType:
+          scoreProvider.pointType == PointType.beans ? 'porotos' : 'fosforos',
+      pieceDesign: scoreProvider.pointType == PointType.beans
+          ? scoreProvider.currentBeanPalette.name
           : scoreProvider.currentPalette.name,
-      controlMode: scoreProvider.scoringMode == ScoringMode.drag 
-          ? 'drag' 
-          : scoreProvider.scoringMode == ScoringMode.tap ? 'tap' : 'classic',
+      controlMode: scoreProvider.scoringMode == ScoringMode.drag
+          ? 'drag'
+          : scoreProvider.scoringMode == ScoringMode.tap
+              ? 'tap'
+              : 'classic',
       soundEnabled: !scoreProvider.isMuted,
       vibrationEnabled: scoreProvider.vibrationEnabled,
       teamNameNos: scoreProvider.nosotrosName,
@@ -598,6 +618,8 @@ class _MainScreenState extends State<MainScreen>
         onLater: () {},
         onFeedback: () async {
           await PersistenceService.setHasRatedApp(true);
+          SupportService.sendFeedbackEmail(
+              subject: 'Puro Truco - ¿Cómo podemos mejorar?');
         },
       );
 
@@ -609,21 +631,23 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
-
   Widget _buildTeamColumnContent(String name, int totalPoints, bool isBuenas,
       bool isNosotros, ScoreProvider scoreProvider, bool isDraggingBack,
       {bool highlight = false}) {
     final String teamKey = isNosotros ? "nosotros" : "ellos";
 
     return Container(
-      color: highlight ? Colors.white.withOpacity(scoreProvider.appTheme.highlightOpacity) : Colors.transparent,
+      color: highlight
+          ? Colors.white.withOpacity(scoreProvider.appTheme.highlightOpacity)
+          : Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // 1. Header with theme margin
           Padding(
             padding: EdgeInsets.only(
-              right: isNosotros ? scoreProvider.appTheme.nosotrosMarginRight : 0.0,
+              right:
+                  isNosotros ? scoreProvider.appTheme.nosotrosMarginRight : 0.0,
               left: !isNosotros ? scoreProvider.appTheme.ellosMarginLeft : 0.0,
             ),
             child: Column(
@@ -631,7 +655,8 @@ class _MainScreenState extends State<MainScreen>
                 GestureDetector(
                   onTap: () => _showNameEditDialog(context, teamKey, name),
                   child: Container(
-                    height: 30, // Fixed height to prevent shifting when text scales
+                    height:
+                        30, // Fixed height to prevent shifting when text scales
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     width: double.infinity,
                     color: Colors.transparent,
@@ -684,33 +709,39 @@ class _MainScreenState extends State<MainScreen>
               double availableWidth = constraints.maxWidth;
               final int numGroups =
                   (scoreProvider.currentGameMode.milestone / 5).ceil();
-              
-              // We calculate slotSize based on the width MINUS the margin, 
+
+              // We calculate slotSize based on the width MINUS the margin,
               // to keep the sticks exactly the same size and position as before.
-              final double effectiveWidth = availableWidth - 
-                  (isNosotros ? scoreProvider.appTheme.nosotrosMarginRight : scoreProvider.appTheme.ellosMarginLeft);
-              
+              final double effectiveWidth = availableWidth -
+                  (isNosotros
+                      ? scoreProvider.appTheme.nosotrosMarginRight
+                      : scoreProvider.appTheme.ellosMarginLeft);
+
               double slotSize =
                   (availableHeight / numGroups).clamp(60.0, effectiveWidth);
-              
+
               // Pica Pica Markers
               List<Widget> picaMarkers = [];
-              if (scoreProvider.picaPicaEnabled && scoreProvider.currentGameMode.totalPoints >= 30) {
+              if (scoreProvider.picaPicaEnabled &&
+                  scoreProvider.currentGameMode.totalPoints >= 30) {
                 final int milestone = scoreProvider.currentGameMode.milestone;
                 final double groupHeight = availableHeight / numGroups;
-                
-                bool anyoneReachedStart = scoreProvider.nosotros >= scoreProvider.picaPicaStart || 
-                                         scoreProvider.ellos >= scoreProvider.picaPicaStart;
-                bool anyoneReachedEnd = scoreProvider.nosotros >= scoreProvider.picaPicaEnd || 
-                                       scoreProvider.ellos >= scoreProvider.picaPicaEnd;
+
+                bool anyoneReachedStart =
+                    scoreProvider.nosotros >= scoreProvider.picaPicaStart ||
+                        scoreProvider.ellos >= scoreProvider.picaPicaStart;
+                bool anyoneReachedEnd =
+                    scoreProvider.nosotros >= scoreProvider.picaPicaEnd ||
+                        scoreProvider.ellos >= scoreProvider.picaPicaEnd;
 
                 // Start Marker
                 int picaStart = scoreProvider.picaPicaStart;
-                bool startInThisPhase = isBuenas ? picaStart >= milestone : picaStart <= milestone;
+                bool startInThisPhase =
+                    isBuenas ? picaStart >= milestone : picaStart <= milestone;
                 if (startInThisPhase && !anyoneReachedStart) {
                   int localStart = isBuenas ? picaStart - milestone : picaStart;
                   double top = (localStart / 5) * groupHeight;
-                  
+
                   picaMarkers.add(Positioned(
                     top: (localStart == milestone) ? null : top,
                     bottom: (localStart == milestone) ? -8 : null,
@@ -726,7 +757,8 @@ class _MainScreenState extends State<MainScreen>
 
                 // End Marker
                 int picaEnd = scoreProvider.picaPicaEnd;
-                bool endInThisPhase = isBuenas ? picaEnd >= milestone : picaEnd <= milestone;
+                bool endInThisPhase =
+                    isBuenas ? picaEnd >= milestone : picaEnd <= milestone;
                 if (endInThisPhase && !anyoneReachedEnd) {
                   int localEnd = isBuenas ? picaEnd - milestone : picaEnd;
                   double top = (localEnd / 5) * groupHeight;
@@ -742,9 +774,11 @@ class _MainScreenState extends State<MainScreen>
                       color: scoreProvider.appTheme.cream,
                       backgroundColor: scoreProvider.appTheme.navy,
                       fontSize: isSmallScreen ? 10 : 12,
-                      padding: isSmallScreen 
-                          ? const EdgeInsets.symmetric(horizontal: 8, vertical: 2)
-                          : const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: isSmallScreen
+                          ? const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2)
+                          : const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
                     ),
                   ));
                 }
@@ -755,12 +789,16 @@ class _MainScreenState extends State<MainScreen>
                 children: [
                   // Full width for Pica Pica
                   ...picaMarkers,
-                  
+
                   // Constrained width for Sticks (keeps them in place)
                   Padding(
                     padding: EdgeInsets.only(
-                      right: isNosotros ? scoreProvider.appTheme.nosotrosMarginRight : 0.0,
-                      left: !isNosotros ? scoreProvider.appTheme.ellosMarginLeft : 0.0,
+                      right: isNosotros
+                          ? scoreProvider.appTheme.nosotrosMarginRight
+                          : 0.0,
+                      left: !isNosotros
+                          ? scoreProvider.appTheme.ellosMarginLeft
+                          : 0.0,
                     ),
                     child: Column(
                       children: List.generate(numGroups, (groupIndex) {
@@ -806,7 +844,7 @@ class _MainScreenState extends State<MainScreen>
               );
             }),
           ),
-          
+
           if (scoreProvider.appTheme.footerAsset != null)
             SizedBox(height: 10 + scoreProvider.appTheme.footerHeight + 20),
         ],
@@ -848,19 +886,23 @@ class _MainScreenState extends State<MainScreen>
         if (team == "ellos") scoreProvider.removePointEllos();
       },
       builder: (context, candidateData, rejectedData) {
-        final bool isClassicMode = scoreProvider.scoringMode == ScoringMode.classic ||
-            (_isTutorialActive && _tutorialStep == 4);
+        final bool isClassicMode =
+            scoreProvider.scoringMode == ScoringMode.classic ||
+                (_isTutorialActive && _tutorialStep == 4);
         final bool isDragMode = scoreProvider.scoringMode == ScoringMode.drag &&
             !(_isTutorialActive && _tutorialStep == 4);
         final bool highlight = candidateData.isNotEmpty;
 
         final theme = scoreProvider.appTheme;
-        final double topPadding = (theme.footerAsset != null ? theme.footerHeight : 0) + 20;
+        final double topPadding =
+            (theme.footerAsset != null ? theme.footerHeight : 0) + 20;
 
         return Container(
           width: double.infinity,
-          padding: EdgeInsets.only(top: topPadding, bottom: 20), 
-          color: highlight ? Colors.white.withOpacity(theme.highlightOpacity) : Colors.transparent,
+          padding: EdgeInsets.only(top: topPadding, bottom: 20),
+          color: highlight
+              ? Colors.white.withOpacity(theme.highlightOpacity)
+              : Colors.transparent,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -904,7 +946,11 @@ class _MainScreenState extends State<MainScreen>
                             child: Transform.translate(
                               offset: const Offset(-5, -50),
                               child: scoreProvider.pointType == PointType.beans
-                                  ? BeanWidget(size: 48, seed: 1, beanType: scoreProvider.currentBeanPalette.type)
+                                  ? BeanWidget(
+                                      size: 48,
+                                      seed: 1,
+                                      beanType:
+                                          scoreProvider.currentBeanPalette.type)
                                   : MatchstickWidget(height: 100),
                             ),
                           ),
@@ -975,85 +1021,121 @@ class _MainScreenState extends State<MainScreen>
 
       if (boxRender == null || targetRender == null) return;
 
-    final boxPos = boxRender.localToGlobal(Offset.zero);
-    final targetPos = targetRender.localToGlobal(Offset.zero);
+      final boxPos = boxRender.localToGlobal(Offset.zero);
+      final targetPos = targetRender.localToGlobal(Offset.zero);
 
-    final boxCenter = Offset(boxPos.dx + boxRender.size.width / 2 - 20,
-        boxPos.dy + boxRender.size.height / 2);
+      final boxCenter = Offset(boxPos.dx + boxRender.size.width / 2 - 20,
+          boxPos.dy + boxRender.size.height / 2);
 
-    final tableCenter = Offset(targetPos.dx + targetRender.size.width / 2,
-        targetPos.dy + targetRender.size.height / 2 + 50);
+      final tableCenter = Offset(targetPos.dx + targetRender.size.width / 2,
+          targetPos.dy + targetRender.size.height / 2 + 50);
 
-    Offset start = tableCenter;
-    Offset end = tableCenter;
+      Offset start = tableCenter;
+      Offset end = tableCenter;
 
-    _handController.stop();
+      _handController.stop();
 
-    if (_tutorialStep == 0) {
-      // Box to Table
-      start = boxCenter;
-      end = tableCenter;
-      _handController.duration = const Duration(seconds: 2);
-      _handScaleAnimation = const AlwaysStoppedAnimation(1.0);
-    } else if (_tutorialStep == 1) {
-      // Table to Box
-      start = tableCenter;
-      end = boxCenter;
-      _handController.duration = const Duration(seconds: 2);
-      _handScaleAnimation = const AlwaysStoppedAnimation(1.0);
-    } else if (_tutorialStep == 2) {
-      // Tap (Quick pulse)
-      start = tableCenter;
-      end = tableCenter;
-      _handController.duration = const Duration(milliseconds: 1000);
-      _handScaleAnimation = TweenSequence<double>([
-        TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 30),
-        TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 20),
-        TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 20),
-        TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 30),
-      ]).animate(_handController);
-    } else if (_tutorialStep == 3) {
-      // Long Press (Slow hold)
-      start = tableCenter;
-      end = tableCenter;
-      _handController.duration = const Duration(milliseconds: 2000);
-      _handScaleAnimation = TweenSequence<double>([
-        TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 20),
-        TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 20),
-        TweenSequenceItem(tween: ConstantTween(0.8), weight: 40),
-        TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 20),
-      ]).animate(_handController);
-      _handController.repeat(reverse: false);
-    } else if (_tutorialStep == 4) {
-      // Classic Buttons (Tap sequence)
-      final nPlus = _nosPlusKey.currentContext?.findRenderObject() as RenderBox?;
-      final nMinus = _nosMinusKey.currentContext?.findRenderObject() as RenderBox?;
-      final ePlus = _ellPlusKey.currentContext?.findRenderObject() as RenderBox?;
-      final eMinus = _ellMinusKey.currentContext?.findRenderObject() as RenderBox?;
+      if (_tutorialStep == 0) {
+        // Box to Table
+        start = boxCenter;
+        end = tableCenter;
+        _handController.duration = const Duration(seconds: 2);
+        _handScaleAnimation = const AlwaysStoppedAnimation(1.0);
+      } else if (_tutorialStep == 1) {
+        // Table to Box
+        start = tableCenter;
+        end = boxCenter;
+        _handController.duration = const Duration(seconds: 2);
+        _handScaleAnimation = const AlwaysStoppedAnimation(1.0);
+      } else if (_tutorialStep == 2) {
+        // Tap (Quick pulse)
+        start = tableCenter;
+        end = tableCenter;
+        _handController.duration = const Duration(milliseconds: 1000);
+        _handScaleAnimation = TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 30),
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 20),
+          TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 20),
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 30),
+        ]).animate(_handController);
+      } else if (_tutorialStep == 3) {
+        // Long Press (Slow hold)
+        start = tableCenter;
+        end = tableCenter;
+        _handController.duration = const Duration(milliseconds: 2000);
+        _handScaleAnimation = TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 20),
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 20),
+          TweenSequenceItem(tween: ConstantTween(0.8), weight: 40),
+          TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 20),
+        ]).animate(_handController);
+        _handController.repeat(reverse: false);
+      } else if (_tutorialStep == 4) {
+        // Classic Buttons (Tap sequence)
+        final nPlus =
+            _nosPlusKey.currentContext?.findRenderObject() as RenderBox?;
+        final nMinus =
+            _nosMinusKey.currentContext?.findRenderObject() as RenderBox?;
+        final ePlus =
+            _ellPlusKey.currentContext?.findRenderObject() as RenderBox?;
+        final eMinus =
+            _ellMinusKey.currentContext?.findRenderObject() as RenderBox?;
 
-      if (nPlus != null && nMinus != null && ePlus != null && eMinus != null) {
-        final pos1 = nPlus.localToGlobal(nPlus.size.center(Offset.zero));
-        final pos2 = nMinus.localToGlobal(nMinus.size.center(Offset.zero));
-        final pos3 = ePlus.localToGlobal(ePlus.size.center(Offset.zero));
-        final pos4 = eMinus.localToGlobal(eMinus.size.center(Offset.zero));
+        if (nPlus != null &&
+            nMinus != null &&
+            ePlus != null &&
+            eMinus != null) {
+          final pos1 = nPlus.localToGlobal(nPlus.size.center(Offset.zero));
+          final pos2 = nMinus.localToGlobal(nMinus.size.center(Offset.zero));
+          final pos3 = ePlus.localToGlobal(ePlus.size.center(Offset.zero));
+          final pos4 = eMinus.localToGlobal(eMinus.size.center(Offset.zero));
 
-        _handController.duration = const Duration(milliseconds: 3200);
+          _handController.duration = const Duration(milliseconds: 3200);
+          _handMoveAnimation = TweenSequence<Offset>([
+            TweenSequenceItem(tween: ConstantTween(pos1), weight: 25),
+            TweenSequenceItem(tween: ConstantTween(pos2), weight: 25),
+            TweenSequenceItem(tween: ConstantTween(pos3), weight: 25),
+            TweenSequenceItem(tween: ConstantTween(pos4), weight: 25),
+          ]).animate(_handController);
+
+          _handScaleAnimation = TweenSequence<double>([
+            TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
+            TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
+            TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
+            TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
+            TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
+            TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
+            TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
+            TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
+          ]).animate(_handController);
+
+          setState(() {
+            _showGhostHand = true;
+            _isTutorialActive = true;
+          });
+          _handController.repeat(reverse: false);
+          return;
+        }
+      } else if (_tutorialStep == 5) {
+        // Team names (Alternating pulse)
+        final RenderBox? ellosRender =
+            _ellosKey.currentContext?.findRenderObject() as RenderBox?;
+        final nosPos = targetPos.translate(60, 20);
+        final ellPos = (ellosRender != null)
+            ? ellosRender.localToGlobal(Offset.zero).translate(60, 20)
+            : nosPos;
+
+        _handController.duration = const Duration(milliseconds: 2400);
         _handMoveAnimation = TweenSequence<Offset>([
-          TweenSequenceItem(tween: ConstantTween(pos1), weight: 25),
-          TweenSequenceItem(tween: ConstantTween(pos2), weight: 25),
-          TweenSequenceItem(tween: ConstantTween(pos3), weight: 25),
-          TweenSequenceItem(tween: ConstantTween(pos4), weight: 25),
+          TweenSequenceItem(tween: ConstantTween(nosPos), weight: 50),
+          TweenSequenceItem(tween: ConstantTween(ellPos), weight: 50),
         ]).animate(_handController);
 
         _handScaleAnimation = TweenSequence<double>([
-          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
-          TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
-          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
-          TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
-          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
-          TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
-          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 12.5),
-          TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 12.5),
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 25),
         ]).animate(_handController);
 
         setState(() {
@@ -1062,92 +1144,63 @@ class _MainScreenState extends State<MainScreen>
         });
         _handController.repeat(reverse: false);
         return;
-      }
-    } else if (_tutorialStep == 5) {
-      // Team names (Alternating pulse)
-      final RenderBox? ellosRender =
-          _ellosKey.currentContext?.findRenderObject() as RenderBox?;
-      final nosPos = targetPos.translate(60, 20);
-      final ellPos = (ellosRender != null)
-          ? ellosRender.localToGlobal(Offset.zero).translate(60, 20)
-          : nosPos;
-
-      _handController.duration = const Duration(milliseconds: 2400);
-      _handMoveAnimation = TweenSequence<Offset>([
-        TweenSequenceItem(tween: ConstantTween(nosPos), weight: 50),
-        TweenSequenceItem(tween: ConstantTween(ellPos), weight: 50),
-      ]).animate(_handController);
-
-      _handScaleAnimation = TweenSequence<double>([
-        TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 25),
-        TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 25),
-        TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 25),
-        TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 25),
-      ]).animate(_handController);
-
-      setState(() {
-        _showGhostHand = true;
-        _isTutorialActive = true;
-      });
-      _handController.repeat(reverse: false);
-      return;
-    } else if (_tutorialStep == 6 && _limitScoreKey.currentContext != null) {
-      // Limit Score
-      final RenderBox? limitRender =
-          _limitScoreKey.currentContext?.findRenderObject() as RenderBox?;
-      if (limitRender != null) {
-        final pos = limitRender.localToGlobal(Offset.zero);
+      } else if (_tutorialStep == 6 && _limitScoreKey.currentContext != null) {
+        // Limit Score
+        final RenderBox? limitRender =
+            _limitScoreKey.currentContext?.findRenderObject() as RenderBox?;
+        if (limitRender != null) {
+          final pos = limitRender.localToGlobal(Offset.zero);
+          start = pos.translate(
+              limitRender.size.width / 2, limitRender.size.height / 2);
+          end = start;
+          _handController.duration = const Duration(milliseconds: 1200);
+          _handScaleAnimation = TweenSequence<double>([
+            TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 50),
+            TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 50),
+          ]).animate(_handController);
+        }
+      } else if (_tutorialStep == 7 && restartRender != null) {
+        // Reset Button
+        final pos = restartRender.localToGlobal(Offset.zero);
         start = pos.translate(
-            limitRender.size.width / 2, limitRender.size.height / 2);
+            restartRender.size.width / 2, restartRender.size.height / 2);
         end = start;
         _handController.duration = const Duration(milliseconds: 1200);
         _handScaleAnimation = TweenSequence<double>([
           TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 50),
           TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 50),
         ]).animate(_handController);
+      } else if (_tutorialStep == 8 && settingsRender != null) {
+        // Settings Button
+        final pos = settingsRender.localToGlobal(Offset.zero);
+        start = pos.translate(
+            settingsRender.size.width / 2, settingsRender.size.height / 2);
+        end = start;
+        _handController.duration = const Duration(milliseconds: 1200);
+        _handScaleAnimation = TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 50),
+          TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 50),
+        ]).animate(_handController);
+      } else {
+        start = tableCenter;
+        end = tableCenter;
+        _handController.duration = const Duration(seconds: 1);
+        _handScaleAnimation = const AlwaysStoppedAnimation(1.0);
       }
-    } else if (_tutorialStep == 7 && restartRender != null) {
-      // Reset Button
-      final pos = restartRender.localToGlobal(Offset.zero);
-      start = pos.translate(
-          restartRender.size.width / 2, restartRender.size.height / 2);
-      end = start;
-      _handController.duration = const Duration(milliseconds: 1200);
-      _handScaleAnimation = TweenSequence<double>([
-        TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 50),
-        TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 50),
-      ]).animate(_handController);
-    } else if (_tutorialStep == 8 && settingsRender != null) {
-      // Settings Button
-      final pos = settingsRender.localToGlobal(Offset.zero);
-      start = pos.translate(
-          settingsRender.size.width / 2, settingsRender.size.height / 2);
-      end = start;
-      _handController.duration = const Duration(milliseconds: 1200);
-      _handScaleAnimation = TweenSequence<double>([
-        TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 50),
-        TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 50),
-      ]).animate(_handController);
-    } else {
-      start = tableCenter;
-      end = tableCenter;
-      _handController.duration = const Duration(seconds: 1);
-      _handScaleAnimation = const AlwaysStoppedAnimation(1.0);
-    }
 
-    setState(() {
-      _handMoveAnimation = Tween<Offset>(
-        begin: start,
-        end: end,
-      ).animate(CurvedAnimation(
-        parent: _handController,
-        curve: const Interval(0.2, 0.8, curve: Curves.easeInOutCubic),
-      ));
-      _showGhostHand = true;
-      _isTutorialActive = true;
-    });
+      setState(() {
+        _handMoveAnimation = Tween<Offset>(
+          begin: start,
+          end: end,
+        ).animate(CurvedAnimation(
+          parent: _handController,
+          curve: const Interval(0.2, 0.8, curve: Curves.easeInOutCubic),
+        ));
+        _showGhostHand = true;
+        _isTutorialActive = true;
+      });
 
-    _handController.repeat(reverse: false);
+      _handController.repeat(reverse: false);
     });
   }
 
@@ -1190,7 +1243,8 @@ class ScoreCircleButton extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isMinus ? Colors.transparent : primaryColor,
-            border: isMinus ? Border.all(color: primaryColor, width: 2.5) : null,
+            border:
+                isMinus ? Border.all(color: primaryColor, width: 2.5) : null,
             boxShadow: !isMinus && isEnabled
                 ? [
                     BoxShadow(

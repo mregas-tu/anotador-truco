@@ -8,6 +8,7 @@ import '../providers/score_provider.dart';
 import '../services/ad_service.dart';
 import '../theme/app_theme.dart';
 import '../services/analytics_service.dart';
+import '../services/support_service.dart';
 import 'truco_buttons.dart';
 import 'truco_dialog.dart';
 import 'victory_share_card.dart';
@@ -145,7 +146,7 @@ abstract class GameDialogs {
 
                           // Compartir el archivo generado
                           final message =
-                              "#AnotadorDeTruco\n${Platform.isAndroid ? 'https://play.google.com/store/apps/details?id=com.mregas.truco.anotador' : 'https://apps.apple.com/app/idYOUR_APP_ID'}";
+                              "#AnotadorDeTruco\n${SupportService.appUrl}";
                           await Share.shareXFiles(
                             [XFile(path)],
                             text: message,
