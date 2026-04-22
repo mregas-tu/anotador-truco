@@ -115,16 +115,13 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
 
   Future<void> _rateApp() async {
     final InAppReview inAppReview = InAppReview.instance;
-    await PersistenceService.setHasRatedApp(true);
     try {
-      if (await inAppReview.isAvailable()) {
-        await inAppReview.requestReview();
-      } else {
-        await inAppReview.openStoreListing();
-      }
-    } catch (e) {
-      debugPrint("Error requesting review: $e");
+      // Para un botón manual en ajustes, usamos openStoreListing() ya que requestReview()
+      // puede ser ignorado silenciosamente por el sistema operativo.
       await inAppReview.openStoreListing();
+      await PersistenceService.setHasRatedApp(true);
+    } catch (e) {
+      debugPrint("Error opening store listing: $e");
     }
   }
 

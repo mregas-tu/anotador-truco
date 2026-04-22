@@ -13,6 +13,7 @@ class TrucoTheme {
   final Color buenas;
   final Color malas;
   final Color centerCircleColor;
+  final double highlightOpacity;
 
   // New Button specific colors
   final Color primaryBackgroundButton;
@@ -97,6 +98,7 @@ class TrucoTheme {
     required this.matchstickBoxType,
     required this.classicButtonColor,
     required this.classicButtonShadowColor,
+    this.highlightOpacity = 0.1,
   });
 
   // PRESETS
@@ -130,6 +132,7 @@ class TrucoTheme {
     scoreVerticalOffset: 5.0,
     centerSectionOffset: 10.0,
     matchstickBoxType: MatchstickBoxType.classic,
+    highlightOpacity: 0.05,
   );
 
   static const TrucoTheme argentinaTheme = TrucoTheme(
@@ -163,6 +166,7 @@ class TrucoTheme {
     scoreVerticalOffset: 2.0,
     centerSectionOffset: 35.0,
     matchstickBoxType: MatchstickBoxType.classic,
+    highlightOpacity: 0.1,
   );
 
   static const TrucoTheme soccerTheme = TrucoTheme(
@@ -199,6 +203,7 @@ class TrucoTheme {
     nosotrosMarginRight: 32.0,
     ellosMarginLeft: 32.0,
     matchstickBoxType: MatchstickBoxType.soccer,
+    highlightOpacity: 0.1,
   );
 
   static const TrucoTheme woodTheme = TrucoTheme(
@@ -238,6 +243,7 @@ class TrucoTheme {
     scoreVerticalOffset: 5.0,
     centerSectionOffset: 35.0,
     matchstickBoxType: MatchstickBoxType.wood,
+    highlightOpacity: 0.08,
   );
 
   static const List<TrucoTheme> allThemes = [

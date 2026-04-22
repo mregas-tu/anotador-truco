@@ -200,17 +200,26 @@ class _MainScreenState extends State<MainScreen>
                   ),
                 ),
 
-                // 5. Matchstick Box
-                Consumer<ScoreProvider>(
-                  builder: (context, sp, _) => _buildFooter(context, sp),
-                ),
+                 // Reservamos el espacio para el footer flotante
+                 const SizedBox(height: 140),
+               ],
+             ),
+           ),
 
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
+           // 6. Matchstick Box (Floating shared area)
+           Positioned(
+             bottom: 0,
+             left: 0,
+             right: 0,
+             child: SafeArea(
+               top: false,
+               child: Consumer<ScoreProvider>(
+                 builder: (context, sp, _) => _buildFooter(context, sp),
+               ),
+             ),
+           ),
 
-          // 6. GHOST HAND OVERLAY
+           // 7. GHOST HAND OVERLAY
           Consumer<ScoreProvider>(
             builder: (context, sp, _) {
               // Only show ghost hand logic if needed
@@ -580,8 +589,10 @@ class _MainScreenState extends State<MainScreen>
         onRate: () async {
           await PersistenceService.setHasRatedApp(true);
           final inAppReview = InAppReview.instance;
-          if (await inAppReview.isAvailable()) {
-            inAppReview.requestReview();
+          try {
+            await inAppReview.openStoreListing();
+          } catch (e) {
+            debugPrint("Error opening store listing: $e");
           }
         },
         onLater: () {},
@@ -605,7 +616,7 @@ class _MainScreenState extends State<MainScreen>
     final String teamKey = isNosotros ? "nosotros" : "ellos";
 
     return Container(
-      color: highlight ? Colors.white.withOpacity(0.05) : Colors.transparent,
+      color: highlight ? Colors.white.withOpacity(scoreProvider.appTheme.highlightOpacity) : Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -841,93 +852,102 @@ class _MainScreenState extends State<MainScreen>
             (_isTutorialActive && _tutorialStep == 4);
         final bool isDragMode = scoreProvider.scoringMode == ScoringMode.drag &&
             !(_isTutorialActive && _tutorialStep == 4);
+        final bool highlight = candidateData.isNotEmpty;
 
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Nosotros Buttons
-            if (isClassicMode) ...[
-              AbsorbPointer(
-                absorbing: _isTutorialActive,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ScoreCircleButton(
-                      key: _nosPlusKey,
-                      onPressed: () => scoreProvider.addPointNosotros(),
-                    ),
-                    const SizedBox(height: 16),
-                    ScoreCircleButton(
-                      key: _nosMinusKey,
-                      isMinus: true,
-                      isEnabled: scoreProvider.nosotros > 0,
-                      onPressed: () => scoreProvider.removePointNosotros(),
-                    ),
-                  ],
+        final theme = scoreProvider.appTheme;
+        final double topPadding = (theme.footerAsset != null ? theme.footerHeight : 0) + 20;
+
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(top: topPadding, bottom: 20), 
+          color: highlight ? Colors.white.withOpacity(theme.highlightOpacity) : Colors.transparent,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Nosotros Buttons
+              if (isClassicMode) ...[
+                AbsorbPointer(
+                  absorbing: _isTutorialActive,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ScoreCircleButton(
+                        key: _nosPlusKey,
+                        onPressed: () => scoreProvider.addPointNosotros(),
+                      ),
+                      const SizedBox(height: 16),
+                      ScoreCircleButton(
+                        key: _nosMinusKey,
+                        isMinus: true,
+                        isEnabled: scoreProvider.nosotros > 0,
+                        onPressed: () => scoreProvider.removePointNosotros(),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 24),
-            ],
+                const SizedBox(width: 24),
+              ],
 
-            // Center Box
-            if (scoreProvider.totalRemainingMatchsticks > 0)
-              isDragMode
-                  ? Draggable<int>(
-                      key: const ValueKey("box_draggable"),
-                      data: 1,
-                      maxSimultaneousDrags: _isTutorialActive ? 0 : 1,
-                      dragAnchorStrategy: pointerDragAnchorStrategy,
-                      feedback: Material(
-                        color: Colors.transparent,
-                        child: Transform.rotate(
-                          angle: 0.1,
-                          child: Transform.translate(
-                            offset: const Offset(-5, -50),
-                            child: scoreProvider.pointType == PointType.beans
-                                ? BeanWidget(size: 48, seed: 1, beanType: scoreProvider.currentBeanPalette.type)
-                                : MatchstickWidget(height: 100),
+              // Center Box
+              if (scoreProvider.totalRemainingMatchsticks > 0)
+                isDragMode
+                    ? Draggable<int>(
+                        key: const ValueKey("box_draggable"),
+                        data: 1,
+                        maxSimultaneousDrags: _isTutorialActive ? 0 : 1,
+                        dragAnchorStrategy: pointerDragAnchorStrategy,
+                        feedback: Material(
+                          color: Colors.transparent,
+                          child: Transform.rotate(
+                            angle: 0.1,
+                            child: Transform.translate(
+                              offset: const Offset(-5, -50),
+                              child: scoreProvider.pointType == PointType.beans
+                                  ? BeanWidget(size: 48, seed: 1, beanType: scoreProvider.currentBeanPalette.type)
+                                  : MatchstickWidget(height: 100),
+                            ),
                           ),
                         ),
-                      ),
-                      childWhenDragging: MatchstickBox(
-                          count: scoreProvider.totalRemainingMatchsticks - 1),
-                      child: MatchstickBox(
+                        childWhenDragging: MatchstickBox(
+                            count: scoreProvider.totalRemainingMatchsticks - 1),
+                        child: MatchstickBox(
+                          key: _boxKey,
+                          count: scoreProvider.totalRemainingMatchsticks,
+                        ),
+                      )
+                    : MatchstickBox(
                         key: _boxKey,
                         count: scoreProvider.totalRemainingMatchsticks,
-                      ),
-                    )
-                  : MatchstickBox(
-                      key: _boxKey,
-                      count: scoreProvider.totalRemainingMatchsticks,
-                    )
-            else
-              MatchstickBox(key: _boxKey, count: 0),
+                      )
+              else
+                MatchstickBox(key: _boxKey, count: 0),
 
-            // Ellos Buttons
-            if (isClassicMode) ...[
-              const SizedBox(width: 24),
-              AbsorbPointer(
-                absorbing: _isTutorialActive,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ScoreCircleButton(
-                      key: _ellPlusKey,
-                      onPressed: () => scoreProvider.addPointEllos(),
-                    ),
-                    const SizedBox(height: 16),
-                    ScoreCircleButton(
-                      key: _ellMinusKey,
-                      isMinus: true,
-                      isEnabled: scoreProvider.ellos > 0,
-                      onPressed: () => scoreProvider.removePointEllos(),
-                    ),
-                  ],
+              // Ellos Buttons
+              if (isClassicMode) ...[
+                const SizedBox(width: 24),
+                AbsorbPointer(
+                  absorbing: _isTutorialActive,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ScoreCircleButton(
+                        key: _ellPlusKey,
+                        onPressed: () => scoreProvider.addPointEllos(),
+                      ),
+                      const SizedBox(height: 16),
+                      ScoreCircleButton(
+                        key: _ellMinusKey,
+                        isMinus: true,
+                        isEnabled: scoreProvider.ellos > 0,
+                        onPressed: () => scoreProvider.removePointEllos(),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         );
       },
     );
