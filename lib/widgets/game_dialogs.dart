@@ -29,7 +29,8 @@ abstract class GameDialogs {
         : scoreProvider.ellosName;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!silenceAd && !Provider.of<PremiumProvider>(context, listen: false).isPremium) {
+      if (!silenceAd &&
+          !Provider.of<PremiumProvider>(context, listen: false).isPremium) {
         AdService.showInterstitial();
       }
     });
@@ -44,127 +45,128 @@ abstract class GameDialogs {
           toUpperCaseTitle: false,
           titleFontSize: 20,
           titleColor: scoreProvider.appTheme.cream,
-        marginHorizontal: 50,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "GANADOR",
-              style: TextStyle(
-                fontFamily: AppFonts.oswald,
-                fontSize: 20,
-                color: scoreProvider.appTheme.cream,
-              ),
-            ),
-            const SizedBox(height: 4),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                winnerName.toUpperCase(),
+          marginHorizontal: 50,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "GANADOR",
                 style: TextStyle(
                   fontFamily: AppFonts.oswald,
-                  fontSize: 38,
-                  color: scoreProvider.appTheme.slate,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                "${scoreProvider.nosotros.toString().padLeft(2, '0')} - ${scoreProvider.ellos.toString().padLeft(2, '0')}",
-                style: TextStyle(
-                  fontFamily: AppFonts.caminito,
-                  fontSize: 52,
+                  fontSize: 20,
                   color: scoreProvider.appTheme.cream,
                 ),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          Column(
-            children: [
-              PrimaryButton(
-                text: "VOLVER A JUGAR",
-                width: double.infinity,
-                onPressed: () {
-                  scoreProvider.triggerReset();
-                  AnalyticsService.logNewGameFromSummary();
-                  Navigator.pop(context);
-                },
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  winnerName.toUpperCase(),
+                  style: TextStyle(
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 38,
+                    color: scoreProvider.appTheme.slate,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0,
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: SecondaryButton(
-                      text: "Deshacer",
-                      toUpperCase: false,
-                      type: SecondaryButtonType.secondary,
-                      iconAsset: 'assets/images/undo_icon.svg',
-                      onPressed: () {
-                        if (winnerKey == "nosotros") {
-                          scoreProvider.removePointNosotros();
-                        } else {
-                          scoreProvider.removePointEllos();
-                        }
-                        AnalyticsService.logUndoFromSummary();
-                        Navigator.pop(context);
-                      },
-                    ),
+              const SizedBox(height: 20),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  "${scoreProvider.nosotros.toString().padLeft(2, '0')} - ${scoreProvider.ellos.toString().padLeft(2, '0')}",
+                  style: TextStyle(
+                    fontFamily: AppFonts.caminito,
+                    fontSize: 52,
+                    color: scoreProvider.appTheme.cream,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: SecondaryButton(
-                      text: "Compartir",
-                      toUpperCase: false,
-                      iconAsset: 'assets/images/share_icon.svg',
-                      onPressed: () async {
-                        final screenshotController = ScreenshotController();
-
-                        // Capturar el widget estilizado en memoria (sin mostrarlo en pantalla)
-                        final Uint8List? imageBytes =
-                            await screenshotController.captureFromWidget(
-                          VictoryShareCard(
-                            winnerName: winnerName,
-                            scoreNosotros: scoreProvider.nosotros,
-                            scoreEllos: scoreProvider.ellos,
-                          ),
-                          delay: const Duration(milliseconds: 100),
-                        );
-
-                        if (imageBytes != null) {
-                          // Guardar en un archivo temporal
-                          final directory = await getTemporaryDirectory();
-                          final String path =
-                              '${directory.path}/resultado_truco.png';
-                          final File file = File(path);
-                          await file.writeAsBytes(imageBytes);
-
-                          // Compartir el archivo generado
-                          final message =
-                              "#AnotadorDeTruco\n${SupportService.appUrl}";
-                          await Share.shareXFiles(
-                            [XFile(path)],
-                            text: message,
-                          );
-                          AnalyticsService.logShareGameResult();
-                        }
-                      },
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
-        ],
+          actions: [
+            Column(
+              children: [
+                PrimaryButton(
+                  text: "VOLVER A JUGAR",
+                  width: double.infinity,
+                  fontSize: 16,
+                  onPressed: () {
+                    scoreProvider.triggerReset();
+                    AnalyticsService.logNewGameFromSummary();
+                    Navigator.pop(context);
+                  },
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SecondaryButton(
+                        text: "Deshacer",
+                        toUpperCase: false,
+                        type: SecondaryButtonType.secondary,
+                        iconAsset: 'assets/images/undo_icon.svg',
+                        onPressed: () {
+                          if (winnerKey == "nosotros") {
+                            scoreProvider.removePointNosotros();
+                          } else {
+                            scoreProvider.removePointEllos();
+                          }
+                          AnalyticsService.logUndoFromSummary();
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: SecondaryButton(
+                        text: "Compartir",
+                        toUpperCase: false,
+                        iconAsset: 'assets/images/share_icon.svg',
+                        onPressed: () async {
+                          final screenshotController = ScreenshotController();
+
+                          // Capturar el widget estilizado en memoria (sin mostrarlo en pantalla)
+                          final Uint8List? imageBytes =
+                              await screenshotController.captureFromWidget(
+                            VictoryShareCard(
+                              winnerName: winnerName,
+                              scoreNosotros: scoreProvider.nosotros,
+                              scoreEllos: scoreProvider.ellos,
+                            ),
+                            delay: const Duration(milliseconds: 100),
+                          );
+
+                          if (imageBytes != null) {
+                            // Guardar en un archivo temporal
+                            final directory = await getTemporaryDirectory();
+                            final String path =
+                                '${directory.path}/resultado_truco.png';
+                            final File file = File(path);
+                            await file.writeAsBytes(imageBytes);
+
+                            // Compartir el archivo generado
+                            final message =
+                                "#AnotadorDeTruco\n${SupportService.appUrl}";
+                            await Share.shareXFiles(
+                              [XFile(path)],
+                              text: message,
+                            );
+                            AnalyticsService.logShareGameResult();
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   static void showRecovery(
     BuildContext context,
@@ -178,39 +180,39 @@ abstract class GameDialogs {
         canPop: false,
         child: TrucoDialog(
           title: "Tenés una partida en curso",
-        contentText: "¿Querés continuarla o empezar una nueva?",
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: SecondaryButton(
-                  text: "Nueva partida",
-                  toUpperCase: true,
-                  onPressed: () {
-                    Navigator.pop(context);
-                    provider.triggerReset();
-                    AnalyticsService.logNewGameStarted();
-                  },
+          contentText: "¿Querés continuarla o empezar una nueva?",
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: SecondaryButton(
+                    text: "Nueva partida",
+                    toUpperCase: true,
+                    onPressed: () {
+                      Navigator.pop(context);
+                      provider.triggerReset();
+                      AnalyticsService.logNewGameStarted();
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: PrimaryButton(
-                  text: "Continuar partida",
-                  onPressed: () {
-                    Navigator.pop(context);
-                    provider.restoreGame(data);
-                    AnalyticsService.logGameRestored();
-                  },
+                const SizedBox(width: 16),
+                Expanded(
+                  child: PrimaryButton(
+                    text: "Continuar partida",
+                    onPressed: () {
+                      Navigator.pop(context);
+                      provider.restoreGame(data);
+                      AnalyticsService.logGameRestored();
+                    },
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   static void showUnlock(
     BuildContext context,
@@ -262,8 +264,10 @@ abstract class GameDialogs {
                           try {
                             final index =
                                 int.parse(id.replaceFirst('palette_', ''));
-                            if (index >= 0 && index < availablePalettes.length) {
-                              scoreProvider.setPalette(availablePalettes[index]);
+                            if (index >= 0 &&
+                                index < availablePalettes.length) {
+                              scoreProvider
+                                  .setPalette(availablePalettes[index]);
                             }
                           } catch (_) {}
                         } else if (id.startsWith('bean_palette_')) {
@@ -298,7 +302,8 @@ abstract class GameDialogs {
                 child: Text(
                   "QUIZÁS MÁS TARDE",
                   style: TextStyle(
-                      color: scoreProvider.appTheme.white.withValues(alpha: 0.5),
+                      color:
+                          scoreProvider.appTheme.white.withValues(alpha: 0.5),
                       fontFamily: AppFonts.oswald),
                 ),
               ),
@@ -308,6 +313,91 @@ abstract class GameDialogs {
       ),
     );
   }
+
+  static void showPremiumBenefits(BuildContext context) {
+    final premiumProvider =
+        Provider.of<PremiumProvider>(context, listen: false);
+    final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
+
+    Widget benefit(String text) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.check_circle,
+                  color: scoreProvider.appTheme.cream, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    height: 1.3,
+                    fontFamily: AppFonts.oswald,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+    showDialog(
+      context: context,
+      builder: (context) => TrucoDialog(
+        title: "¡SUMATE A PREMIUM!",
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Cuesta menos que un café con medialuna ☕🥐… y te dura para siempre.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                height: 1.4,
+                fontFamily: AppFonts.oswald,
+              ),
+            ),
+            const SizedBox(height: 16),
+            benefit("Eliminás toda la publicidad para siempre"),
+            benefit("Desbloqueás todos los temas de la app"),
+            benefit("Desbloqueás todos los diseños de fósforos"),
+            benefit("Desbloqueás todos los diseños de porotos"),
+            benefit("Ayudás a un desarrollador independiente ❤️"),
+          ],
+        ),
+        actions: [
+          Column(
+            children: [
+              PrimaryButton(
+                text: "QUIERO SER PREMIUM",
+                width: double.infinity,
+                onPressed: () {
+                  Navigator.pop(context);
+                  premiumProvider.buyPremium();
+                },
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  "AHORA NO",
+                  style: TextStyle(
+                    color: scoreProvider.appTheme.white.withValues(alpha: 0.5),
+                    fontFamily: AppFonts.oswald,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   static void showRatingDialog(
     BuildContext context,
     ScoreProvider scoreProvider, {
@@ -323,52 +413,52 @@ abstract class GameDialogs {
         child: TrucoDialog(
           showBanner: false,
           title: "¡GRACIAS POR JUGAR!",
-        contentText:
-            "¿Te está gustando Puro Truco?\nTu opinión nos ayuda mucho a seguir mejorando.",
-        actions: [
-          Column(
-            children: [
-              PrimaryButton(
-                text: "ME ENCANTA",
-                width: double.infinity,
-                onPressed: () {
-                  Navigator.pop(context);
-                  onRate();
-                  AnalyticsService.logRateAppAction('rate_now');
-                },
-              ),
-              const SizedBox(height: 12),
-              SecondaryButton(
-                text: "Ahora no",
-                width: double.infinity,
-                toUpperCase: false,
-                onPressed: () {
-                  Navigator.pop(context);
-                  onLater();
-                  AnalyticsService.logRateAppAction('later');
-                },
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  onFeedback();
-                  AnalyticsService.logRateAppAction('never_or_feedback');
-                },
-                child: Text(
-                  "Podría mejorar...",
-                  style: TextStyle(
-                    fontFamily: AppFonts.oswald,
-                    fontSize: 14,
-                    color: Colors.white,
+          contentText:
+              "¿Te está gustando Puro Truco?\nTu opinión nos ayuda mucho a seguir mejorando.",
+          actions: [
+            Column(
+              children: [
+                PrimaryButton(
+                  text: "ME ENCANTA",
+                  width: double.infinity,
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onRate();
+                    AnalyticsService.logRateAppAction('rate_now');
+                  },
+                ),
+                const SizedBox(height: 12),
+                SecondaryButton(
+                  text: "Ahora no",
+                  width: double.infinity,
+                  toUpperCase: false,
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onLater();
+                    AnalyticsService.logRateAppAction('later');
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onFeedback();
+                    AnalyticsService.logRateAppAction('never_or_feedback');
+                  },
+                  child: Text(
+                    "Podría mejorar...",
+                    style: TextStyle(
+                      fontFamily: AppFonts.oswald,
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

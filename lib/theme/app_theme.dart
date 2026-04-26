@@ -257,7 +257,7 @@ class TrucoTheme {
 class AppFonts {
   static const String oswald = 'Oswald';
   static const String oswaldSemiBold = 'Oswald-SemiBold';
-  static const String oswaldRegular = 'Oswald';
+  static const String oswaldRegular = 'Oswald-Regular';
   static const String caminito = 'CaminitoBase';
 }
 

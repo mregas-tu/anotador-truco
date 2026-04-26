@@ -15,6 +15,7 @@ import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
 import 'truco_buttons.dart';
 import 'bean_widget.dart';
+import 'game_dialogs.dart';
 
 class SettingsDialogContent extends StatefulWidget {
   final Function(String) onThemeLockedTap;
@@ -88,7 +89,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     }
   }
 
-
   Future<void> _rateApp() async {
     final InAppReview inAppReview = InAppReview.instance;
     try {
@@ -100,7 +100,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
       debugPrint("Error opening store listing: $e");
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -278,7 +277,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               iconAsset: 'assets/images/menu_icons/premium_icon.svg',
               onTap: () {
                 Navigator.pop(context);
-                premiumProvider.buyPremium();
+                GameDialogs.showPremiumBenefits(context);
               },
               scoreProvider: scoreProvider,
               isSmallScreen: isSmallScreen,

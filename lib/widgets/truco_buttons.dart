@@ -47,7 +47,8 @@ class PrimaryButton extends StatelessWidget {
                 SvgPicture.asset(
                   iconAsset!,
                   height: 18,
-                  colorFilter: ColorFilter.mode(theme.primaryTextButton, BlendMode.srcIn),
+                  colorFilter: ColorFilter.mode(
+                      theme.primaryTextButton, BlendMode.srcIn),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -91,14 +92,14 @@ class SecondaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Provider.of<ScoreProvider>(context).appTheme;
-    
+
     // Determine colors based on type
-    final Color borderColor = type == SecondaryButtonType.secondary 
-        ? theme.malas 
+    final Color borderColor = type == SecondaryButtonType.secondary
+        ? theme.malas
         : theme.secondaryButtonBorder;
-        
-    final Color textColor = type == SecondaryButtonType.secondary 
-        ? theme.malas 
+
+    final Color textColor = type == SecondaryButtonType.secondary
+        ? theme.malas
         : theme.secondaryButtonText;
 
     return SizedBox(
