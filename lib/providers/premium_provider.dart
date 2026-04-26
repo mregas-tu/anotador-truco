@@ -47,22 +47,31 @@ class PremiumProvider with ChangeNotifier {
         debugPrint('Error loading temp unlocks: $e');
       }
     }
+    AnalyticsService.setSuperProperties(analyticsSuperProperties);
+    AnalyticsService.setPeopleProperties({'is_premium': _isPremium});
     notifyListeners();
   }
+
+  Map<String, dynamic> get analyticsSuperProperties => {
+        'is_premium': _isPremium,
+      };
 
   Future<void> setPremium(bool value) async {
     _isPremium = value;
     await _prefs?.setBool(_keyIsPremium, value);
+    AnalyticsService.setSuperProperties(analyticsSuperProperties);
+    AnalyticsService.setPeopleProperties({'is_premium': value});
     notifyListeners();
   }
 
-  Future<void> buyPremium() async {
-    AnalyticsService.logPurchaseStarted();
+  Future<void> buyPremium({String source = 'unknown'}) async {
+    AnalyticsService.logEvent('premium_purchase_started',
+        parameters: {'source': source});
     await _billingService.buyPremium();
   }
 
   Future<void> restorePurchases() async {
-    AnalyticsService.logEvent('restore_purchases_clicked');
+    AnalyticsService.logEvent('premium_restore_attempted');
     await _billingService.restorePurchases();
   }
 

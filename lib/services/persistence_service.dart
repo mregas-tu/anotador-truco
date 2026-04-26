@@ -22,6 +22,10 @@ class PersistenceService {
   static const String keyMatchesCompletedCount = 'matches_completed_count';
   static const String keyHasRatedApp = 'has_rated_app';
   static const String keyLastRateRequestMatchCount = 'last_rate_request_match_count';
+  static const String keyInstallDate = 'install_date';
+  static const String keyLastPremiumPromptDate = 'last_premium_prompt_date';
+  static const String keyMatchesAtLastPremiumPrompt =
+      'matches_at_last_premium_prompt';
 
   static SharedPreferences? _prefs;
 
@@ -69,6 +73,33 @@ class PersistenceService {
   static Future<void> setLastRateRequestMatchCount(int count) async {
     final prefs = await _getPrefs();
     await prefs.setInt(keyLastRateRequestMatchCount, count);
+  }
+
+  static Future<int> getOrSetInstallDate() async {
+    final prefs = await _getPrefs();
+    int? installMillis = prefs.getInt(keyInstallDate);
+    if (installMillis == null) {
+      installMillis = DateTime.now().millisecondsSinceEpoch;
+      await prefs.setInt(keyInstallDate, installMillis);
+    }
+    return installMillis;
+  }
+
+  static Future<int> getLastPremiumPromptDate() async {
+    final prefs = await _getPrefs();
+    return prefs.getInt(keyLastPremiumPromptDate) ?? 0;
+  }
+
+  static Future<int> getMatchesAtLastPremiumPrompt() async {
+    final prefs = await _getPrefs();
+    return prefs.getInt(keyMatchesAtLastPremiumPrompt) ?? 0;
+  }
+
+  static Future<void> markPremiumPromptShown(int matchesCount) async {
+    final prefs = await _getPrefs();
+    await prefs.setInt(
+        keyLastPremiumPromptDate, DateTime.now().millisecondsSinceEpoch);
+    await prefs.setInt(keyMatchesAtLastPremiumPrompt, matchesCount);
   }
 
   static Future<void> saveGameState({

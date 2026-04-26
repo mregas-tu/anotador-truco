@@ -1,6 +1,8 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'persistence_service.dart';
 
 class AnalyticsService {
   static final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
@@ -28,12 +30,7 @@ class AnalyticsService {
   }
 
   static Future<void> _track(String name, [Map<String, Object>? parameters]) async {
-    // Track en Firebase
-    await _analytics.logEvent(name: name, parameters: parameters);
-    
-    // Track en Mixpanel
     if (parameters != null) {
-      // Mixpanel prefiere Map<String, dynamic> para las propiedades
       final Map<String, dynamic> props = Map<String, dynamic>.from(parameters);
       _mixpanel?.track(name, properties: props);
     } else {
@@ -42,20 +39,63 @@ class AnalyticsService {
   }
 
   static Future<void> markAsInternalUser() async {
-    await _analytics.setAnalyticsCollectionEnabled(true);
-    await _analytics.setUserProperty(name: 'user_type', value: 'internal');
     _mixpanel?.optInTracking();
     _mixpanel?.getPeople().set("user_type", "internal");
-    
+
     if (kDebugMode) {
-      await _analytics.setAnalyticsCollectionEnabled(false);
       _mixpanel?.optOutTracking();
     }
   }
 
   static Future<void> logAppOpen() async {
-    await _analytics.logAppOpen();
     _mixpanel?.track("app_open");
+  }
+
+  // --- SUPER PROPERTIES & PEOPLE PROPERTIES ---
+
+  static Future<void> setSuperProperties(Map<String, dynamic> props) async {
+    _mixpanel?.registerSuperProperties(props);
+  }
+
+  static Future<void> setSuperProperty(String key, dynamic value) async {
+    await setSuperProperties({key: value});
+  }
+
+  static Future<void> setPeopleProperties(Map<String, dynamic> props) async {
+    final people = _mixpanel?.getPeople();
+    if (people == null) return;
+    for (final entry in props.entries) {
+      people.set(entry.key, entry.value);
+    }
+  }
+
+  static Future<void> incrementPeopleProperty(String key,
+      [num value = 1]) async {
+    _mixpanel?.getPeople().increment(key, value.toDouble());
+  }
+
+  /// Refresca propiedades estáticas: app_version, days_since_install.
+  /// Llamar al iniciar la app.
+  static Future<void> refreshStaticUserContext() async {
+    try {
+      final pkg = await PackageInfo.fromPlatform();
+      await setSuperProperty('app_version', pkg.version);
+      await setPeopleProperties({'app_version': pkg.version});
+    } catch (_) {}
+
+    try {
+      final installMillis = await PersistenceService.getOrSetInstallDate();
+      final installDate =
+          DateTime.fromMillisecondsSinceEpoch(installMillis).toIso8601String();
+      final days = DateTime.now()
+          .difference(DateTime.fromMillisecondsSinceEpoch(installMillis))
+          .inDays;
+      await setSuperProperty('days_since_install', days);
+      await setPeopleProperties({
+        '\$created': installDate,
+        'days_since_install': days,
+      });
+    } catch (_) {}
   }
 
   // --- EVENTOS DE CONFIGURACIÓN Y UI ---
@@ -78,14 +118,6 @@ class AnalyticsService {
 
   static Future<void> logTutorialSkip(int step) async {
     await _track('tutorial_skip', {'at_step': step});
-  }
-
-  static Future<void> logViewAbout() async {
-    await _track('view_about');
-  }
-
-  static Future<void> logViewRateApp() async {
-    await _track('view_rate_app');
   }
 
   static Future<void> logRateAppAction(String action) async {
@@ -122,57 +154,69 @@ class AnalyticsService {
     await _track('share_game_result');
   }
 
-  static Future<void> logNewGameFromSummary() async {
-    await _track('new_game_from_summary');
-  }
-
   static Future<void> logUndoFromSummary() async {
     await _track('undo_from_summary');
   }
 
   static Future<void> logGameFinished({
-    required String gameMode,
-    required bool picaPica,
-    required String theme,
-    required String pieceType,
-    required String pieceDesign,
-    required String controlMode,
-    required bool soundEnabled,
-    required bool vibrationEnabled,
-    required String teamNameNos,
-    required String teamNameEllos,
+    required bool teamNosIsCustom,
+    required bool teamEllosIsCustom,
   }) async {
     await _track(
       'game_finished',
       {
-        'game_mode': gameMode,
-        'pica_pica_enabled': picaPica ? 'yes' : 'no',
-        'theme': theme,
-        'piece_type': pieceType,
-        'piece_design': pieceDesign,
-        'control_mode': controlMode,
-        'sound_enabled': soundEnabled ? 'yes' : 'no',
-        'vibration_enabled': vibrationEnabled ? 'yes' : 'no',
-        'team_nos': teamNameNos,
-        'team_ellos': teamNameEllos,
+        'team_nos_is_custom': teamNosIsCustom,
+        'team_ellos_is_custom': teamEllosIsCustom,
       },
     );
-  }
-
-  static Future<void> logGameModeMenu() async {
-    await _track('menu_game_mode_view');
+    incrementPeopleProperty('total_matches_played');
+    setPeopleProperties({
+      'last_match_at': DateTime.now().toIso8601String(),
+    });
   }
 
   static Future<void> logDesignMenu() async {
     await _track('menu_design_view');
   }
 
-  static Future<void> logSupportMenu() async {
-    await _track('menu_support_view');
+  // --- PREMIUM FUNNEL ---
+
+  static Future<void> logPremiumPromptShown(String source) async {
+    await _track('premium_prompt_shown', {'source': source});
   }
 
-  static Future<void> logPurchaseStarted() async {
-    await _track('purchase_premium_started');
+  static Future<void> logPremiumPromptAccepted(String source) async {
+    await _track('premium_prompt_accepted', {'source': source});
+  }
+
+  static Future<void> logPremiumPromptDismissed(String source) async {
+    await _track('premium_prompt_dismissed', {'source': source});
+  }
+
+  static Future<void> logPremiumPurchaseCompleted(String? productId) async {
+    await _track('premium_purchase_completed', {
+      'product_id': productId ?? 'unknown',
+    });
+  }
+
+  static Future<void> logPremiumPurchaseFailed({String? reason}) async {
+    await _track('premium_purchase_failed', {
+      'reason': reason ?? 'unknown',
+    });
+  }
+
+  static Future<void> logPremiumRestoreSucceeded() async {
+    await _track('premium_restore_succeeded');
+  }
+
+  static Future<void> logLockedContentTapped({
+    required String contentType,
+    required String contentId,
+  }) async {
+    await _track('locked_content_tapped', {
+      'content_type': contentType,
+      'content_id': contentId,
+    });
   }
 
   // Evento genérico por si necesitamos trackear algo rápido

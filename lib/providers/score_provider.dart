@@ -395,6 +395,7 @@ class ScoreProvider with ChangeNotifier {
     }
     notifyListeners();
     _saveCurrentState();
+    _pushAnalyticsContext();
   }
 
   Future<void> triggerReset({bool keepNames = true}) async {
@@ -518,7 +519,26 @@ class ScoreProvider with ChangeNotifier {
     );
   }
 
+  Map<String, dynamic> get analyticsSuperProperties => {
+        'current_theme': _appTheme.name,
+        'current_palette': _currentPalette.name,
+        'current_bean_palette': _currentBeanPalette.name,
+        'point_type': _pointType == PointType.beans ? 'porotos' : 'fosforos',
+        'scoring_mode': _scoringMode.name,
+        'sound_enabled': !_isMuted,
+        'vibration_enabled': _vibrationEnabled,
+        'pica_pica_enabled': _picaPicaEnabled,
+        'current_game_mode': _currentGameMode.label,
+        'has_custom_team_names':
+            _nosotrosName != "NOSOTROS" || _ellosName != "ELLOS",
+      };
+
+  void _pushAnalyticsContext() {
+    AnalyticsService.setSuperProperties(analyticsSuperProperties);
+  }
+
   void _saveCurrentSettings() {
+    _pushAnalyticsContext();
     PersistenceService.saveSettings(
       gameModeIndex: availableModes.indexOf(_currentGameMode),
       themeId: _appTheme.name, // Using name as ID

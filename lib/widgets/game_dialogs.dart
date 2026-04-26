@@ -94,7 +94,7 @@ abstract class GameDialogs {
                   fontSize: 16,
                   onPressed: () {
                     scoreProvider.triggerReset();
-                    AnalyticsService.logNewGameFromSummary();
+                    AnalyticsService.logNewGameStarted();
                     Navigator.pop(context);
                   },
                 ),
@@ -237,7 +237,9 @@ abstract class GameDialogs {
                 text: "SER PREMIUM",
                 width: double.infinity,
                 onPressed: () {
-                  premiumProvider.buyPremium();
+                  AnalyticsService.logPremiumPromptAccepted(
+                      'unlock_dialog_$type');
+                  premiumProvider.buyPremium(source: 'unlock_dialog_$type');
                   Navigator.pop(context);
                 },
               ),
@@ -314,10 +316,14 @@ abstract class GameDialogs {
     );
   }
 
-  static void showPremiumBenefits(BuildContext context) {
+  static void showPremiumBenefits(BuildContext context,
+      {required String source}) {
     final premiumProvider =
         Provider.of<PremiumProvider>(context, listen: false);
     final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
+
+    AnalyticsService.logPremiumPromptShown(source);
+    bool accepted = false;
 
     Widget benefit(String text) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
@@ -376,8 +382,10 @@ abstract class GameDialogs {
                 text: "QUIERO SER PREMIUM",
                 width: double.infinity,
                 onPressed: () {
+                  accepted = true;
+                  AnalyticsService.logPremiumPromptAccepted(source);
                   Navigator.pop(context);
-                  premiumProvider.buyPremium();
+                  premiumProvider.buyPremium(source: source);
                 },
               ),
               const SizedBox(height: 8),
@@ -395,7 +403,11 @@ abstract class GameDialogs {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      if (!accepted) {
+        AnalyticsService.logPremiumPromptDismissed(source);
+      }
+    });
   }
 
   static void showRatingDialog(

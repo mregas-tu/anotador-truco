@@ -239,7 +239,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             label: "MODO DE JUEGO",
             iconAsset: 'assets/images/menu_icons/game_mode_icon.svg',
             onTap: () {
-              AnalyticsService.logGameModeMenu();
               setState(() => currentPane = 2);
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _scrollToSelectedMode(scoreProvider);
@@ -264,7 +263,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             label: "AYUDA Y SOPORTE",
             iconAsset: 'assets/images/menu_icons/support_icon.svg',
             onTap: () {
-              AnalyticsService.logSupportMenu();
               setState(() => currentPane = 3);
             },
             scoreProvider: scoreProvider,
@@ -277,7 +275,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               iconAsset: 'assets/images/menu_icons/premium_icon.svg',
               onTap: () {
                 Navigator.pop(context);
-                GameDialogs.showPremiumBenefits(context);
+                GameDialogs.showPremiumBenefits(context, source: 'settings');
               },
               scoreProvider: scoreProvider,
               isSmallScreen: isSmallScreen,
@@ -955,7 +953,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             label: "VALORAR APP",
             onTap: () {
               _rateApp();
-              AnalyticsService.logViewRateApp();
             },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
@@ -964,7 +961,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           _buildMenuNavigationItem(
             label: "ACERCA DE",
             onTap: () {
-              AnalyticsService.logViewAbout();
               setState(() => currentPane = 4);
             },
             scoreProvider: scoreProvider,

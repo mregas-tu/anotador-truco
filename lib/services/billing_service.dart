@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'analytics_service.dart';
 
 class BillingService {
   static const String premiumId = '33_de_mano';
@@ -30,11 +31,17 @@ class BillingService {
         // Mostrar cargando si hace falta
       } else {
         if (purchaseDetails.status == PurchaseStatus.error) {
-          // Manejar error de compra
-        } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-            purchaseDetails.status == PurchaseStatus.restored) {
-          // ¡COMPRA EXITOSA!
+          AnalyticsService.logPremiumPurchaseFailed(
+              reason: purchaseDetails.error?.message);
+        } else if (purchaseDetails.status == PurchaseStatus.purchased) {
           await _deliverProduct(purchaseDetails);
+          AnalyticsService.logPremiumPurchaseCompleted(
+              purchaseDetails.productID);
+        } else if (purchaseDetails.status == PurchaseStatus.restored) {
+          await _deliverProduct(purchaseDetails);
+          AnalyticsService.logPremiumRestoreSucceeded();
+        } else if (purchaseDetails.status == PurchaseStatus.canceled) {
+          AnalyticsService.logPremiumPurchaseFailed(reason: 'canceled');
         }
 
         if (purchaseDetails.pendingCompletePurchase) {

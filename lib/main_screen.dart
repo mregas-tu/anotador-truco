@@ -18,6 +18,7 @@ import 'widgets/settings_dialog.dart';
 import 'widgets/tutorial_overlay.dart';
 import 'widgets/game_dialogs.dart';
 import 'widgets/main_screen_widgets.dart';
+import 'providers/premium_provider.dart';
 import 'widgets/pica_pica_widgets.dart';
 
 class MainScreen extends StatefulWidget {
@@ -60,16 +61,23 @@ class _MainScreenState extends State<MainScreen>
       final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
       await scoreProvider.loadSettings();
 
+      AnalyticsService.refreshStaticUserContext();
+      AnalyticsService.setSuperProperties(scoreProvider.analyticsSuperProperties);
+      AnalyticsService.incrementPeopleProperty('app_open_count');
+
       final data = await PersistenceService.loadAll();
       final nosotros = data[PersistenceService.keyNosotrosScore] ?? 0;
       final ellos = data[PersistenceService.keyEllosScore] ?? 0;
       final targetScore = scoreProvider.currentGameMode.totalPoints;
+
+      bool blockingDialogShown = false;
 
       // Solo mostramos recuperar si alguien tiene puntos PERO nadie llegó al límite
       if ((nosotros > 0 || ellos > 0) &&
           (nosotros < targetScore && ellos < targetScore)) {
         if (mounted) {
           _showRecoveryDialog(context, scoreProvider, data);
+          blockingDialogShown = true;
         }
       } else if (nosotros >= targetScore || ellos >= targetScore) {
         // Si ya terminó, limpiamos para que no vuelva a molestar al reiniciar
@@ -85,7 +93,12 @@ class _MainScreenState extends State<MainScreen>
             _tutorialStep = 0;
           });
           _startGhostHandTutorial();
+          blockingDialogShown = true;
         }
+      }
+
+      if (!blockingDialogShown && mounted) {
+        _maybeShowPremiumPrompt(context);
       }
     });
 
@@ -555,6 +568,34 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
+  static const int _premiumPromptMinMatches = 3;
+  static const int _premiumPromptMinDays = 7;
+
+  Future<void> _maybeShowPremiumPrompt(BuildContext context) async {
+    final premiumProvider =
+        Provider.of<PremiumProvider>(context, listen: false);
+    if (premiumProvider.isPremium) return;
+
+    final matchesCount = await PersistenceService.getMatchesCompletedCount();
+    final matchesAtLast =
+        await PersistenceService.getMatchesAtLastPremiumPrompt();
+    if (matchesCount - matchesAtLast < _premiumPromptMinMatches) return;
+
+    final lastPromptMillis =
+        await PersistenceService.getLastPremiumPromptDate();
+    final referenceMillis = lastPromptMillis > 0
+        ? lastPromptMillis
+        : await PersistenceService.getOrSetInstallDate();
+    final daysSince =
+        (DateTime.now().millisecondsSinceEpoch - referenceMillis) /
+            (1000 * 60 * 60 * 24);
+    if (daysSince < _premiumPromptMinDays) return;
+
+    if (!mounted) return;
+    await PersistenceService.markPremiumPromptShown(matchesCount);
+    GameDialogs.showPremiumBenefits(context, source: 'auto_open');
+  }
+
   void _showWinnerDialog(
       BuildContext context, ScoreProvider scoreProvider) async {
     bool shouldShowRating = false;
@@ -577,25 +618,11 @@ class _MainScreenState extends State<MainScreen>
       }
     }
 
-    // Log detailed game finished event (uno solo para todos los flujos)
+    // Game finished — el resto del contexto (theme, modo, sonido, etc.)
+    // viaja automáticamente vía super properties.
     AnalyticsService.logGameFinished(
-      gameMode: scoreProvider.currentGameMode.label,
-      picaPica: scoreProvider.picaPicaEnabled,
-      theme: scoreProvider.appTheme.name,
-      pieceType:
-          scoreProvider.pointType == PointType.beans ? 'porotos' : 'fosforos',
-      pieceDesign: scoreProvider.pointType == PointType.beans
-          ? scoreProvider.currentBeanPalette.name
-          : scoreProvider.currentPalette.name,
-      controlMode: scoreProvider.scoringMode == ScoringMode.drag
-          ? 'drag'
-          : scoreProvider.scoringMode == ScoringMode.tap
-              ? 'tap'
-              : 'classic',
-      soundEnabled: !scoreProvider.isMuted,
-      vibrationEnabled: scoreProvider.vibrationEnabled,
-      teamNameNos: scoreProvider.nosotrosName,
-      teamNameEllos: scoreProvider.ellosName,
+      teamNosIsCustom: scoreProvider.nosotrosName != "NOSOTROS",
+      teamEllosIsCustom: scoreProvider.ellosName != "ELLOS",
     );
 
     if (shouldShowRating && mounted) {
@@ -876,6 +903,10 @@ class _MainScreenState extends State<MainScreen>
   }
 
   void _showUnlockDialog(BuildContext context, String id, String type) {
+    AnalyticsService.logLockedContentTapped(
+      contentType: type,
+      contentId: id,
+    );
     GameDialogs.showUnlock(context, id, type);
   }
 
