@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/audio_service.dart';
@@ -158,6 +159,11 @@ class ScoreProvider with ChangeNotifier {
   bool _picaPicaEnabled = false;
   int _picaPicaStart = 5;
   int _picaPicaEnd = 20;
+  bool _picaPicaStartTriggered = false;
+  bool _picaPicaEndTriggered = false;
+  final StreamController<String> _picaPicaEventsController =
+      StreamController<String>.broadcast();
+  Stream<String> get picaPicaEvents => _picaPicaEventsController.stream;
   int _nosotros = 0;
   int _ellos = 0;
   String _nosotrosName = "NOSOTROS";
@@ -256,6 +262,19 @@ class ScoreProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void _checkPicaPicaCross() {
+    if (!_picaPicaEnabled) return;
+    final int maxScore = _nosotros > _ellos ? _nosotros : _ellos;
+    if (!_picaPicaStartTriggered && maxScore >= _picaPicaStart) {
+      _picaPicaStartTriggered = true;
+      _picaPicaEventsController.add('start');
+    }
+    if (!_picaPicaEndTriggered && maxScore >= _picaPicaEnd) {
+      _picaPicaEndTriggered = true;
+      _picaPicaEventsController.add('end');
+    }
+  }
+
   void _vibrate() {
     if (_vibrationEnabled) {
       HapticFeedback.lightImpact();
@@ -329,6 +348,7 @@ class ScoreProvider with ChangeNotifier {
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       }
       _vibrate();
+      _checkPicaPicaCross();
       notifyListeners();
       _saveCurrentState();
     }
@@ -367,6 +387,7 @@ class ScoreProvider with ChangeNotifier {
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       }
       _vibrate();
+      _checkPicaPicaCross();
       notifyListeners();
       _saveCurrentState();
     }
@@ -413,6 +434,8 @@ class ScoreProvider with ChangeNotifier {
     }
     _nosotrosFinishedMalas = false;
     _ellosFinishedMalas = false;
+    _picaPicaStartTriggered = false;
+    _picaPicaEndTriggered = false;
     _totalRemainingMatchsticks = (_currentGameMode.totalPoints * 2);
     _lastDropOffset = null;
     _lastPointTeam = null;

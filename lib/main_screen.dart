@@ -51,6 +51,7 @@ class _MainScreenState extends State<MainScreen>
   String? _lastWinnerShown;
   int _tutorialStep = 0;
   bool _isTutorialActive = false;
+  StreamSubscription<String>? _picaPicaSub;
 
   late Animation<double> _handScaleAnimation;
 
@@ -60,6 +61,13 @@ class _MainScreenState extends State<MainScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
       await scoreProvider.loadSettings();
+
+      _picaPicaSub = scoreProvider.picaPicaEvents.listen((event) {
+        if (!mounted) return;
+        _showPicaPicaToast(
+          event == 'start' ? '¡INICIO PICA PICA!' : '¡FIN PICA PICA!',
+        );
+      });
 
       AnalyticsService.refreshStaticUserContext();
       AnalyticsService.setSuperProperties(scoreProvider.analyticsSuperProperties);
@@ -127,8 +135,45 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void dispose() {
+    _picaPicaSub?.cancel();
+    _picaPicaToastEntry?.remove();
+    _picaPicaToastEntry = null;
+    _picaPicaToastTimer?.cancel();
     _handController.dispose();
     super.dispose();
+  }
+
+  OverlayEntry? _picaPicaToastEntry;
+  Timer? _picaPicaToastTimer;
+
+  void _showPicaPicaToast(String message) {
+    final theme = Provider.of<ScoreProvider>(context, listen: false).appTheme;
+    _picaPicaToastEntry?.remove();
+    _picaPicaToastTimer?.cancel();
+
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (ctx) => Positioned(
+        top: MediaQuery.of(ctx).padding.top + 16,
+        left: 24,
+        right: 24,
+        child: IgnorePointer(
+          child: _PicaPicaToast(
+            message: message,
+            background: theme.accentColor,
+            border: theme.cream,
+            textColor: theme.cream,
+          ),
+        ),
+      ),
+    );
+
+    _picaPicaToastEntry = entry;
+    overlay.insert(entry);
+    _picaPicaToastTimer = Timer(const Duration(milliseconds: 2400), () {
+      _picaPicaToastEntry?.remove();
+      _picaPicaToastEntry = null;
+    });
   }
 
   @override
@@ -1292,6 +1337,131 @@ class ScoreCircleButton extends StatelessWidget {
               isMinus ? 'assets/images/subtract.svg' : 'assets/images/add.svg',
               width: 32,
               height: 32,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PicaPicaToast extends StatefulWidget {
+  final String message;
+  final Color background;
+  final Color border;
+  final Color textColor;
+
+  const _PicaPicaToast({
+    required this.message,
+    required this.background,
+    required this.border,
+    required this.textColor,
+  });
+
+  @override
+  State<_PicaPicaToast> createState() => _PicaPicaToastState();
+}
+
+class _PicaPicaToastState extends State<_PicaPicaToast>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+  late final Animation<Offset> _slide;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    );
+
+    _opacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 70),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 15),
+    ]).animate(_controller);
+
+    _slide = TweenSequence<Offset>([
+      TweenSequenceItem(
+        tween: Tween(begin: const Offset(0, -1.5), end: Offset.zero)
+            .chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 20,
+      ),
+      TweenSequenceItem(tween: ConstantTween(Offset.zero), weight: 65),
+      TweenSequenceItem(
+        tween: Tween(begin: Offset.zero, end: const Offset(0, -1.5))
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 15,
+      ),
+    ]).animate(_controller);
+
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.85, end: 1.05)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 12,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.05, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 8,
+      ),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 80),
+    ]).animate(_controller);
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _opacity.value,
+          child: FractionalTranslation(
+            translation: _slide.value,
+            child: Transform.scale(
+              scale: _scale.value,
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: BoxDecoration(
+            color: widget.background,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: widget.border, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Text(
+            widget.message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: AppFonts.oswald,
+              color: widget.textColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              letterSpacing: 3,
             ),
           ),
         ),
