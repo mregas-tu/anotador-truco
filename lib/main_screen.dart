@@ -52,6 +52,7 @@ class _MainScreenState extends State<MainScreen>
   int _tutorialStep = 0;
   bool _isTutorialActive = false;
   StreamSubscription<String>? _picaPicaSub;
+  String? _footerIntDragSide;
 
   late Animation<double> _handScaleAnimation;
 
@@ -494,7 +495,8 @@ class _MainScreenState extends State<MainScreen>
                 name, totalPoints, isBuenas, isNosotros, scoreProvider, true),
             child: _buildTeamColumnContent(
                 name, totalPoints, isBuenas, isNosotros, scoreProvider, false,
-                highlight: candidateData.isNotEmpty),
+                highlight: candidateData.isNotEmpty ||
+                    _footerIntDragSide == (isNosotros ? "nosotros" : "ellos")),
           );
         },
       ),
@@ -975,11 +977,48 @@ class _MainScreenState extends State<MainScreen>
 
         return Container(
           width: double.infinity,
-          padding: EdgeInsets.only(top: topPadding, bottom: 20),
           color: highlight
               ? Colors.white.withOpacity(theme.highlightOpacity)
               : Colors.transparent,
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drop zone above the box (extends the team's int drop area
+              // through the footer ornament zone, but NOT over the box itself).
+              DragTarget<int>(
+                onMove: (details) {
+                  final double screenWidth =
+                      MediaQuery.of(context).size.width;
+                  final String side = details.offset.dx + 20 < screenWidth / 2
+                      ? "nosotros"
+                      : "ellos";
+                  if (_footerIntDragSide != side) {
+                    setState(() => _footerIntDragSide = side);
+                  }
+                },
+                onLeave: (_) {
+                  if (_footerIntDragSide != null) {
+                    setState(() => _footerIntDragSide = null);
+                  }
+                },
+                onAcceptWithDetails: (details) {
+                  final double screenWidth =
+                      MediaQuery.of(context).size.width;
+                  if (details.offset.dx + 20 < screenWidth / 2) {
+                    scoreProvider.addPointNosotros(details.offset);
+                  } else {
+                    scoreProvider.addPointEllos(details.offset);
+                  }
+                  if (_footerIntDragSide != null) {
+                    setState(() => _footerIntDragSide = null);
+                  }
+                },
+                builder: (ctx, _, __) =>
+                    SizedBox(height: topPadding, width: double.infinity),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -1068,6 +1107,9 @@ class _MainScreenState extends State<MainScreen>
                   ),
                 ),
               ],
+            ],
+          ),
+              ),
             ],
           ),
         );
