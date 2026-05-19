@@ -26,6 +26,9 @@ class PersistenceService {
   static const String keyLastPremiumPromptDate = 'last_premium_prompt_date';
   static const String keyMatchesAtLastPremiumPrompt =
       'matches_at_last_premium_prompt';
+  static const String keyVasoAdsWatched = 'vaso_ads_watched';
+  static const String keyVasoLastAdAt = 'vaso_last_ad_at';
+  static const String keyVasoBrindados = 'vaso_brindados';
 
   static SharedPreferences? _prefs;
 
@@ -83,6 +86,36 @@ class PersistenceService {
       await prefs.setInt(keyInstallDate, installMillis);
     }
     return installMillis;
+  }
+
+  static Future<int> getVasoAdsWatched() async {
+    final prefs = await _getPrefs();
+    return prefs.getInt(keyVasoAdsWatched) ?? 0;
+  }
+
+  static Future<void> setVasoAdsWatched(int count) async {
+    final prefs = await _getPrefs();
+    await prefs.setInt(keyVasoAdsWatched, count);
+  }
+
+  static Future<int> getVasoLastAdAt() async {
+    final prefs = await _getPrefs();
+    return prefs.getInt(keyVasoLastAdAt) ?? 0;
+  }
+
+  static Future<void> setVasoLastAdAt(int millis) async {
+    final prefs = await _getPrefs();
+    await prefs.setInt(keyVasoLastAdAt, millis);
+  }
+
+  static Future<int> getVasoBrindados() async {
+    final prefs = await _getPrefs();
+    return prefs.getInt(keyVasoBrindados) ?? 0;
+  }
+
+  static Future<void> setVasoBrindados(int count) async {
+    final prefs = await _getPrefs();
+    await prefs.setInt(keyVasoBrindados, count);
   }
 
   static Future<int> getLastPremiumPromptDate() async {

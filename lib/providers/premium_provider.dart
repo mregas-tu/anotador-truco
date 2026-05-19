@@ -8,14 +8,30 @@ import '../services/analytics_service.dart';
 class PremiumProvider with ChangeNotifier {
   static const String _keyIsPremium = '33_de_mano_unlocked';
   static const String _keyTempUnlocks = 'temp_unlocks';
+  static const String _keyGlobalTempUntil = 'global_temp_unlock_until';
 
   bool _isPremium = false;
   Map<String, DateTime> _tempUnlocks = {};
+  DateTime? _globalTempUnlockUntil;
   final Map<String, Timer> _expirationTimers = {};
+  Timer? _globalExpirationTimer;
   SharedPreferences? _prefs;
   late BillingService _billingService;
 
   bool get isPremium => _isPremium;
+
+  bool get hasGlobalTempUnlock {
+    final until = _globalTempUnlockUntil;
+    return until != null && until.isAfter(DateTime.now());
+  }
+
+  String? getGlobalTempUnlockRemaining() {
+    if (!hasGlobalTempUnlock) return null;
+    final diff = _globalTempUnlockUntil!.difference(DateTime.now());
+    final hours = diff.inHours.toString().padLeft(2, '0');
+    final minutes = (diff.inMinutes % 60).toString().padLeft(2, '0');
+    return "$hours:$minutes";
+  }
 
   PremiumProvider() {
     _billingService = BillingService(
@@ -45,6 +61,21 @@ class PremiumProvider with ChangeNotifier {
         _tempUnlocks.forEach((key, expiry) => _scheduleExpiration(key, expiry));
       } catch (e) {
         debugPrint('Error loading temp unlocks: $e');
+      }
+    }
+
+    final String? globalUntilStr = _prefs?.getString(_keyGlobalTempUntil);
+    if (globalUntilStr != null) {
+      try {
+        final DateTime dt = DateTime.parse(globalUntilStr);
+        if (dt.isAfter(DateTime.now())) {
+          _globalTempUnlockUntil = dt;
+          _scheduleGlobalExpiration();
+        } else {
+          await _prefs?.remove(_keyGlobalTempUntil);
+        }
+      } catch (e) {
+        debugPrint('Error loading global temp unlock: $e');
       }
     }
     AnalyticsService.setSuperProperties(analyticsSuperProperties);
@@ -91,6 +122,37 @@ class PremiumProvider with ChangeNotifier {
     }
   }
 
+  void _scheduleGlobalExpiration() {
+    _globalExpirationTimer?.cancel();
+    final until = _globalTempUnlockUntil;
+    if (until == null) return;
+    final diff = until.difference(DateTime.now());
+    if (diff.isNegative) {
+      _globalTempUnlockUntil = null;
+      _prefs?.remove(_keyGlobalTempUntil);
+      notifyListeners();
+      return;
+    }
+    _globalExpirationTimer = Timer(diff, () {
+      _globalTempUnlockUntil = null;
+      _prefs?.remove(_keyGlobalTempUntil);
+      notifyListeners();
+    });
+  }
+
+  Future<void> extendGlobalTempUnlock(Duration duration) async {
+    final now = DateTime.now();
+    final base = (_globalTempUnlockUntil != null &&
+            _globalTempUnlockUntil!.isAfter(now))
+        ? _globalTempUnlockUntil!
+        : now;
+    _globalTempUnlockUntil = base.add(duration);
+    await _prefs?.setString(
+        _keyGlobalTempUntil, _globalTempUnlockUntil!.toIso8601String());
+    _scheduleGlobalExpiration();
+    notifyListeners();
+  }
+
   Future<void> unlockTemporarily(String id) async {
     final expiry = DateTime.now().add(const Duration(hours: 24));
     _tempUnlocks[id] = expiry;
@@ -107,6 +169,7 @@ class PremiumProvider with ChangeNotifier {
 
   bool isUnlocked(String id) {
     if (_isPremium) return true;
+    if (hasGlobalTempUnlock) return true;
     if (_tempUnlocks.containsKey(id)) {
       if (_tempUnlocks[id]!.isAfter(DateTime.now())) return true;
     }
@@ -148,6 +211,7 @@ class PremiumProvider with ChangeNotifier {
     for (var timer in _expirationTimers.values) {
       timer.cancel();
     }
+    _globalExpirationTimer?.cancel();
     _billingService.dispose();
     super.dispose();
   }

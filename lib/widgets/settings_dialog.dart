@@ -940,6 +940,15 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
+            label: "BRINDIS",
+            onTap: () {
+              GameDialogs.showVaso(context);
+            },
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+          ),
+          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          _buildMenuNavigationItem(
             label: "ESCRIBINOS",
             onTap: () {
               SupportService.sendFeedbackEmail();

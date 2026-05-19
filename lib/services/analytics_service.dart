@@ -138,6 +138,49 @@ class AnalyticsService {
     await _track('pica_pica_toggled', {'enabled': enabled ? 'on' : 'off'});
   }
 
+  // === BRINDIS / VASO ===
+  static Future<void> logVasoDialogOpened({required bool isPremium}) async {
+    await _track('vaso_dialog_opened', {
+      'is_premium': isPremium ? 'yes' : 'no',
+    });
+  }
+
+  static Future<void> logVasoVideoButtonTapped({
+    required bool isPremium,
+    required int vasosFilledBefore,
+  }) async {
+    await _track('vaso_video_button_tapped', {
+      'is_premium': isPremium ? 'yes' : 'no',
+      'vasos_filled_before': vasosFilledBefore,
+    });
+  }
+
+  static Future<void> logVasoFilled({
+    required bool isPremium,
+    required int vasosFilledTotal,
+    required int adsInBar,
+  }) async {
+    await _track('vaso_filled', {
+      'is_premium': isPremium ? 'yes' : 'no',
+      'vasos_filled_total': vasosFilledTotal,
+      'ads_in_bar_after': adsInBar,
+    });
+  }
+
+  static Future<void> logVasoTempPremiumUnlocked({
+    required int vasosFilledTotal,
+  }) async {
+    await _track('vaso_temp_premium_unlocked', {
+      'vasos_filled_total': vasosFilledTotal,
+    });
+  }
+
+  static Future<void> logVasoAdNotReady({required bool isPremium}) async {
+    await _track('vaso_ad_not_ready', {
+      'is_premium': isPremium ? 'yes' : 'no',
+    });
+  }
+
   static Future<void> logNewGameStarted() async {
     await _track('new_game_started');
   }
