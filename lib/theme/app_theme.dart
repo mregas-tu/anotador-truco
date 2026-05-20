@@ -165,10 +165,10 @@ class TrucoTheme {
     tintHeader: false,
     tintFooter: false,
     headerShadows: [
-      Shadow(color: Colors.black38, offset: Offset(0, 2), blurRadius: 4),
+      Shadow(color: Colors.black26, offset: Offset(0, 1), blurRadius: 2),
     ],
     footerShadows: [
-      Shadow(color: Colors.black38, offset: Offset(0, 2), blurRadius: 4),
+      Shadow(color: Colors.black26, offset: Offset(0, 1), blurRadius: 2),
     ],
     dividerColor: Colors.white,
     scoreColor: Colors.white,
