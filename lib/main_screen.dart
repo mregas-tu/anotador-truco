@@ -242,16 +242,16 @@ class _MainScreenState extends State<MainScreen>
                             padding: const EdgeInsets.only(bottom: 20),
                             child: IgnorePointer(
                               child: RepaintBoundary(
-                                child: SvgPicture.asset(
-                                  theme.footerAsset!,
+                                child: assetWithShadows(
+                                  asset: theme.footerAsset!,
                                   height: theme.footerHeight,
-                                  colorFilter:
-                                      theme.footerAsset!.contains('dibu')
-                                          ? null
-                                          : ColorFilter.mode(
-                                              Colors.white.withOpacity(0.8),
-                                              BlendMode.srcIn,
-                                            ),
+                                  colorFilter: theme.tintFooter
+                                      ? ColorFilter.mode(
+                                          Colors.white.withOpacity(0.8),
+                                          BlendMode.srcIn,
+                                        )
+                                      : null,
+                                  shadows: theme.footerShadows,
                                 ),
                               ),
                             ),
@@ -356,8 +356,9 @@ class _MainScreenState extends State<MainScreen>
             color: theme.dividerColor.withOpacity(0.15),
           ),
         ),
-        if (theme.footerAsset != null)
-          SizedBox(height: 10 + theme.footerHeight + 20),
+        SizedBox(
+            height:
+                10 + (theme.footerAsset != null ? theme.footerHeight : 0) + 20),
       ],
     );
   }
@@ -919,8 +920,12 @@ class _MainScreenState extends State<MainScreen>
             }),
           ),
 
-          if (scoreProvider.appTheme.footerAsset != null)
-            SizedBox(height: 10 + scoreProvider.appTheme.footerHeight + 20),
+          SizedBox(
+              height: 10 +
+                  (scoreProvider.appTheme.footerAsset != null
+                      ? scoreProvider.appTheme.footerHeight
+                      : 0) +
+                  20),
         ],
       ),
     );

@@ -38,6 +38,10 @@ class TrucoTheme {
   final String? headerAsset;
   final String? footerAsset;
   final double footerHeight;
+  final bool tintHeader;
+  final bool tintFooter;
+  final List<Shadow>? headerShadows;
+  final List<Shadow>? footerShadows;
   final Color scoreColor;
   final Color teamScoreColor;
   final Color dividerColor;
@@ -81,6 +85,10 @@ class TrucoTheme {
     this.headerAsset,
     this.footerAsset,
     this.footerHeight = 45,
+    this.tintHeader = true,
+    this.tintFooter = true,
+    this.headerShadows,
+    this.footerShadows,
     required this.scoreColor,
     required this.teamScoreColor,
     required this.dividerColor,
@@ -152,18 +160,26 @@ class TrucoTheme {
     secondaryButtonText: Colors.white,
     classicButtonColor: Color(0xFF5A91C5),
     classicButtonShadowColor: Color(0x14000000), // black with 0.08 opacity
-    headerAsset: 'assets/images/header.svg',
-    footerAsset: 'assets/images/footer.svg',
+    headerAsset: 'assets/images/argentina_header.png',
+    footerAsset: 'assets/images/argentina_footer.png',
+    tintHeader: false,
+    tintFooter: false,
+    headerShadows: [
+      Shadow(color: Colors.black38, offset: Offset(0, 2), blurRadius: 4),
+    ],
+    footerShadows: [
+      Shadow(color: Colors.black38, offset: Offset(0, 2), blurRadius: 4),
+    ],
     dividerColor: Colors.white,
     scoreColor: Colors.white,
     teamScoreColor: Colors.white,
     accentColor: Color(0xFFF6B000),
     backgroundAsset: null,
-    centerOrnamentAsset: 'assets/images/sun.svg',
+    centerOrnamentAsset: 'assets/images/escarapela.png',
     hideCenterCircleBorder: true,
     centerOrnamentScale: 1.7,
     scoreFontSize: 18,
-    scoreVerticalOffset: 2.0,
+    scoreVerticalOffset: -7.0,
     centerSectionOffset: 35.0,
     matchstickBoxType: MatchstickBoxType.classic,
     highlightOpacity: 0.1,

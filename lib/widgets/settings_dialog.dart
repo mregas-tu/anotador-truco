@@ -382,8 +382,8 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                                       child: Container(
                                         color: Colors.white,
                                         child: Center(
-                                          child: SvgPicture.asset(
-                                              'assets/images/sun.svg',
+                                          child: Image.asset(
+                                              'assets/images/sun.png',
                                               height: 16,
                                               fit: BoxFit.contain),
                                         ),

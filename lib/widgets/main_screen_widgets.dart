@@ -1,9 +1,57 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/score_provider.dart';
 import '../theme/app_theme.dart';
+
+Widget _centerOrnament(String asset) {
+  if (asset.toLowerCase().endsWith('.svg')) {
+    return SvgPicture.asset(asset, width: 56, height: 56);
+  }
+  return Image.asset(asset, width: 56, height: 56);
+}
+
+Widget _renderAsset(String asset, double height, ColorFilter? colorFilter) {
+  if (asset.toLowerCase().endsWith('.svg')) {
+    return SvgPicture.asset(asset, height: height, colorFilter: colorFilter);
+  }
+  final image = Image.asset(asset, height: height);
+  if (colorFilter == null) return image;
+  return ColorFiltered(colorFilter: colorFilter, child: image);
+}
+
+Widget assetWithShadows({
+  required String asset,
+  required double height,
+  required ColorFilter? colorFilter,
+  required List<Shadow>? shadows,
+}) {
+  final picture = _renderAsset(asset, height, colorFilter);
+  if (shadows == null || shadows.isEmpty) return picture;
+  return Stack(
+    alignment: Alignment.center,
+    children: [
+      for (final s in shadows)
+        Transform.translate(
+          offset: s.offset,
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(
+              sigmaX: s.blurRadius,
+              sigmaY: s.blurRadius,
+            ),
+            child: ColorFiltered(
+              colorFilter: ColorFilter.mode(s.color, BlendMode.srcIn),
+              child: _renderAsset(asset, height, null),
+            ),
+          ),
+        ),
+      picture,
+    ],
+  );
+}
 
 class MainHeader extends StatelessWidget {
   final GlobalKey restartKey;
@@ -27,13 +75,16 @@ class MainHeader extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         if (scoreProvider.appTheme.headerAsset != null)
-          SvgPicture.asset(
-            scoreProvider.appTheme.headerAsset!,
+          assetWithShadows(
+            asset: scoreProvider.appTheme.headerAsset!,
             height: 45,
-            colorFilter: ColorFilter.mode(
-              Colors.white.withValues(alpha: 0.8),
-              BlendMode.srcIn,
-            ),
+            colorFilter: scoreProvider.appTheme.tintHeader
+                ? ColorFilter.mode(
+                    Colors.white.withValues(alpha: 0.8),
+                    BlendMode.srcIn,
+                  )
+                : null,
+            shadows: scoreProvider.appTheme.headerShadows,
           ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -205,34 +256,38 @@ class CenterScoreCircle extends StatelessWidget {
                               child: ColorFiltered(
                                 colorFilter: ColorFilter.mode(
                                     s.color, BlendMode.srcIn),
-                                child: SvgPicture.asset(
+                                child: _centerOrnament(
                                   scoreProvider.appTheme.centerOrnamentAsset!,
-                                  width: 56,
-                                  height: 56,
                                 ),
                               ),
                             )),
-                  SvgPicture.asset(
-                    scoreProvider.appTheme.centerOrnamentAsset!,
-                    width: 56,
-                    height: 56,
-                  ),
+                  _centerOrnament(scoreProvider.appTheme.centerOrnamentAsset!),
                 ],
               ),
             ),
           Padding(
             padding: EdgeInsets.only(
-              top: scoreProvider.appTheme.scoreVerticalOffset,
+              top: scoreProvider.appTheme.scoreVerticalOffset > 0
+                  ? scoreProvider.appTheme.scoreVerticalOffset
+                  : 0,
             ),
-            child: Text(
-              key: limitScoreKey,
-              "${scoreProvider.currentGameMode.totalPoints}",
-              style: TextStyle(
-                fontFamily: AppFonts.caminito,
-                fontSize: scoreProvider.appTheme.scoreFontSize,
-                color: scoreProvider.appTheme.scoreColor,
-                fontWeight: FontWeight.bold,
-                shadows: scoreProvider.appTheme.teamNameShadow,
+            child: Transform.translate(
+              offset: Offset(
+                0,
+                scoreProvider.appTheme.scoreVerticalOffset < 0
+                    ? scoreProvider.appTheme.scoreVerticalOffset
+                    : 0,
+              ),
+              child: Text(
+                key: limitScoreKey,
+                "${scoreProvider.currentGameMode.totalPoints}",
+                style: TextStyle(
+                  fontFamily: AppFonts.caminito,
+                  fontSize: scoreProvider.appTheme.scoreFontSize,
+                  color: scoreProvider.appTheme.scoreColor,
+                  fontWeight: FontWeight.bold,
+                  shadows: scoreProvider.appTheme.teamNameShadow,
+                ),
               ),
             ),
           ),

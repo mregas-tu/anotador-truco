@@ -99,9 +99,12 @@ flutter:
     - assets/images/matchbox_wood.svg
     - assets/images/header.svg
     - assets/images/footer.svg
+    - assets/images/argentina_header.png
+    - assets/images/argentina_footer.png
+    - assets/images/escarapela.png
     - assets/images/restart.svg
     - assets/images/settings.svg
-    - assets/images/sun.svg
+    - assets/images/sun.png
     - assets/images/afa.svg
     - assets/images/dibu.svg
     - assets/images/hand.svg
