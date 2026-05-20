@@ -164,12 +164,6 @@ class TrucoTheme {
     footerAsset: 'assets/images/argentina_footer.png',
     tintHeader: false,
     tintFooter: false,
-    headerShadows: [
-      Shadow(color: Colors.black26, offset: Offset(0, 1), blurRadius: 2),
-    ],
-    footerShadows: [
-      Shadow(color: Colors.black26, offset: Offset(0, 1), blurRadius: 2),
-    ],
     dividerColor: Colors.white,
     scoreColor: Colors.white,
     teamScoreColor: Colors.white,
@@ -205,6 +199,7 @@ class TrucoTheme {
     headerAsset: null,
     footerAsset: 'assets/images/dibu.svg',
     footerHeight: 75,
+    tintFooter: false,
     dividerColor: Colors.transparent,
     scoreColor: Color(0xFF07007A),
     teamScoreColor: Colors.white,
