@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'services/ad_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -603,6 +604,10 @@ class _MainScreenState extends State<MainScreen>
                 child: PrimaryButton(
                   text: "COMENZAR",
                   onPressed: () {
+                    AdService.maybeShowInterstitialOnNewGame(
+                      nosotros: scoreProvider.nosotros,
+                      ellos: scoreProvider.ellos,
+                    );
                     scoreProvider.triggerReset();
                     AnalyticsService.logNewGameStarted();
                     Navigator.pop(context);

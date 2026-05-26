@@ -12,11 +12,14 @@ import 'providers/score_provider.dart';
 import 'providers/premium_provider.dart';
 import 'widgets/force_update_screen.dart';
 import 'main_screen.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  WakelockPlus.enable();
   
   await Firebase.initializeApp();
   

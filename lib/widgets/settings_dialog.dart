@@ -113,6 +113,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     if (currentPane == 3) title = "AYUDA Y SOPORTE";
     if (currentPane == 4) title = "ACERCA DE";
     if (currentPane == 5) title = "VALORES Y SEÑAS";
+    if (currentPane == 6) title = "BRINDIS";
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -260,6 +261,16 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
+            label: "BRINDIS",
+            iconAsset: 'assets/images/menu_icons/cheers_icon.svg',
+            onTap: () {
+              setState(() => currentPane = 6);
+            },
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+          ),
+          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          _buildMenuNavigationItem(
             label: "AYUDA Y SOPORTE",
             iconAsset: 'assets/images/menu_icons/support_icon.svg',
             onTap: () {
@@ -282,19 +293,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             ),
             Divider(color: scoreProvider.appTheme.slate, height: 1),
           ],
-          _buildMenuNavigationItem(
-            label: "RESTAURAR COMPRAS",
-            iconAsset: 'assets/images/menu_icons/restauring_icon.svg',
-            onTap: () async {
-              await premiumProvider.restorePurchases();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text("Buscando compras anteriores...")));
-              }
-            },
-            scoreProvider: scoreProvider,
-            isSmallScreen: isSmallScreen,
-          ),
 
           const SizedBox(height: 24),
 
@@ -940,15 +938,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
           _buildMenuNavigationItem(
-            label: "BRINDIS",
-            onTap: () {
-              GameDialogs.showVaso(context);
-            },
-            scoreProvider: scoreProvider,
-            isSmallScreen: isSmallScreen,
-          ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
-          _buildMenuNavigationItem(
             label: "ESCRIBINOS",
             onTap: () {
               SupportService.sendFeedbackEmail();
@@ -967,6 +956,17 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             isSmallScreen: isSmallScreen,
           ),
           Divider(color: scoreProvider.appTheme.slate, height: 1),
+          if (!premiumProvider.isPremium) ...[
+            _buildMenuNavigationItem(
+              label: "RESTAURAR COMPRAS",
+              onTap: () {
+                premiumProvider.restorePurchases();
+              },
+              scoreProvider: scoreProvider,
+              isSmallScreen: isSmallScreen,
+            ),
+            Divider(color: scoreProvider.appTheme.slate, height: 1),
+          ],
           _buildMenuNavigationItem(
             label: "ACERCA DE",
             onTap: () {
@@ -1097,6 +1097,9 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               },
             ),
           ),
+        ] else if (currentPane == 6) ...[
+          // --- PANE 6: BRINDIS ---
+          GameDialogs.buildVasoBody(context),
         ],
       ],
     );

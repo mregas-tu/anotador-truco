@@ -1,5 +1,9 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'analytics_service.dart';
 
@@ -83,6 +87,47 @@ class BillingService {
 
   Future<void> restorePurchases() async {
     await _inAppPurchase.restorePurchases();
+  }
+
+  /// Verifica contra la tienda si la compra premium sigue vigente.
+  /// Si el usuario tuvo un reembolso, revoca el acceso localmente.
+  /// Conservador: no revoca si hay error o sin conexión.
+  Future<bool?> verifyPremiumStatus() async {
+    try {
+      if (Platform.isAndroid) {
+        final InAppPurchaseAndroidPlatformAddition androidAddition =
+            _inAppPurchase
+                .getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
+        final QueryPurchaseDetailsResponse response =
+            await androidAddition.queryPastPurchases();
+
+        if (response.error != null) {
+          // Error de red u otro — no revocar, ser conservador
+          debugPrint('[BillingService] queryPastPurchases error: ${response.error}');
+          return null;
+        }
+
+        final bool hasPremium = response.pastPurchases.any(
+          (p) =>
+              (p.productID == premiumId || p.productID == premiumIdAlt) &&
+              p.status == PurchaseStatus.purchased,
+        );
+        return hasPremium;
+      } else if (Platform.isIOS) {
+        final InAppPurchaseStoreKitPlatformAddition iosAddition =
+            _inAppPurchase
+                .getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>();
+        // En iOS se usa restorePurchases y el stream responde con los items.
+        // No hay una query directa equivalente a queryPastPurchases —
+        // retornamos null para ser conservadores y no revocar.
+        await iosAddition.refreshPurchaseVerificationData();
+        return null;
+      }
+    } catch (e) {
+      // Cualquier excepción (sin conexión, etc.) — no revocar
+      debugPrint('[BillingService] verifyPremiumStatus exception: $e');
+    }
+    return null;
   }
 
   void dispose() {

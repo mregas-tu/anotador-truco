@@ -384,11 +384,11 @@ abstract class GameDialogs {
               PrimaryButton(
                 text: "QUIERO SER PREMIUM",
                 width: double.infinity,
-                onPressed: () {
+                onPressed: () async {
                   accepted = true;
                   AnalyticsService.logPremiumPromptAccepted(source);
                   Navigator.pop(context);
-                  premiumProvider.buyPremium(source: source);
+                  await premiumProvider.buyPremium(source: source);
                 },
               ),
               const SizedBox(height: 8),
@@ -399,6 +399,23 @@ abstract class GameDialogs {
                   style: TextStyle(
                     color: scoreProvider.appTheme.white.withValues(alpha: 0.5),
                     fontFamily: AppFonts.oswald,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              GestureDetector(
+                onTap: () async {
+                  Navigator.pop(context);
+                  await premiumProvider.restorePurchases();
+                },
+                child: Text(
+                  "Restaurar compras",
+                  style: TextStyle(
+                    color: scoreProvider.appTheme.white.withValues(alpha: 0.35),
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 12,
+                    decoration: TextDecoration.underline,
+                    decorationColor: scoreProvider.appTheme.white.withValues(alpha: 0.35),
                   ),
                 ),
               ),
@@ -485,6 +502,9 @@ abstract class GameDialogs {
       builder: (ctx) => const _VasoDialog(),
     );
   }
+
+  /// Devuelve el widget del brindis para embeber en otro dialog/pane.
+  static Widget buildVasoBody(BuildContext context) => const _VasoDialog();
 }
 
 class _VasoDialog extends StatefulWidget {
@@ -496,7 +516,7 @@ class _VasoDialog extends StatefulWidget {
 
 class _VasoDialogState extends State<_VasoDialog> {
   static const int _adsPerBar = 5;
-  static const Duration _cooldown = Duration(minutes: 10);
+  static const Duration _cooldown = Duration(minutes: 1);
   static const Duration _fillAnim = Duration(milliseconds: 2500);
   static const Duration _premiumDuration = Duration(hours: 24);
 
@@ -505,6 +525,7 @@ class _VasoDialogState extends State<_VasoDialog> {
   int _lastAdAt = 0;
   Duration _remaining = Duration.zero;
   Timer? _ticker;
+  Timer? _uiTicker; // actualiza el countdown de 24hs cada segundo
 
   // Animación del vaso: cada iteración recrea el widget para que arranque
   // limpio en 0 antes de animar a 1.
@@ -517,6 +538,10 @@ class _VasoDialogState extends State<_VasoDialog> {
     super.initState();
     AdService.loadRewardedAd();
     _loadState();
+    // Ticker permanente para actualizar el countdown de DISEÑOS DESBLOQUEADOS
+    _uiTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _loadState() async {
@@ -620,14 +645,16 @@ class _VasoDialogState extends State<_VasoDialog> {
   }
 
   String _formatRemaining(Duration d) {
-    final m = d.inMinutes;
-    final s = d.inSeconds % 60;
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    final h = d.inHours.toString().padLeft(2, '0');
+    final m = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$h:$m:$s';
   }
 
   @override
   void dispose() {
     _ticker?.cancel();
+    _uiTicker?.cancel();
     super.dispose();
   }
 
@@ -644,62 +671,16 @@ class _VasoDialogState extends State<_VasoDialog> {
     final String description = isPremium
         ? "¿Te gusta la app? Llená vasos viendo publicidades y ayudame a mantenerla ❤️"
         : hasGlobalTemp
-            ? "Premium temporal activo. Llená otro vaso (5 videos) para sumar 24hs más."
-            : "Mirá videos para llenar el vaso. Cada 5 vasos desbloqueás todos los temas y diseños premium por 24hs.";
+            ? "Diseños desbloqueados ✨ Llená más vasos si te gusta la app y querés ayudar a mantenerla ❤️"
+            : "Mirá videos para llenar el vaso. Cada 5 vasos desbloqueás todos los temas y diseños por 24hs.";
 
     final Color iconColor = scoreProvider.appTheme.cream;
 
-    return TrucoDialog(
-      title: null,
-      content: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header con flecha back, título y X (usa todo el ancho)
-              SizedBox(
-                width: double.infinity,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Positioned(
-                      left: 0,
-                      child: IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(Icons.arrow_back, color: iconColor),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ),
-                    const Text(
-                      "BRINDIS",
-                      style: TextStyle(
-                        fontFamily: AppFonts.oswald,
-                        fontSize: 20,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    Positioned(
-                      right: 0,
-                      child: IconButton(
-                        onPressed: () {
-                          // X cierra todo (vaso + settings si está atrás)
-                          Navigator.of(context)
-                              .popUntil((route) => route.isFirst);
-                        },
-                        icon: Icon(Icons.close, color: iconColor),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 16),
+        Text(
                 description,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
@@ -718,7 +699,7 @@ class _VasoDialogState extends State<_VasoDialog> {
                 fillDuration: _fillAnim,
               ),
               const SizedBox(height: 14),
-              if (!isPremium) ...[
+              if (!isPremium && !hasGlobalTemp) ...[
                 _BarSegments(
                   current: _adsInBar,
                   total: _adsPerBar,
@@ -737,7 +718,7 @@ class _VasoDialogState extends State<_VasoDialog> {
               if (hasGlobalTemp) ...[
                 const SizedBox(height: 8),
                 Text(
-                  "PREMIUM ACTIVO • ${tempRemaining ?? ''}",
+                  "DISEÑOS DESBLOQUEADOS • ${tempRemaining ?? ''}",
                   style: TextStyle(
                     color: scoreProvider.appTheme.cream,
                     fontFamily: AppFonts.oswald,
@@ -749,7 +730,7 @@ class _VasoDialogState extends State<_VasoDialog> {
               ],
               const SizedBox(height: 18),
               // Botón o cooldown (full-width)
-              if (inCooldown)
+              if (inCooldown && !hasGlobalTemp)
                 Text(
                   "Próximo video en ${_formatRemaining(_remaining)}",
                   textAlign: TextAlign.center,
@@ -760,7 +741,7 @@ class _VasoDialogState extends State<_VasoDialog> {
                     letterSpacing: 1,
                   ),
                 )
-              else if (!_animating)
+              else if (!_animating && (!hasGlobalTemp || isPremium))
                 PrimaryButton(
                   text: "VER UN VIDEO",
                   width: double.infinity,
@@ -789,6 +770,17 @@ class _VasoDialogState extends State<_VasoDialog> {
                     );
                   },
                 ),
+              if (!_animating && hasGlobalTemp && !isPremium)
+                Text(
+                  "Contenido desbloqueado ✨",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: scoreProvider.appTheme.cream.withValues(alpha: 0.7),
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 13,
+                    letterSpacing: 0.5,
+                  ),
+                ),
               const SizedBox(height: 14),
               // Contador lifetime centrado debajo del botón
               Row(
@@ -815,10 +807,7 @@ class _VasoDialogState extends State<_VasoDialog> {
                     ),
                   ],
                 ),
-            ],
-          ),
-        ],
-      ),
+      ],
     );
   }
 }

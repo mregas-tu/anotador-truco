@@ -91,8 +91,28 @@ class AdService {
     );
   }
 
+  static const Duration _interstitialCooldown = Duration(minutes: 1);
+  static const Duration _appStartGracePeriod = Duration(minutes: 1);
+  static final DateTime _appStartedAt = DateTime.now();
+  static DateTime? _lastInterstitialShownAt;
+
+  static void maybeShowInterstitialOnNewGame({
+    required int nosotros,
+    required int ellos,
+  }) {
+    if (nosotros == 0 && ellos == 0) return;
+    if (DateTime.now().difference(_appStartedAt) < _appStartGracePeriod) return;
+    showInterstitial();
+  }
+
   static void showInterstitial() {
+    final now = DateTime.now();
+    if (_lastInterstitialShownAt != null &&
+        now.difference(_lastInterstitialShownAt!) < _interstitialCooldown) {
+      return;
+    }
     if (_interstitialAd != null) {
+      _lastInterstitialShownAt = now;
       _interstitialAd!.show();
     } else {
       loadInterstitial();

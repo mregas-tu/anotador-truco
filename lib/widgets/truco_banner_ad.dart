@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
@@ -16,17 +17,23 @@ class TrucoBannerAd extends StatefulWidget {
 class _TrucoBannerAdState extends State<TrucoBannerAd> {
   BannerAd? _bannerAd;
   bool _isBannerLoaded = false;
+  bool _loadAttempted = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadBanner();
-  }
+  Future<void> _loadAdaptiveBanner() async {
+    if (_loadAttempted) return;
+    _loadAttempted = true;
 
-  void _loadBanner() {
+    final AnchoredAdaptiveBannerAdSize? size =
+        await AdSize.getAnchoredAdaptiveBannerAdSize(
+      Platform.isAndroid ? Orientation.portrait : Orientation.portrait,
+      MediaQuery.of(context).size.width.truncate(),
+    );
+
+    if (size == null || !mounted) return;
+
     _bannerAd = BannerAd(
       adUnitId: AdService.bannerAdUnitId,
-      size: AdSize.banner,
+      size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
@@ -53,7 +60,14 @@ class _TrucoBannerAdState extends State<TrucoBannerAd> {
   @override
   Widget build(BuildContext context) {
     bool isPremium = Provider.of<PremiumProvider>(context).isPremium;
-    if (isPremium || !_isBannerLoaded || _bannerAd == null) return const SizedBox.shrink();
+    if (isPremium) return const SizedBox.shrink();
+
+    // Trigger load once context is available (needs MediaQuery).
+    if (!_loadAttempted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadAdaptiveBanner());
+    }
+
+    if (!_isBannerLoaded || _bannerAd == null) return const SizedBox.shrink();
 
     return Center(
       child: Container(

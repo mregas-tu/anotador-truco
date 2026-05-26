@@ -30,7 +30,8 @@ class PremiumProvider with ChangeNotifier {
     final diff = _globalTempUnlockUntil!.difference(DateTime.now());
     final hours = diff.inHours.toString().padLeft(2, '0');
     final minutes = (diff.inMinutes % 60).toString().padLeft(2, '0');
-    return "$hours:$minutes";
+    final seconds = (diff.inSeconds % 60).toString().padLeft(2, '0');
+    return "$hours:$minutes:$seconds";
   }
 
   PremiumProvider() {
@@ -81,6 +82,19 @@ class PremiumProvider with ChangeNotifier {
     AnalyticsService.setSuperProperties(analyticsSuperProperties);
     AnalyticsService.setPeopleProperties({'is_premium': _isPremium});
     notifyListeners();
+
+    // Verifica contra la tienda si la compra sigue vigente.
+    // Solo revoca si Google Play confirma explícitamente que no hay compra (false).
+    // null = error/sin conexión → conservador, no revocar.
+    if (_isPremium) {
+      _billingService.verifyPremiumStatus().then((verified) {
+        if (verified == false) {
+          debugPrint('[PremiumProvider] Compra revocada por la tienda. Removiendo premium.');
+          AnalyticsService.logEvent('premium_revoked_by_store');
+          setPremium(false);
+        }
+      });
+    }
   }
 
   Map<String, dynamic> get analyticsSuperProperties => {
