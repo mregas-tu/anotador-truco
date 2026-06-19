@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:confetti/confetti.dart';
 
 import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
@@ -428,6 +429,13 @@ abstract class GameDialogs {
         AnalyticsService.logPremiumPromptDismissed(source);
       }
     });
+  }
+
+  static void showWorldCupThemeAvailable(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const _WorldCupPopup(),
+    );
   }
 
   static void showRatingDialog(
@@ -901,4 +909,65 @@ class _StaticVasoIconPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _StaticVasoIconPainter old) =>
       old.outline != outline;
+}
+
+class _WorldCupPopup extends StatefulWidget {
+  const _WorldCupPopup();
+
+  @override
+  State<_WorldCupPopup> createState() => _WorldCupPopupState();
+}
+
+class _WorldCupPopupState extends State<_WorldCupPopup> {
+  late final ConfettiController _confetti;
+
+  @override
+  void initState() {
+    super.initState();
+    _confetti = ConfettiController(duration: const Duration(seconds: 3));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _confetti.play());
+  }
+
+  @override
+  void dispose() {
+    _confetti.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        TrucoDialog(
+          title: "¡EMPEZÓ EL MUNDIAL!",
+          contentText:
+              "Para vivirlo bien argentino desbloqueamos los temas de la Selección y la Bandera Nacional. "
+              "Los podés elegir desde la sección Diseño mientras dure el Mundial.",
+          actions: [
+            PrimaryButton(
+              text: "DALE CAMPEÓN",
+              width: double.infinity,
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+        IgnorePointer(
+          child: ConfettiWidget(
+            confettiController: _confetti,
+            blastDirectionality: BlastDirectionality.explosive,
+            shouldLoop: false,
+            numberOfParticles: 25,
+            emissionFrequency: 0.05,
+            gravity: 0.25,
+            colors: const [
+              Color(0xFF74ACDF),
+              Colors.white,
+              Color(0xFF5A91C5),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }

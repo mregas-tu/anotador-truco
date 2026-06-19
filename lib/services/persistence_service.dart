@@ -29,6 +29,17 @@ class PersistenceService {
   static const String keyVasoAdsWatched = 'vaso_ads_watched';
   static const String keyVasoLastAdAt = 'vaso_last_ad_at';
   static const String keyVasoBrindados = 'vaso_brindados';
+  static const String keyWorldCupPopupShown = 'world_cup_2026_popup_shown';
+
+  static Future<bool> getWorldCupPopupShown() async {
+    final prefs = await _getPrefs();
+    return prefs.getBool(keyWorldCupPopupShown) ?? false;
+  }
+
+  static Future<void> setWorldCupPopupShown(bool value) async {
+    final prefs = await _getPrefs();
+    await prefs.setBool(keyWorldCupPopupShown, value);
+  }
 
   static SharedPreferences? _prefs;
 

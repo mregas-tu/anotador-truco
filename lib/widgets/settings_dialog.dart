@@ -13,9 +13,11 @@ import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
+import '../services/world_cup_event.dart';
 import 'truco_buttons.dart';
 import 'bean_widget.dart';
 import 'game_dialogs.dart';
+import 'package:confetti/confetti.dart';
 
 class SettingsDialogContent extends StatefulWidget {
   final Function(String) onThemeLockedTap;
@@ -42,6 +44,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   Timer? _timer;
   final ScrollController _gameModeScrollController = ScrollController();
   String _appVersion = "1.1.4"; // Initial fallback
+  VoidCallback? _activeCleanup;
 
   @override
   void initState() {
@@ -69,7 +72,59 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   void dispose() {
     _timer?.cancel();
     _gameModeScrollController.dispose();
+    // No limpiamos los papelitos: que sigan cayendo aunque el usuario
+    // cierre el diálogo. Cada tanda se limpia sola por su Future.delayed.
     super.dispose();
+  }
+
+  void _playWorldCupConfetti(BuildContext context) {
+    // Si ya hay una tanda activa, la matamos de golpe antes de largar la nueva.
+    _clearActiveConfetti();
+
+    final overlay = Overlay.of(context);
+    final controller =
+        ConfettiController(duration: const Duration(seconds: 2));
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => IgnorePointer(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConfettiWidget(
+            confettiController: controller,
+            blastDirectionality: BlastDirectionality.explosive,
+            shouldLoop: false,
+            numberOfParticles: 30,
+            emissionFrequency: 0.05,
+            gravity: 0.25,
+            colors: const [
+              Color(0xFF74ACDF),
+              Colors.white,
+              Color(0xFF5A91C5),
+            ],
+          ),
+        ),
+      ),
+    );
+    overlay.insert(entry);
+    controller.play();
+
+    // Tiempo suficiente para que las partículas caigan fuera de pantalla.
+    // Usa refs locales para que funcione aunque el state ya esté desmontado.
+    bool disposed = false;
+    void cleanup() {
+      if (disposed) return;
+      disposed = true;
+      controller.dispose();
+      if (entry.mounted) entry.remove();
+    }
+
+    Future.delayed(const Duration(seconds: 6), cleanup);
+    _activeCleanup = cleanup;
+  }
+
+  void _clearActiveConfetti() {
+    _activeCleanup?.call();
+    _activeCleanup = null;
   }
 
   void _scrollToSelectedMode(ScoreProvider scoreProvider) {
@@ -342,6 +397,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                       } else {
                         scoreProvider.setAppTheme(theme);
                         AnalyticsService.logThemeChanged(theme.name);
+                        if (WorldCupEvent.isActive &&
+                            WorldCupEvent.unlockedThemes.contains(theme.name)) {
+                          _playWorldCupConfetti(context);
+                        }
                       }
                     },
                     child: Container(
