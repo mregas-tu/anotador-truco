@@ -416,7 +416,8 @@ abstract class GameDialogs {
                     fontFamily: AppFonts.oswald,
                     fontSize: 12,
                     decoration: TextDecoration.underline,
-                    decorationColor: scoreProvider.appTheme.white.withValues(alpha: 0.35),
+                    decorationColor:
+                        scoreProvider.appTheme.white.withValues(alpha: 0.35),
                   ),
                 ),
               ),
@@ -524,7 +525,7 @@ class _VasoDialog extends StatefulWidget {
 
 class _VasoDialogState extends State<_VasoDialog> {
   static const int _adsPerBar = 5;
-  static const Duration _cooldown = Duration(minutes: 1);
+  static const Duration _cooldown = Duration(seconds: 30);
   static const Duration _fillAnim = Duration(milliseconds: 2500);
   static const Duration _premiumDuration = Duration(hours: 24);
 
@@ -558,8 +559,7 @@ class _VasoDialogState extends State<_VasoDialog> {
     final int last = await PersistenceService.getVasoLastAdAt();
     if (!mounted) return;
     final int now = DateTime.now().millisecondsSinceEpoch;
-    final bool stillInCooldown =
-        _cooldown.inMilliseconds - (now - last) > 0;
+    final bool stillInCooldown = _cooldown.inMilliseconds - (now - last) > 0;
     setState(() {
       _adsInBar = adsInBar.clamp(0, _adsPerBar - 1);
       _vasosFilled = filled;
@@ -586,6 +586,7 @@ class _VasoDialogState extends State<_VasoDialog> {
         setState(() => _remaining = Duration(milliseconds: remainingMs));
       }
     }
+
     tick();
     if (_remaining > Duration.zero) {
       _ticker = Timer.periodic(const Duration(seconds: 1), (_) => tick());
@@ -602,8 +603,7 @@ class _VasoDialogState extends State<_VasoDialog> {
     final int newAdsInBar = barCompleted ? 0 : newBar;
     final int newVasosFilled = _vasosFilled + 1;
 
-    final premiumNow =
-        Provider.of<PremiumProvider>(context, listen: false);
+    final premiumNow = Provider.of<PremiumProvider>(context, listen: false);
 
     // Analytics
     AnalyticsService.logVasoFilled(
@@ -653,10 +653,7 @@ class _VasoDialogState extends State<_VasoDialog> {
   }
 
   String _formatRemaining(Duration d) {
-    final h = d.inHours.toString().padLeft(2, '0');
-    final m = (d.inMinutes % 60).toString().padLeft(2, '0');
-    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
-    return '$h:$m:$s';
+    return '${d.inSeconds}';
   }
 
   @override
@@ -689,132 +686,132 @@ class _VasoDialogState extends State<_VasoDialog> {
       children: [
         const SizedBox(height: 16),
         Text(
-                description,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13,
-                  height: 1.4,
-                  fontFamily: AppFonts.oswald,
+          description,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 13,
+            height: 1.4,
+            fontFamily: AppFonts.oswald,
+          ),
+        ),
+        const SizedBox(height: 14),
+        FernetGlassWidget(
+          key: ValueKey(_vasoIteration),
+          progress: _vasoProgress,
+          width: 150,
+          height: 210,
+          fillDuration: _fillAnim,
+        ),
+        const SizedBox(height: 14),
+        if (!isPremium && !hasGlobalTemp) ...[
+          _BarSegments(
+            current: _adsInBar,
+            total: _adsPerBar,
+            color: scoreProvider.appTheme.cream,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "$_adsInBar / $_adsPerBar",
+            style: TextStyle(
+              color: scoreProvider.appTheme.cream,
+              fontSize: 18,
+              fontFamily: AppFonts.caminito,
+            ),
+          ),
+        ],
+        if (hasGlobalTemp) ...[
+          const SizedBox(height: 8),
+          Text(
+            "DISEÑOS DESBLOQUEADOS • ${tempRemaining ?? ''}",
+            style: TextStyle(
+              color: scoreProvider.appTheme.cream,
+              fontFamily: AppFonts.oswald,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
+          ),
+        ],
+        const SizedBox(height: 18),
+        // Botón o cooldown (full-width)
+        if (inCooldown && !hasGlobalTemp)
+          Text(
+            "Próximo video en ${_formatRemaining(_remaining)}",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: scoreProvider.appTheme.cream,
+              fontFamily: AppFonts.oswald,
+              fontSize: 15,
+              letterSpacing: 1,
+            ),
+          )
+        else if (!_animating && (!hasGlobalTemp || isPremium))
+          PrimaryButton(
+            text: "VER UN VIDEO",
+            width: double.infinity,
+            onPressed: () {
+              final premiumNow =
+                  Provider.of<PremiumProvider>(context, listen: false);
+              AnalyticsService.logVasoVideoButtonTapped(
+                isPremium: premiumNow.isPremium,
+                vasosFilledBefore: _vasosFilled,
+              );
+              AdService.showRewardedAd(
+                onUserEarnedReward: _onRewardEarned,
+                onAdNotReady: () {
+                  if (!mounted) return;
+                  AnalyticsService.logVasoAdNotReady(
+                    isPremium: premiumNow.isPremium,
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content:
+                          Text("No hay videos disponibles, probá en un rato."),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        if (!_animating && hasGlobalTemp && !isPremium)
+          Text(
+            "Contenido desbloqueado ✨",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: scoreProvider.appTheme.cream.withValues(alpha: 0.7),
+              fontFamily: AppFonts.oswald,
+              fontSize: 13,
+              letterSpacing: 0.5,
+            ),
+          ),
+        const SizedBox(height: 14),
+        // Contador lifetime centrado debajo del botón
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 14,
+              height: 20,
+              child: CustomPaint(
+                painter: _StaticVasoIconPainter(
+                  outline: scoreProvider.appTheme.cream,
                 ),
               ),
-              const SizedBox(height: 14),
-              FernetGlassWidget(
-                key: ValueKey(_vasoIteration),
-                progress: _vasoProgress,
-                width: 150,
-                height: 210,
-                fillDuration: _fillAnim,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              "Vasos brindados: $_vasosFilled",
+              style: TextStyle(
+                color: scoreProvider.appTheme.cream,
+                fontFamily: AppFonts.oswald,
+                fontSize: 14,
+                letterSpacing: 1,
               ),
-              const SizedBox(height: 14),
-              if (!isPremium && !hasGlobalTemp) ...[
-                _BarSegments(
-                  current: _adsInBar,
-                  total: _adsPerBar,
-                  color: scoreProvider.appTheme.cream,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  "$_adsInBar / $_adsPerBar",
-                  style: TextStyle(
-                    color: scoreProvider.appTheme.cream,
-                    fontSize: 18,
-                    fontFamily: AppFonts.caminito,
-                  ),
-                ),
-              ],
-              if (hasGlobalTemp) ...[
-                const SizedBox(height: 8),
-                Text(
-                  "DISEÑOS DESBLOQUEADOS • ${tempRemaining ?? ''}",
-                  style: TextStyle(
-                    color: scoreProvider.appTheme.cream,
-                    fontFamily: AppFonts.oswald,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 18),
-              // Botón o cooldown (full-width)
-              if (inCooldown && !hasGlobalTemp)
-                Text(
-                  "Próximo video en ${_formatRemaining(_remaining)}",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: scoreProvider.appTheme.cream,
-                    fontFamily: AppFonts.oswald,
-                    fontSize: 15,
-                    letterSpacing: 1,
-                  ),
-                )
-              else if (!_animating && (!hasGlobalTemp || isPremium))
-                PrimaryButton(
-                  text: "VER UN VIDEO",
-                  width: double.infinity,
-                  onPressed: () {
-                    final premiumNow =
-                        Provider.of<PremiumProvider>(context, listen: false);
-                    AnalyticsService.logVasoVideoButtonTapped(
-                      isPremium: premiumNow.isPremium,
-                      vasosFilledBefore: _vasosFilled,
-                    );
-                    AdService.showRewardedAd(
-                      onUserEarnedReward: _onRewardEarned,
-                      onAdNotReady: () {
-                        if (!mounted) return;
-                        AnalyticsService.logVasoAdNotReady(
-                          isPremium: premiumNow.isPremium,
-                        );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                "No hay videos disponibles, probá en un rato."),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              if (!_animating && hasGlobalTemp && !isPremium)
-                Text(
-                  "Contenido desbloqueado ✨",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: scoreProvider.appTheme.cream.withValues(alpha: 0.7),
-                    fontFamily: AppFonts.oswald,
-                    fontSize: 13,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              const SizedBox(height: 14),
-              // Contador lifetime centrado debajo del botón
-              Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 14,
-                      height: 20,
-                      child: CustomPaint(
-                        painter: _StaticVasoIconPainter(
-                          outline: scoreProvider.appTheme.cream,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Vasos brindados: $_vasosFilled",
-                      style: TextStyle(
-                        color: scoreProvider.appTheme.cream,
-                        fontFamily: AppFonts.oswald,
-                        fontSize: 14,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+          ],
+        ),
       ],
     );
   }

@@ -82,8 +82,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     _clearActiveConfetti();
 
     final overlay = Overlay.of(context);
-    final controller =
-        ConfettiController(duration: const Duration(seconds: 2));
+    final controller = ConfettiController(duration: const Duration(seconds: 2));
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (_) => IgnorePointer(
@@ -277,7 +276,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               },
               child: Text(
                 scoreProvider.scoringMode == ScoringMode.drag
-                    ? "ARRASTRAR"
+                    ? "ARRASTRE"
                     : scoreProvider.scoringMode == ScoringMode.tap
                         ? "TOQUE"
                         : "CLÁSICO",

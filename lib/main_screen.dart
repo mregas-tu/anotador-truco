@@ -814,8 +814,8 @@ class _MainScreenState extends State<MainScreen>
                       ? scoreProvider.appTheme.nosotrosMarginRight
                       : scoreProvider.appTheme.ellosMarginLeft);
 
-              double slotSize =
-                  (availableHeight / numGroups).clamp(60.0, effectiveWidth);
+              double slotSize = (availableHeight / numGroups)
+                  .clamp(60.0, effectiveWidth < 60.0 ? 60.0 : effectiveWidth);
 
               // Pica Pica Markers
               List<Widget> picaMarkers = [];

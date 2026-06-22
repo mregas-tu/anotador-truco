@@ -7,12 +7,12 @@ import 'truco_buttons.dart';
 
 const List<Map<String, String>> kTutorialSteps = [
   {
-    "title": "MODO ARRASTRAR",
+    "title": "MODO ARRASTRE",
     "desc":
         "Arrastrá un punto desde la caja hacia la mesa para sumar puntos en el jugador."
   },
   {
-    "title": "MODE ARRASTRAR",
+    "title": "MODE ARRASTRE",
     "desc":
         "Para sacar el último punto, arrastralo desde la mesa hacia la caja."
   },

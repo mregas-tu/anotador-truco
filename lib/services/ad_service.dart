@@ -111,9 +111,11 @@ class AdService {
         now.difference(_lastInterstitialShownAt!) < _interstitialCooldown) {
       return;
     }
-    if (_interstitialAd != null) {
+    final ad = _interstitialAd;
+    _interstitialAd = null;
+    if (ad != null) {
       _lastInterstitialShownAt = now;
-      _interstitialAd!.show();
+      ad.show();
     } else {
       loadInterstitial();
     }
@@ -123,8 +125,10 @@ class AdService {
     required Function onUserEarnedReward,
     required Function onAdNotReady,
   }) {
-    if (_rewardedAd != null) {
-      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+    final ad = _rewardedAd;
+    _rewardedAd = null;
+    if (ad != null) {
+      ad.fullScreenContentCallback = FullScreenContentCallback(
         onAdDismissedFullScreenContent: (ad) {
           ad.dispose();
           loadRewardedAd();
@@ -135,7 +139,7 @@ class AdService {
           onAdNotReady();
         },
       );
-      _rewardedAd!.show(onUserEarnedReward: (ad, reward) => onUserEarnedReward());
+      ad.show(onUserEarnedReward: (ad, reward) => onUserEarnedReward());
     } else {
       loadRewardedAd();
       onAdNotReady();

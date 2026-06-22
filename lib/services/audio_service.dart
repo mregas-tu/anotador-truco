@@ -5,47 +5,61 @@ class AudioService {
   factory AudioService() => _instance;
   AudioService._internal();
 
-  final AudioPlayer _markerPlayer = AudioPlayer();
+  // En modo lowLatency, audioplayers usa SoundPool en Android.
+  // Cada AudioPlayer mantiene UN sample cargado en memoria — no toca cache.
+  final AudioPlayer _stickPlayer = AudioPlayer();
+  final AudioPlayer _beanPlayer = AudioPlayer();
+  final AudioPlayer _packPlayer = AudioPlayer();
+  final AudioPlayer _beanPackPlayer = AudioPlayer();
   final AudioPlayer _clearPlayer = AudioPlayer();
-  final AudioPlayer _milestonePlayer = AudioPlayer();
+  final AudioPlayer _buenasPlayer = AudioPlayer();
+
+  bool _loaded = false;
+
+  Future<void> _setup(AudioPlayer player, String asset) async {
+    await player.setPlayerMode(PlayerMode.lowLatency);
+    await player.setReleaseMode(ReleaseMode.stop);
+    await player.setSource(AssetSource(asset));
+  }
 
   Future<void> preload() async {
-    // Pre-set sources to minimize first-play delay
+    if (_loaded) return;
     await Future.wait([
-      _markerPlayer.setSource(AssetSource('sounds/stick.wav')),
-      _markerPlayer.setSource(AssetSource('sounds/bean.wav')),
-      _markerPlayer.setSource(AssetSource('sounds/pack.wav')),
-      _markerPlayer.setSource(AssetSource('sounds/bean_pack.wav')),
-      _clearPlayer.setSource(AssetSource('sounds/clear.wav')),
-      _milestonePlayer.setSource(AssetSource('sounds/buenas.wav')),
+      _setup(_stickPlayer, 'sounds/stick.wav'),
+      _setup(_beanPlayer, 'sounds/bean.wav'),
+      _setup(_packPlayer, 'sounds/pack.wav'),
+      _setup(_beanPackPlayer, 'sounds/bean_pack.wav'),
+      _setup(_clearPlayer, 'sounds/clear.wav'),
+      _setup(_buenasPlayer, 'sounds/buenas.wav'),
     ]);
+    _loaded = true;
   }
 
-  Future<void> playMarker(bool isBean) async {
-    await _markerPlayer.stop();
-    final String source = isBean ? 'sounds/bean.wav' : 'sounds/stick.wav';
-    await _markerPlayer.play(AssetSource(source));
+  Future<void> _safePlay(AudioPlayer player) async {
+    try {
+      await player.stop();
+      await player.resume();
+    } catch (_) {
+      // Si por algún motivo fallara, no crashea la UI.
+    }
   }
 
-  Future<void> playPack(bool isBean) async {
-    await _markerPlayer.stop();
-    final String source = isBean ? 'sounds/bean_pack.wav' : 'sounds/pack.wav';
-    await _markerPlayer.play(AssetSource(source));
-  }
+  Future<void> playMarker(bool isBean) =>
+      _safePlay(isBean ? _beanPlayer : _stickPlayer);
 
-  Future<void> playClear() async {
-    await _clearPlayer.stop();
-    await _clearPlayer.play(AssetSource('sounds/clear.wav'));
-  }
+  Future<void> playPack(bool isBean) =>
+      _safePlay(isBean ? _beanPackPlayer : _packPlayer);
 
-  Future<void> playBuenas() async {
-    await _milestonePlayer.stop();
-    await _milestonePlayer.play(AssetSource('sounds/buenas.wav'));
-  }
+  Future<void> playClear() => _safePlay(_clearPlayer);
+
+  Future<void> playBuenas() => _safePlay(_buenasPlayer);
 
   void dispose() {
-    _markerPlayer.dispose();
+    _stickPlayer.dispose();
+    _beanPlayer.dispose();
+    _packPlayer.dispose();
+    _beanPackPlayer.dispose();
     _clearPlayer.dispose();
-    _milestonePlayer.dispose();
+    _buenasPlayer.dispose();
   }
 }
