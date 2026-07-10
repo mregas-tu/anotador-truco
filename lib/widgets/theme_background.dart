@@ -64,7 +64,7 @@ class MateThemeBackground extends StatelessWidget {
           child: _BackgroundImage(asset: asset, fit: fit),
         ),
         const BackgroundAssetLayer(
-          asset: 'assets/images/themes/mate_top_objects_overlay.png',
+          asset: 'assets/images/themes/mate_top_objects_overlay.webp',
           alignment: Alignment.topCenter,
           offset: Offset(0, -20),
           widthFactor: 1.0,
@@ -72,7 +72,7 @@ class MateThemeBackground extends StatelessWidget {
           opacity: 0.92,
         ),
         const BackgroundAssetLayer(
-          asset: 'assets/images/themes/mate_corner_overlay.png',
+          asset: 'assets/images/themes/mate_corner_overlay.webp',
           alignment: Alignment.bottomRight,
           offset: Offset(18, -12),
           widthFactor: 0.34,

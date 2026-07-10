@@ -98,19 +98,8 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/malvinas_background.png
     - assets/images/themes/
-    - assets/images/mate_background.png
-    - assets/images/mate_background_cards_integrated.png
-    - assets/images/mate_background_cards_medium_mate.png
-    - assets/images/mate_background_cards_small_mate.png
-    - assets/images/mate_background_base.png
-    - assets/images/mate_background_clean.png
-    - assets/images/mate_background_sobremesa.png
-    - assets/images/mate_card_back_overlay.png
-    - assets/images/mate_card_espada_overlay.png
-    - assets/images/mate_footer_black_thermos_preview.png
-    - assets/images/mate_footer_vintage.png
+    - assets/images/themes/thumbnails/
     - assets/images/restart.svg
     - assets/images/settings.svg
     - assets/images/hand.svg
