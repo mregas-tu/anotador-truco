@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 enum MatchstickBoxType { classic, soccer, wood }
 
+enum ThemeBackgroundType { generic, mate }
+
 class TrucoTheme {
   final String name;
   final Color navy;
@@ -47,12 +49,18 @@ class TrucoTheme {
   final Color dividerColor;
   final Color accentColor;
   final String? backgroundAsset;
+  final ThemeBackgroundType backgroundType;
 
   // CENTER ORNAMENT
   final String? centerOrnamentAsset;
   final bool hideCenterCircleBorder;
   final double centerOrnamentScale;
   final List<Shadow>? centerOrnamentShadows;
+
+  // ASSET BELOW TOTAL SCORE
+  final String? belowScoreAsset;
+  final double belowScoreAssetSize;
+  final double belowScoreAssetOffset;
 
   // FINE-TUNING FOR SCORE
   final double scoreFontSize;
@@ -62,6 +70,9 @@ class TrucoTheme {
   final double ellosMarginLeft;
 
   final MatchstickBoxType matchstickBoxType;
+  final double matchstickBoxOpacity;
+  final Color? teamNameColorOverride;
+  Color get teamNameColor => teamNameColorOverride ?? slate;
 
   const TrucoTheme({
     required this.name,
@@ -94,16 +105,22 @@ class TrucoTheme {
     required this.dividerColor,
     required this.accentColor,
     this.backgroundAsset,
+    this.backgroundType = ThemeBackgroundType.generic,
     this.centerOrnamentAsset,
     this.hideCenterCircleBorder = false,
     this.centerOrnamentScale = 1.0,
     this.centerOrnamentShadows,
+    this.belowScoreAsset,
+    this.belowScoreAssetSize = 28,
+    this.belowScoreAssetOffset = 6,
     required this.scoreFontSize,
     required this.scoreVerticalOffset,
     required this.centerSectionOffset,
     this.nosotrosMarginRight = 0.0,
     this.ellosMarginLeft = 0.0,
     required this.matchstickBoxType,
+    this.matchstickBoxOpacity = 1.0,
+    this.teamNameColorOverride,
     required this.classicButtonColor,
     required this.classicButtonShadowColor,
     this.highlightOpacity = 0.1,
@@ -257,11 +274,93 @@ class TrucoTheme {
     highlightOpacity: 0.08,
   );
 
+  static const TrucoTheme malvinasTheme = TrucoTheme(
+    name: "MALVINAS",
+    navy: Color(0xFF283648),
+    navyLight: Color(0xFF283648),
+    slate: Color(0xFF283648),
+    cream: Colors.white,
+    white: Colors.white,
+    navyAccent: Color(0xFF283648),
+    buenas: Color(0xFFF6B000),
+    malas: Colors.white,
+    centerCircleColor: Colors.transparent,
+    primaryBackgroundButton: Color(0xFF5A91C5),
+    primaryTextButton: Colors.white,
+    secondaryButtonBorder: Colors.white,
+    secondaryButtonText: Colors.white,
+    classicButtonColor: Color(0xFF5A91C5),
+    classicButtonShadowColor: Color(0x14000000),
+    headerAsset: null,
+    footerAsset: 'assets/images/malvinas_footer.png',
+    footerHeight: 75,
+    tintHeader: false,
+    tintFooter: false,
+    dividerColor: Colors.white,
+    scoreColor: Colors.white,
+    teamScoreColor: Colors.white,
+    accentColor: Color(0xFFF6B000),
+    backgroundAsset: 'assets/images/malvinas_background_selected.png',
+    centerOrnamentAsset: null,
+    hideCenterCircleBorder: true,
+    scoreFontSize: 22,
+    scoreVerticalOffset: 5.0,
+    centerSectionOffset: 10.0,
+    belowScoreAsset: 'assets/images/sun.png',
+    belowScoreAssetSize: 90,
+    belowScoreAssetOffset: 0,
+    matchstickBoxType: MatchstickBoxType.classic,
+    matchstickBoxOpacity: 0.1,
+    teamNameColorOverride: Color(0xFF5A91C5),
+    highlightOpacity: 0.1,
+  );
+
+  static const TrucoTheme mateTheme = TrucoTheme(
+    name: "MATE",
+    navy: Color(0xFF3D2F1F),
+    navyLight: Color(0xFF3D2F1F),
+    slate: Color(0xFF3D2F1F),
+    cream: Colors.white,
+    white: Colors.white,
+    navyAccent: Color(0xFF3D2F1F),
+    buenas: Color(0xFFB6A35A),
+    malas: Color(0xFFA05A38),
+    centerCircleColor: Colors.transparent,
+    primaryBackgroundButton: Color(0xFF6F7A3A),
+    primaryTextButton: Colors.white,
+    secondaryButtonBorder: Colors.white,
+    secondaryButtonText: Colors.white,
+    classicButtonColor: Color(0xFF6F7A3A),
+    classicButtonShadowColor: Color(0x14000000),
+    headerAsset: null,
+    footerAsset: null,
+    footerHeight: 85,
+    tintHeader: false,
+    tintFooter: false,
+    dividerColor: Color(0xFFE2D2B4),
+    scoreColor: Color(0xFFF5EFE3),
+    teamScoreColor: Color(0xFFF5EFE3),
+    accentColor: Color(0xFFB6A35A),
+    backgroundAsset: 'assets/images/mate_background_base_v2.png',
+    backgroundType: ThemeBackgroundType.mate,
+    centerOrnamentAsset: null,
+    hideCenterCircleBorder: true,
+    scoreFontSize: 22,
+    scoreVerticalOffset: 5.0,
+    centerSectionOffset: 10.0,
+    matchstickBoxType: MatchstickBoxType.classic,
+    matchstickBoxOpacity: 0.1,
+    teamNameColorOverride: Color(0xFFE2D2B4),
+    highlightOpacity: 0.1,
+  );
+
   static const List<TrucoTheme> allThemes = [
     navyTheme,
     argentinaTheme,
     soccerTheme,
     woodTheme,
+    malvinasTheme,
+    mateTheme,
   ];
 }
 

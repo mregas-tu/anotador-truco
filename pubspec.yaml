@@ -105,6 +105,23 @@ flutter:
     - assets/images/footer.svg
     - assets/images/argentina_header.png
     - assets/images/argentina_footer.png
+    - assets/images/malvinas_background.png
+    - assets/images/malvinas_background_selected.png
+    - assets/images/malvinas_footer.png
+    - assets/images/mate_background.png
+    - assets/images/mate_background_cards_integrated.png
+    - assets/images/mate_background_cards_medium_mate.png
+    - assets/images/mate_background_cards_small_mate.png
+    - assets/images/mate_background_base.png
+    - assets/images/mate_background_base_v2.png
+    - assets/images/mate_background_clean.png
+    - assets/images/mate_background_sobremesa.png
+    - assets/images/mate_card_back_overlay.png
+    - assets/images/mate_card_espada_overlay.png
+    - assets/images/mate_corner_overlay.png
+    - assets/images/mate_footer_black_thermos_preview.png
+    - assets/images/mate_footer_vintage.png
+    - assets/images/mate_top_objects_overlay.png
     - assets/images/escarapela.png
     - assets/images/restart.svg
     - assets/images/settings.svg

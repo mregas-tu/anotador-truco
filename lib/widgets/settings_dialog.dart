@@ -17,6 +17,7 @@ import '../services/world_cup_event.dart';
 import 'truco_buttons.dart';
 import 'bean_widget.dart';
 import 'game_dialogs.dart';
+import 'theme_background.dart';
 import 'package:confetti/confetti.dart';
 
 class SettingsDialogContent extends StatefulWidget {
@@ -453,8 +454,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                               )
                             else if (theme.backgroundAsset != null)
                               Positioned.fill(
-                                child: Image.asset(theme.backgroundAsset!,
-                                    fit: BoxFit.cover),
+                                child: ThemeBackground(theme: theme),
                               ),
                             if (isLocked)
                               Container(

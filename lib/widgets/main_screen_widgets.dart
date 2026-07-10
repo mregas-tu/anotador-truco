@@ -278,16 +278,30 @@ class CenterScoreCircle extends StatelessWidget {
                     ? scoreProvider.appTheme.scoreVerticalOffset
                     : 0,
               ),
-              child: Text(
-                key: limitScoreKey,
-                "${scoreProvider.currentGameMode.totalPoints}",
-                style: TextStyle(
-                  fontFamily: AppFonts.caminito,
-                  fontSize: scoreProvider.appTheme.scoreFontSize,
-                  color: scoreProvider.appTheme.scoreColor,
-                  fontWeight: FontWeight.bold,
-                  shadows: scoreProvider.appTheme.teamNameShadow,
-                ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (scoreProvider.appTheme.belowScoreAsset != null)
+                    Transform.translate(
+                      offset: Offset(
+                          0, scoreProvider.appTheme.belowScoreAssetOffset),
+                      child: Image.asset(
+                        scoreProvider.appTheme.belowScoreAsset!,
+                        height: scoreProvider.appTheme.belowScoreAssetSize,
+                      ),
+                    ),
+                  Text(
+                    key: limitScoreKey,
+                    "${scoreProvider.currentGameMode.totalPoints}",
+                    style: TextStyle(
+                      fontFamily: AppFonts.caminito,
+                      fontSize: scoreProvider.appTheme.scoreFontSize,
+                      color: scoreProvider.appTheme.scoreColor,
+                      fontWeight: FontWeight.bold,
+                      shadows: scoreProvider.appTheme.teamNameShadow,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

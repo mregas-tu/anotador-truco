@@ -42,16 +42,17 @@ class _MatchstickBoxClassic extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double op = theme.matchstickBoxOpacity;
     return Container(
       width: 200,
       height: 120,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: theme.navyLight,
+        color: theme.navyLight.withOpacity(op),
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withOpacity(0.5 * op),
             offset: const Offset(4, 4),
             blurRadius: 15,
           ),
@@ -59,16 +60,16 @@ class _MatchstickBoxClassic extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: theme.navy,
+          color: theme.navy.withOpacity(op),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: theme.white.withOpacity(0.24), width: 0.5),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              theme.navy,
-              theme.navyLight,
-              theme.navyAccent,
+              theme.navy.withOpacity(op),
+              theme.navyLight.withOpacity(op),
+              theme.navyAccent.withOpacity(op),
             ],
             stops: const [0.0, 0.4, 1.0],
           ),
