@@ -17,7 +17,7 @@ class MatchstickBox extends StatelessWidget {
     return Consumer<ScoreProvider>(
       builder: (context, scoreProvider, child) {
         final theme = scoreProvider.appTheme;
-        
+
         switch (theme.matchstickBoxType) {
           case MatchstickBoxType.soccer:
             return _MatchstickBoxSoccer(count: count, theme: theme);
@@ -137,8 +137,11 @@ class _MatchstickContainerWood extends StatelessWidget {
             offset: Offset(offsetX, offsetY),
             child: Transform.rotate(
               angle: angle,
-                child: scoreProvider.pointType == PointType.beans
-                  ? BeanWidget(size: 20, beanType: scoreProvider.currentBeanPalette.type, animateOnReset: false)
+              child: scoreProvider.pointType == PointType.beans
+                  ? BeanWidget(
+                      size: 20,
+                      beanType: scoreProvider.currentBeanPalette.type,
+                      animateOnReset: false)
                   : const MatchstickWidget(
                       height: 180,
                       width: 6,
@@ -163,7 +166,7 @@ class _MatchstickContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context);
     final theme = scoreProvider.appTheme;
-    
+
     return Container(
       width: 200,
       height: 120,
@@ -179,7 +182,8 @@ class _MatchstickContainer extends StatelessWidget {
             if (showHexNet)
               Positioned.fill(
                 child: CustomPaint(
-                  painter: _HexNetPainter(color: Colors.white.withOpacity(0.15)),
+                  painter:
+                      _HexNetPainter(color: Colors.white.withOpacity(0.15)),
                 ),
               ),
             if (!showHexNet)
@@ -197,7 +201,7 @@ class _MatchstickContainer extends StatelessWidget {
                 ),
               ),
             ...List.generate(math.max(0, count), (index) {
-              final random = math.Random(index * 42); 
+              final random = math.Random(index * 42);
               final angle = (random.nextDouble() - 0.5) * 1.5;
               final offsetX = (random.nextDouble() - 0.5) * 90;
               final offsetY = (random.nextDouble() - 0.5) * 45;
@@ -285,14 +289,14 @@ class _MatchstickBoxWood extends StatelessWidget {
           // La caja SVG completa al fondo
           Positioned.fill(
             child: SvgPicture.asset(
-              'assets/images/matchbox_wood.svg',
+              'assets/images/themes/wood_matchbox.svg',
               fit: BoxFit.contain,
             ),
           ),
 
           // Fósforos AL FRENTE con máscara y margen derecho ajustado
           Positioned(
-            left: 155, 
+            left: 155,
             right: 8, // Margen mínimo para que no se corten las cabezas
             top: 15,
             bottom: 15,
@@ -316,7 +320,8 @@ class _MatchstickBoxPlate extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: 260,
-      height: 160, // Increased height to give safe vertical padding for rotations
+      height:
+          160, // Increased height to give safe vertical padding for rotations
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
@@ -330,7 +335,7 @@ class _MatchstickBoxPlate extends StatelessWidget {
               fit: BoxFit.contain,
             ),
           ),
-          
+
           // Beans clustered in the center of the plate
           SizedBox(
             width: 260,
@@ -351,18 +356,18 @@ class _MatchstickContainerPlate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context);
-    
+
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.center,
       children: [
         ...List.generate(math.max(0, count), (index) {
-          final random = math.Random(index * 1337); 
+          final random = math.Random(index * 1337);
           final angle = (random.nextDouble() - 0.5) * 4.0;
-          
+
           // Allow a wider horizontal distribution to fill the plate
-          final offsetX = (random.nextDouble() - 0.5) * 180; 
-          
+          final offsetX = (random.nextDouble() - 0.5) * 180;
+
           // Allow a wider vertical distribution, taking advantage of the new SVG margins
           final offsetY = (random.nextDouble() - 0.5) * 45;
 

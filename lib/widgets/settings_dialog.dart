@@ -416,40 +416,11 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         borderRadius: BorderRadius.circular(9),
                         child: Stack(
                           children: [
-                            if (theme.name == "NAVY PROFUNDO")
+                            if (theme.thumbnailAsset != null)
                               Positioned.fill(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Opacity(
-                                    opacity: 0.8,
-                                    child: SvgPicture.asset(
-                                        'assets/images/footer.svg',
-                                        fit: BoxFit.contain),
-                                  ),
-                                ),
-                              )
-                            else if (theme.name == "ARGENTINA")
-                              Positioned.fill(
-                                child: Column(
-                                  children: [
-                                    Expanded(
-                                        child: Container(
-                                            color: const Color(0xFF74ACDF))),
-                                    Expanded(
-                                      child: Container(
-                                        color: Colors.white,
-                                        child: Center(
-                                          child: Image.asset(
-                                              'assets/images/sun.png',
-                                              height: 16,
-                                              fit: BoxFit.contain),
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                        child: Container(
-                                            color: const Color(0xFF74ACDF))),
-                                  ],
+                                child: Image.asset(
+                                  theme.thumbnailAsset!,
+                                  fit: BoxFit.cover,
                                 ),
                               )
                             else if (theme.backgroundAsset != null)

@@ -30,6 +30,7 @@ class PersistenceService {
   static const String keyVasoLastAdAt = 'vaso_last_ad_at';
   static const String keyVasoBrindados = 'vaso_brindados';
   static const String keyWorldCupPopupShown = 'world_cup_2026_popup_shown';
+  static const String keyScoreHistory = 'score_history';
 
   static Future<bool> getWorldCupPopupShown() async {
     final prefs = await _getPrefs();
@@ -163,12 +164,23 @@ class PersistenceService {
     await prefs.setBool(keyFinishedMalasEllos, finishedMalasEllos);
   }
 
+  static Future<void> saveScoreHistory(List<String> serialized) async {
+    final prefs = await _getPrefs();
+    await prefs.setStringList(keyScoreHistory, serialized);
+  }
+
+  static Future<List<String>> loadScoreHistory() async {
+    final prefs = await _getPrefs();
+    return prefs.getStringList(keyScoreHistory) ?? [];
+  }
+
   static Future<void> clearGameState() async {
     final prefs = await _getPrefs();
     await prefs.remove(keyNosotrosScore);
     await prefs.remove(keyEllosScore);
     await prefs.remove(keyFinishedMalasNosotros);
     await prefs.remove(keyFinishedMalasEllos);
+    await prefs.remove(keyScoreHistory);
     // Names and settings persist
   }
 

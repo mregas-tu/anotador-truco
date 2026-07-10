@@ -8,6 +8,22 @@ import '../theme/app_theme.dart';
 import '../services/bean_image_manager.dart';
 import 'premium_provider.dart';
 
+class ScoreEvent {
+  final String team;
+  final int delta;
+  final DateTime timestamp;
+  final int nosotrosTotal;
+  final int ellosTotal;
+
+  const ScoreEvent({
+    required this.team,
+    required this.delta,
+    required this.timestamp,
+    required this.nosotrosTotal,
+    required this.ellosTotal,
+  });
+}
+
 class GameMode {
   final String label;
   final int totalPoints;
@@ -193,6 +209,9 @@ class ScoreProvider with ChangeNotifier {
   String? _flyOutTeam;
   bool _isFlyingOut = false;
 
+  final List<ScoreEvent> _scoreHistory = [];
+  List<ScoreEvent> get scoreHistory => List.unmodifiable(_scoreHistory);
+
   GameMode get currentGameMode => _currentGameMode;
   MatchstickPalette get currentPalette => _currentPalette;
   BeanPalette get currentBeanPalette => _currentBeanPalette;
@@ -228,6 +247,21 @@ class ScoreProvider with ChangeNotifier {
   String? get flyOutTeam => _flyOutTeam;
   bool get isFlyingOut => _isFlyingOut;
   PointType get pointType => _pointType;
+
+  void _recordEvent(String team, int delta) {
+    _scoreHistory.add(ScoreEvent(
+      team: team,
+      delta: delta,
+      timestamp: DateTime.now(),
+      nosotrosTotal: _nosotros,
+      ellosTotal: _ellos,
+    ));
+    PersistenceService.saveScoreHistory(
+      _scoreHistory.map((e) =>
+        '${e.team}:${e.delta}:${e.timestamp.millisecondsSinceEpoch}:${e.nosotrosTotal}:${e.ellosTotal}'
+      ).toList(),
+    );
+  }
 
   void updateLastStickPos(String team, Offset pos) {
     if (team == "nosotros") {
@@ -336,6 +370,7 @@ class ScoreProvider with ChangeNotifier {
       _totalRemainingMatchsticks--;
       _lastDropOffset = dropOffset;
       _lastPointTeam = "nosotros";
+      _recordEvent("nosotros", 1);
 
       if (_currentGameMode.hasBuenas && _nosotros == _currentGameMode.milestone) {
         if (!_isMuted) audioService.playBuenas();
@@ -363,6 +398,7 @@ class ScoreProvider with ChangeNotifier {
       _nosotros--;
       _winner = null; // Clear winner if score decreased
       _totalRemainingMatchsticks++;
+      _recordEvent("nosotros", -1);
       _vibrate();
       notifyListeners();
       _saveCurrentState();
@@ -375,6 +411,7 @@ class ScoreProvider with ChangeNotifier {
       _totalRemainingMatchsticks--;
       _lastDropOffset = dropOffset;
       _lastPointTeam = "ellos";
+      _recordEvent("ellos", 1);
 
       if (_currentGameMode.hasBuenas && _ellos == _currentGameMode.milestone) {
         if (!_isMuted) audioService.playBuenas();
@@ -402,6 +439,7 @@ class ScoreProvider with ChangeNotifier {
       _ellos--;
       _winner = null; // Clear winner if score decreased
       _totalRemainingMatchsticks++;
+      _recordEvent("ellos", -1);
       _vibrate();
       notifyListeners();
       _saveCurrentState();
@@ -439,6 +477,7 @@ class ScoreProvider with ChangeNotifier {
     _totalRemainingMatchsticks = (_currentGameMode.totalPoints * 2);
     _lastDropOffset = null;
     _lastPointTeam = null;
+    _scoreHistory.clear();
     _isResetting = false;
     notifyListeners();
     PersistenceService.clearGameState();
@@ -584,10 +623,26 @@ class ScoreProvider with ChangeNotifier {
     _ellosName = data[PersistenceService.keyEllosName] ?? "ELLOS";
     _nosotrosFinishedMalas = data[PersistenceService.keyFinishedMalasNosotros] ?? false;
     _ellosFinishedMalas = data[PersistenceService.keyFinishedMalasEllos] ?? false;
-    
+
     // Recalculate matchsticks based on scores
     _totalRemainingMatchsticks = (_currentGameMode.totalPoints * 2) - _nosotros - _ellos;
-    
+
+    // Restore score history
+    final serialized = await PersistenceService.loadScoreHistory();
+    _scoreHistory.clear();
+    for (final s in serialized) {
+      final parts = s.split(':');
+      if (parts.length == 5) {
+        _scoreHistory.add(ScoreEvent(
+          team: parts[0],
+          delta: int.parse(parts[1]),
+          timestamp: DateTime.fromMillisecondsSinceEpoch(int.parse(parts[2])),
+          nosotrosTotal: int.parse(parts[3]),
+          ellosTotal: int.parse(parts[4]),
+        ));
+      }
+    }
+
     notifyListeners();
     _saveCurrentState();
   }

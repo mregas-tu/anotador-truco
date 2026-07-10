@@ -201,17 +201,21 @@ class GhostHandOverlay extends StatelessWidget {
 
 class CenterScoreCircle extends StatelessWidget {
   final GlobalKey limitScoreKey;
+  final VoidCallback? onTap;
 
   const CenterScoreCircle({
     super.key,
     required this.limitScoreKey,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context);
 
-    return Padding(
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
       padding: EdgeInsets.only(
         top: scoreProvider.appTheme.centerSectionOffset,
       ),
@@ -307,6 +311,8 @@ class CenterScoreCircle extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }
+
