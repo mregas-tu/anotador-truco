@@ -54,6 +54,7 @@ class _MainScreenState extends State<MainScreen>
   String? _lastWinnerShown;
   int _tutorialStep = 0;
   bool _isTutorialActive = false;
+  bool _isSingleStepTutorial = false;
   StreamSubscription<String>? _picaPicaSub;
   String? _footerIntDragSide;
 
@@ -99,11 +100,26 @@ class _MainScreenState extends State<MainScreen>
 
       // Ghost Hand Tutorial
       final isTutorialDone = await PersistenceService.getTutorialDone();
+      final scoreHistoryTutorialShown =
+          await PersistenceService.getScoreHistoryTutorialShown();
       if (!isTutorialDone && nosotros == 0 && ellos == 0) {
         if (mounted) {
           setState(() {
             _isTutorialActive = true;
             _tutorialStep = 0;
+            _isSingleStepTutorial = false;
+          });
+          _startGhostHandTutorial();
+          blockingDialogShown = true;
+        }
+      } else if (!blockingDialogShown &&
+          isTutorialDone &&
+          !scoreHistoryTutorialShown) {
+        if (mounted) {
+          setState(() {
+            _isTutorialActive = true;
+            _tutorialStep = 6;
+            _isSingleStepTutorial = true;
           });
           _startGhostHandTutorial();
           blockingDialogShown = true;
@@ -305,8 +321,18 @@ class _MainScreenState extends State<MainScreen>
           if (_isTutorialActive)
             TutorialOverlay(
               currentStep: _tutorialStep,
+              isFinalStep: _isSingleStepTutorial,
+              isStandalone: _isSingleStepTutorial,
+              titleOverride: _isSingleStepTutorial ? 'PUNTOS ANOTADOS' : null,
+              descriptionOverride: _isSingleStepTutorial
+                  ? 'Desde acá podés revisar los puntos que se anotaron en la partida.'
+                  : null,
               onSkip: _skipTutorial,
               onNext: () {
+                if (_isSingleStepTutorial) {
+                  _skipTutorial();
+                  return;
+                }
                 if (_tutorialStep < kTutorialSteps.length - 1) {
                   setState(() {
                     _tutorialStep++;
@@ -956,6 +982,7 @@ class _MainScreenState extends State<MainScreen>
     final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
     final events = scoreProvider.scoreHistory;
     final theme = scoreProvider.appTheme;
+    final historyNow = DateTime.now();
 
     Widget historyContent;
     if (events.isEmpty) {
@@ -978,9 +1005,10 @@ class _MainScreenState extends State<MainScreen>
         children: [
           for (int i = 0; i < reversedEvents.length; i++) ...[
             if (i > 0)
-              Divider(
-                  color: theme.teamNameColor.withValues(alpha: 0.1), height: 1),
-            _buildHistoryRow(reversedEvents[i], scoreProvider, theme),
+              _buildHistoryDivider(
+                  reversedEvents[i - 1], reversedEvents[i], theme, historyNow),
+            _buildHistoryRow(
+                reversedEvents[i], scoreProvider, theme, historyNow),
           ],
         ],
       );
@@ -989,7 +1017,6 @@ class _MainScreenState extends State<MainScreen>
     showDialog(
       context: context,
       builder: (ctx) => TrucoDialog(
-        showBanner: false,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1017,19 +1044,6 @@ class _MainScreenState extends State<MainScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            Text(
-              '${scoreProvider.nosotrosName} ${scoreProvider.nosotros.toString().padLeft(2, '0')} - '
-              '${scoreProvider.ellos.toString().padLeft(2, '0')} ${scoreProvider.ellosName}',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: AppFonts.oswald,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: theme.teamNameColor,
-                letterSpacing: 0,
-              ),
-            ),
             const SizedBox(height: 18),
             ConstrainedBox(
               constraints: BoxConstraints(
@@ -1047,6 +1061,7 @@ class _MainScreenState extends State<MainScreen>
     ScoreEvent event,
     ScoreProvider scoreProvider,
     TrucoTheme theme,
+    DateTime historyNow,
   ) {
     final teamName = event.team == 'nosotros'
         ? scoreProvider.nosotrosName
@@ -1055,10 +1070,11 @@ class _MainScreenState extends State<MainScreen>
     final points = event.delta.abs();
     final pointsLabel = points == 1 ? 'punto' : 'puntos';
     final deltaStr = event.delta > 0 ? '+$points' : '-$points';
-    final timeStr = _formatHistoryTime(event.timestamp);
+    final timeStr = _formatHistoryTime(event.timestamp, historyNow);
     final actionColor = event.delta > 0 ? theme.buenas : theme.malas;
-    final nosotrosAfter = event.nosotrosTotal.toString().padLeft(2, '0');
-    final ellosAfter = event.ellosTotal.toString().padLeft(2, '0');
+    final nosotrosAfter =
+        _formatHistoryScore(event.nosotrosTotal, scoreProvider);
+    final ellosAfter = _formatHistoryScore(event.ellosTotal, scoreProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1109,9 +1125,7 @@ class _MainScreenState extends State<MainScreen>
                           fontWeight: event.team == 'nosotros'
                               ? FontWeight.bold
                               : FontWeight.normal,
-                          color: event.team == 'nosotros'
-                              ? actionColor
-                              : null,
+                          color: event.team == 'nosotros' ? actionColor : null,
                         ),
                       ),
                       const TextSpan(text: ' - '),
@@ -1121,9 +1135,7 @@ class _MainScreenState extends State<MainScreen>
                           fontWeight: event.team == 'ellos'
                               ? FontWeight.bold
                               : FontWeight.normal,
-                          color: event.team == 'ellos'
-                              ? actionColor
-                              : null,
+                          color: event.team == 'ellos' ? actionColor : null,
                         ),
                       ),
                     ],
@@ -1158,11 +1170,43 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
-  String _formatHistoryTime(DateTime time) {
-    final diff = DateTime.now().difference(time);
+  Widget _buildHistoryDivider(
+    ScoreEvent previousEvent,
+    ScoreEvent currentEvent,
+    TrucoTheme theme,
+    DateTime historyNow,
+  ) {
+    final sameTimeLabel =
+        _formatHistoryTime(previousEvent.timestamp, historyNow) ==
+            _formatHistoryTime(currentEvent.timestamp, historyNow);
+
+    return Divider(
+      color: theme.teamNameColor.withValues(alpha: sameTimeLabel ? 0.1 : 0.34),
+      thickness: sameTimeLabel ? 0.5 : 1.25,
+      height: sameTimeLabel ? 1 : 14,
+    );
+  }
+
+  String _formatHistoryTime(DateTime time, DateTime now) {
+    final diff = now.difference(time);
     if (diff.inSeconds < 60) return 'Recién';
     if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _formatHistoryScore(int total, ScoreProvider scoreProvider) {
+    final mode = scoreProvider.currentGameMode;
+    if (!mode.hasBuenas || total == 0) {
+      return total.toString().padLeft(2, '0');
+    }
+
+    final milestone = mode.milestone;
+    if (total <= milestone) {
+      return '${total.toString().padLeft(2, '0')} MALAS';
+    }
+
+    final buenas = (total - milestone).clamp(0, milestone);
+    return '${buenas.toString().padLeft(2, '0')} BUENAS';
   }
 
   void _showSettingsDialog() {
@@ -1180,6 +1224,7 @@ class _MainScreenState extends State<MainScreen>
           onRepeatTutorial: () {
             setState(() {
               _tutorialStep = 0;
+              _isSingleStepTutorial = false;
             });
             _startGhostHandTutorial();
           },
@@ -1504,7 +1549,7 @@ class _MainScreenState extends State<MainScreen>
         _handController.repeat(reverse: false);
         return;
       } else if (_tutorialStep == 6 && _limitScoreKey.currentContext != null) {
-        // Limit Score
+        // Limit score / score history
         final RenderBox? limitRender =
             _limitScoreKey.currentContext?.findRenderObject() as RenderBox?;
         if (limitRender != null) {
@@ -1565,12 +1610,17 @@ class _MainScreenState extends State<MainScreen>
 
   void _skipTutorial() async {
     AnalyticsService.logTutorialSkip(_tutorialStep);
+    final wasSingleStepTutorial = _isSingleStepTutorial;
     setState(() {
       _isTutorialActive = false;
       _showGhostHand = false;
+      _isSingleStepTutorial = false;
     });
     _handController.stop();
     await PersistenceService.setTutorialDone(true);
+    if (wasSingleStepTutorial || _tutorialStep >= 6) {
+      await PersistenceService.setScoreHistoryTutorialShown(true);
+    }
   }
 }
 

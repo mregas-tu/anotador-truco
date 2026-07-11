@@ -95,6 +95,9 @@ class BillingService {
   Future<bool?> verifyPremiumStatus() async {
     try {
       if (Platform.isAndroid) {
+        final bool available = await _inAppPurchase.isAvailable();
+        if (!available) return null;
+
         final InAppPurchaseAndroidPlatformAddition androidAddition =
             _inAppPurchase
                 .getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
@@ -103,20 +106,21 @@ class BillingService {
 
         if (response.error != null) {
           // Error de red u otro — no revocar, ser conservador
-          debugPrint('[BillingService] queryPastPurchases error: ${response.error}');
+          debugPrint(
+              '[BillingService] queryPastPurchases error: ${response.error}');
           return null;
         }
 
         final bool hasPremium = response.pastPurchases.any(
           (p) =>
               (p.productID == premiumId || p.productID == premiumIdAlt) &&
-              p.status == PurchaseStatus.purchased,
+              (p.status == PurchaseStatus.purchased ||
+                  p.status == PurchaseStatus.restored),
         );
         return hasPremium;
       } else if (Platform.isIOS) {
-        final InAppPurchaseStoreKitPlatformAddition iosAddition =
-            _inAppPurchase
-                .getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>();
+        final InAppPurchaseStoreKitPlatformAddition iosAddition = _inAppPurchase
+            .getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>();
         // En iOS se usa restorePurchases y el stream responde con los items.
         // No hay una query directa equivalente a queryPastPurchases —
         // retornamos null para ser conservadores y no revocar.

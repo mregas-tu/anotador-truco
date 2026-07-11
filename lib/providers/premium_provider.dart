@@ -84,17 +84,28 @@ class PremiumProvider with ChangeNotifier {
     AnalyticsService.setPeopleProperties({'is_premium': _isPremium});
     notifyListeners();
 
-    // Verifica contra la tienda si la compra sigue vigente.
-    // Solo revoca si Google Play confirma explícitamente que no hay compra (false).
-    // null = error/sin conexión → conservador, no revocar.
-    if (_isPremium) {
-      _billingService.verifyPremiumStatus().then((verified) {
-        if (verified == false) {
-          debugPrint('[PremiumProvider] Compra revocada por la tienda. Removiendo premium.');
-          AnalyticsService.logEvent('premium_revoked_by_store');
-          setPremium(false);
-        }
-      });
+    _syncPremiumStatusWithStore();
+  }
+
+  Future<void> _syncPremiumStatusWithStore() async {
+    final verified = await _billingService.verifyPremiumStatus();
+
+    if (verified == true && !_isPremium) {
+      debugPrint(
+          '[PremiumProvider] Compra premium recuperada desde la tienda.');
+      AnalyticsService.logEvent('premium_restored_silently');
+      await setPremium(true);
+      return;
+    }
+
+    // Solo revoca si la tienda confirma explícitamente que no hay compra.
+    // null = error/sin conexión/plataforma sin query silenciosa -> conservador.
+    if (verified == false && _isPremium) {
+      debugPrint(
+        '[PremiumProvider] Compra revocada por la tienda. Removiendo premium.',
+      );
+      AnalyticsService.logEvent('premium_revoked_by_store');
+      await setPremium(false);
     }
   }
 
@@ -157,10 +168,10 @@ class PremiumProvider with ChangeNotifier {
 
   Future<void> extendGlobalTempUnlock(Duration duration) async {
     final now = DateTime.now();
-    final base = (_globalTempUnlockUntil != null &&
-            _globalTempUnlockUntil!.isAfter(now))
-        ? _globalTempUnlockUntil!
-        : now;
+    final base =
+        (_globalTempUnlockUntil != null && _globalTempUnlockUntil!.isAfter(now))
+            ? _globalTempUnlockUntil!
+            : now;
     _globalTempUnlockUntil = base.add(duration);
     await _prefs?.setString(
         _keyGlobalTempUntil, _globalTempUnlockUntil!.toIso8601String());

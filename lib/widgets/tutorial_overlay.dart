@@ -35,7 +35,7 @@ const List<Map<String, String>> kTutorialSteps = [
   {
     "title": "PUNTUACIÓN TOTAL",
     "desc":
-        "En el centro entre los equipos ves los puntos totales de la partida."
+        "En el centro ves los puntos totales de la partida. Tocá ahí para revisar los puntos anotados."
   },
   {
     "title": "REINICIAR PARTIDA",
@@ -53,12 +53,20 @@ class TutorialOverlay extends StatelessWidget {
   final int currentStep;
   final VoidCallback onSkip;
   final VoidCallback onNext;
+  final bool isFinalStep;
+  final bool isStandalone;
+  final String? titleOverride;
+  final String? descriptionOverride;
 
   const TutorialOverlay({
     super.key,
     required this.currentStep,
     required this.onSkip,
     required this.onNext,
+    this.isFinalStep = false,
+    this.isStandalone = false,
+    this.titleOverride,
+    this.descriptionOverride,
   });
 
   @override
@@ -67,6 +75,9 @@ class TutorialOverlay extends StatelessWidget {
     final isTop = currentStep <= 4;
     final isSmallScreen = MediaQuery.of(context).size.height < 700;
     final offset = isSmallScreen ? 80.0 : 150.0;
+    final title = titleOverride ?? kTutorialSteps[currentStep]["title"]!;
+    final description =
+        descriptionOverride ?? kTutorialSteps[currentStep]["desc"]!;
 
     return Positioned(
       top: isTop ? offset : null,
@@ -97,7 +108,7 @@ class TutorialOverlay extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  kTutorialSteps[currentStep]["title"]!,
+                  title,
                   style: TextStyle(
                     color: scoreProvider.appTheme.white,
                     fontFamily: AppFonts.oswald,
@@ -106,14 +117,16 @@ class TutorialOverlay extends StatelessWidget {
                     letterSpacing: 0,
                   ),
                 ),
-                Text(
-                  "${currentStep + 1}/${kTutorialSteps.length}",
-                  style: TextStyle(
-                    color: scoreProvider.appTheme.white.withValues(alpha: 0.5),
-                    fontFamily: AppFonts.oswald,
-                    fontSize: 14,
+                if (!isStandalone)
+                  Text(
+                    "${currentStep + 1}/${kTutorialSteps.length}",
+                    style: TextStyle(
+                      color:
+                          scoreProvider.appTheme.white.withValues(alpha: 0.5),
+                      fontFamily: AppFonts.oswald,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -121,7 +134,7 @@ class TutorialOverlay extends StatelessWidget {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 child: Text(
-                  kTutorialSteps[currentStep]["desc"]!,
+                  description,
                   key: ValueKey<int>(currentStep),
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -135,20 +148,23 @@ class TutorialOverlay extends StatelessWidget {
             const SizedBox(height: 20),
             Row(
               children: [
-                Expanded(
-                  child: SecondaryButton(
-                    text: "OMITIR",
-                    height: 40,
-                    toUpperCase: true,
-                    onPressed: onSkip,
+                if (!isStandalone) ...[
+                  Expanded(
+                    child: SecondaryButton(
+                      text: "OMITIR",
+                      height: 40,
+                      toUpperCase: true,
+                      onPressed: onSkip,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
+                  const SizedBox(width: 16),
+                ],
                 Expanded(
                   child: PrimaryButton(
-                    text: currentStep == kTutorialSteps.length - 1
-                        ? "FINALIZAR"
-                        : "SIGUIENTE",
+                    text:
+                        isFinalStep || currentStep == kTutorialSteps.length - 1
+                            ? "FINALIZAR"
+                            : "SIGUIENTE",
                     height: 40,
                     onPressed: onNext,
                   ),

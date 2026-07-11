@@ -13,6 +13,8 @@ class PersistenceService {
   static const String keyFinishedMalasNosotros = 'finished_malas_nosotros';
   static const String keyFinishedMalasEllos = 'finished_malas_ellos';
   static const String keyTutorialDone = 'tutorial_done';
+  static const String keyScoreHistoryTutorialShown =
+      'score_history_tutorial_shown';
   static const String keyPointType = 'point_type';
   static const String keyPicaPicaEnabled = 'pica_pica_enabled';
   static const String keyPicaPicaStart = 'pica_pica_start';
@@ -21,7 +23,8 @@ class PersistenceService {
   static const String keyVibrationEnabled = 'vibration_enabled';
   static const String keyMatchesCompletedCount = 'matches_completed_count';
   static const String keyHasRatedApp = 'has_rated_app';
-  static const String keyLastRateRequestMatchCount = 'last_rate_request_match_count';
+  static const String keyLastRateRequestMatchCount =
+      'last_rate_request_match_count';
   static const String keyInstallDate = 'install_date';
   static const String keyLastPremiumPromptDate = 'last_premium_prompt_date';
   static const String keyMatchesAtLastPremiumPrompt =
@@ -57,6 +60,16 @@ class PersistenceService {
   static Future<void> setTutorialDone(bool done) async {
     final prefs = await _getPrefs();
     await prefs.setBool(keyTutorialDone, done);
+  }
+
+  static Future<bool> getScoreHistoryTutorialShown() async {
+    final prefs = await _getPrefs();
+    return prefs.getBool(keyScoreHistoryTutorialShown) ?? false;
+  }
+
+  static Future<void> setScoreHistoryTutorialShown(bool shown) async {
+    final prefs = await _getPrefs();
+    await prefs.setBool(keyScoreHistoryTutorialShown, shown);
   }
 
   static Future<int> getMatchesCompletedCount() async {
