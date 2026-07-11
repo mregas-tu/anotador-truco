@@ -955,41 +955,14 @@ class _MainScreenState extends State<MainScreen>
   void _showScoreHistory(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
     final events = scoreProvider.scoreHistory;
-
-    // Group consecutive same-team events within 15 seconds
-    final groups = <({String team, DateTime time, int delta, int nosotrosAfter, int ellosAfter})>[];
-    DateTime? lastEventTime;
-    for (final e in events) {
-      final gap = lastEventTime != null ? e.timestamp.difference(lastEventTime).inSeconds : 999;
-      if (groups.isNotEmpty && groups.last.team == e.team && gap <= 15) {
-        final last = groups.removeLast();
-        groups.add((
-          team: last.team,
-          time: last.time,
-          delta: last.delta + e.delta,
-          nosotrosAfter: e.nosotrosTotal,
-          ellosAfter: e.ellosTotal,
-        ));
-      } else {
-        groups.add((
-          team: e.team,
-          time: e.timestamp,
-          delta: e.delta,
-          nosotrosAfter: e.nosotrosTotal,
-          ellosAfter: e.ellosTotal,
-        ));
-      }
-      lastEventTime = e.timestamp;
-    }
-
     final theme = scoreProvider.appTheme;
 
     Widget historyContent;
-    if (groups.isEmpty) {
+    if (events.isEmpty) {
       historyContent = Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 18),
         child: Text(
-          'No se anotaron puntos aún',
+          'Todavía no hay puntos anotados',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: AppFonts.oswald,
@@ -999,13 +972,15 @@ class _MainScreenState extends State<MainScreen>
         ),
       );
     } else {
-      final reversedGroups = groups.reversed.toList();
+      final reversedEvents = events.reversed.toList();
       historyContent = Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (int i = 0; i < reversedGroups.length; i++) ...[
-            if (i > 0) Divider(color: theme.teamNameColor.withValues(alpha: 0.1), height: 1),
-            _buildHistoryRow(reversedGroups[i], scoreProvider, theme),
+          for (int i = 0; i < reversedEvents.length; i++) ...[
+            if (i > 0)
+              Divider(
+                  color: theme.teamNameColor.withValues(alpha: 0.1), height: 1),
+            _buildHistoryRow(reversedEvents[i], scoreProvider, theme),
           ],
         ],
       );
@@ -1023,7 +998,7 @@ class _MainScreenState extends State<MainScreen>
                 const SizedBox(width: 24),
                 Expanded(
                   child: Text(
-                    'HISTORIAL',
+                    'PUNTOS ANOTADOS',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: AppFonts.oswald,
@@ -1042,8 +1017,26 @@ class _MainScreenState extends State<MainScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            historyContent,
+            const SizedBox(height: 14),
+            Text(
+              '${scoreProvider.nosotrosName} ${scoreProvider.nosotros.toString().padLeft(2, '0')} - '
+              '${scoreProvider.ellos.toString().padLeft(2, '0')} ${scoreProvider.ellosName}',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: AppFonts.oswald,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: theme.teamNameColor,
+                letterSpacing: 0,
+              ),
+            ),
+            const SizedBox(height: 18),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.45,
+              ),
+              child: SingleChildScrollView(child: historyContent),
+            ),
           ],
         ),
       ),
@@ -1051,50 +1044,125 @@ class _MainScreenState extends State<MainScreen>
   }
 
   Widget _buildHistoryRow(
-    ({String team, DateTime time, int delta, int nosotrosAfter, int ellosAfter}) g,
+    ScoreEvent event,
     ScoreProvider scoreProvider,
     TrucoTheme theme,
   ) {
-    final teamName = g.team == 'nosotros' ? scoreProvider.nosotrosName : scoreProvider.ellosName;
-    final totalAfter = g.team == 'nosotros' ? g.nosotrosAfter : g.ellosAfter;
-    final deltaStr = g.delta > 0 ? '+${g.delta}' : '${g.delta}';
-    final timeStr = '${g.time.hour.toString().padLeft(2, '0')}:${g.time.minute.toString().padLeft(2, '0')}';
+    final teamName = event.team == 'nosotros'
+        ? scoreProvider.nosotrosName
+        : scoreProvider.ellosName;
+    final action = event.delta > 0 ? 'sumó' : 'restó';
+    final points = event.delta.abs();
+    final pointsLabel = points == 1 ? 'punto' : 'puntos';
+    final deltaStr = event.delta > 0 ? '+$points' : '-$points';
+    final timeStr = _formatHistoryTime(event.timestamp);
+    final actionColor = event.delta > 0 ? theme.buenas : theme.malas;
+    final nosotrosAfter = event.nosotrosTotal.toString().padLeft(2, '0');
+    final ellosAfter = event.ellosTotal.toString().padLeft(2, '0');
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            timeStr,
-            style: TextStyle(
-              fontFamily: AppFonts.oswald,
-              fontSize: 13,
-              color: theme.teamNameColor.withValues(alpha: 0.5),
+          SizedBox(
+            width: 68,
+            child: Text(
+              timeStr,
+              style: TextStyle(
+                fontFamily: AppFonts.oswald,
+                fontSize: 11,
+                color: theme.teamNameColor.withValues(alpha: 0.5),
+                letterSpacing: 0,
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              teamName,
-              style: TextStyle(
-                fontFamily: AppFonts.oswald,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: theme.teamNameColor,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$teamName $action $points $pointsLabel',
+                  style: TextStyle(
+                    fontFamily: AppFonts.oswald,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: theme.teamNameColor,
+                    letterSpacing: 0,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontFamily: AppFonts.oswald,
+                      fontSize: 12,
+                      color: theme.teamNameColor.withValues(alpha: 0.55),
+                      letterSpacing: 0,
+                    ),
+                    children: [
+                      const TextSpan(text: 'Quedó '),
+                      TextSpan(
+                        text: nosotrosAfter,
+                        style: TextStyle(
+                          fontWeight: event.team == 'nosotros'
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: event.team == 'nosotros'
+                              ? actionColor
+                              : null,
+                        ),
+                      ),
+                      const TextSpan(text: ' - '),
+                      TextSpan(
+                        text: ellosAfter,
+                        style: TextStyle(
+                          fontWeight: event.team == 'ellos'
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: event.team == 'ellos'
+                              ? actionColor
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          Text(
-            '$deltaStr  →  $totalAfter',
-            style: TextStyle(
-              fontFamily: AppFonts.caminito,
-              fontSize: 15,
-              color: g.delta > 0 ? theme.buenas : theme.malas,
+          const SizedBox(width: 12),
+          Container(
+            width: 38,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: actionColor.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: actionColor.withValues(alpha: 0.35)),
+            ),
+            child: Text(
+              deltaStr,
+              style: TextStyle(
+                fontFamily: AppFonts.oswald,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: actionColor,
+                letterSpacing: 0,
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _formatHistoryTime(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inSeconds < 60) return 'Recién';
+    if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
   void _showSettingsDialog() {
