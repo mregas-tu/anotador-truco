@@ -218,7 +218,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: currentPane == 1 ? 4 : 24),
 
         if (currentPane == 0) ...[
           // --- PANE 0: MAIN SETTINGS ---
@@ -366,7 +366,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: 6),
                 child: Text("TEMA DE LA APP",
                     style: TextStyle(
                         fontFamily: AppFonts.oswald,
@@ -472,9 +472,9 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                   );
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 4),
               Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: 6),
                 child: Text("TIPO DE FICHAS",
                     style: TextStyle(
                         fontFamily: AppFonts.oswald,
@@ -554,9 +554,9 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
               Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
                     scoreProvider.pointType == PointType.matches
                         ? "DISEÑO DE FÓSFOROS"
