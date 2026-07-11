@@ -218,7 +218,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             ),
           ],
         ),
-        SizedBox(height: currentPane == 1 ? 4 : 24),
+        SizedBox(height: currentPane == 1 ? 8 : 24),
 
         if (currentPane == 0) ...[
           // --- PANE 0: MAIN SETTINGS ---
@@ -472,7 +472,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                   );
                 },
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text("TIPO DE FICHAS",
@@ -554,7 +554,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
@@ -569,175 +569,225 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         letterSpacing: 0)),
               ),
               if (scoreProvider.pointType == PointType.matches)
-                Wrap(
-                  spacing: isSmallScreen ? 12 : 16,
-                  runSpacing: isSmallScreen ? 12 : 16,
-                  children: availablePalettes.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final palette = entry.value;
-                    final isSelected =
-                        scoreProvider.currentPalette.name == palette.name;
-                    final isLocked = !premiumProvider.isPaletteUnlocked(index);
-                    final timeLeft =
-                        premiumProvider.getRemainingTime('palette_$index');
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    const crossAxisCount = 5;
+                    final spacing = isSmallScreen ? 12.0 : 16.0;
+                    final availableItemSize = (constraints.maxWidth -
+                            (spacing * (crossAxisCount - 1))) /
+                        crossAxisCount;
+                    final defaultItemSize = isSmallScreen ? 44.0 : 48.0;
+                    final itemSize = availableItemSize < defaultItemSize
+                        ? availableItemSize
+                        : defaultItemSize;
 
-                    return GestureDetector(
-                      onTap: () {
-                        if (isLocked) {
-                          widget.onPaletteLockedTap(index);
-                        } else {
-                          scoreProvider.setPalette(palette);
-                        }
-                      },
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: isSmallScreen ? 44 : 48,
-                            height: isSmallScreen ? 44 : 48,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  palette.headColors[0],
-                                  palette.headColors.last
-                                ],
-                              ),
-                              border: Border.all(
-                                color:
-                                    isSelected ? Colors.white : Colors.white10,
-                                width: isSelected ? 3 : 1,
-                              ),
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                          color: palette.headColors.first
-                                              .withValues(alpha: 0.4),
-                                          blurRadius: 10,
-                                          spreadRadius: 2)
-                                    ]
-                                  : null,
-                            ),
-                          ),
-                          if (isLocked)
-                            const Icon(Icons.lock,
-                                color: Colors.white, size: 18),
-                          if (timeLeft != null)
-                            Container(
-                              decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.black45),
-                              padding: const EdgeInsets.all(4),
-                              child: Text(
-                                timeLeft,
-                                style: const TextStyle(
-                                  fontFamily: AppFonts.oswald,
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: spacing,
+                        mainAxisSpacing: spacing,
+                        childAspectRatio: 1,
                       ),
-                    );
-                  }).toList(),
-                )
-              else
-                Wrap(
-                  spacing: isSmallScreen ? 12 : 16,
-                  runSpacing: isSmallScreen ? 12 : 16,
-                  children: availableBeanPalettes.asMap().entries.map((entry) {
-                    final palette = entry.value;
-                    final index = entry.key;
-                    final isSelected =
-                        scoreProvider.currentBeanPalette.name == palette.name;
-                    final isLocked =
-                        !premiumProvider.isBeanPaletteUnlocked(index);
-                    final timeLeft =
-                        premiumProvider.getRemainingTime('bean_palette_$index');
+                      itemCount: availablePalettes.length,
+                      itemBuilder: (context, index) {
+                        final palette = availablePalettes[index];
+                        final isSelected =
+                            scoreProvider.currentPalette.name == palette.name;
+                        final isLocked =
+                            !premiumProvider.isPaletteUnlocked(index);
+                        final timeLeft =
+                            premiumProvider.getRemainingTime('palette_$index');
 
-                    return GestureDetector(
-                      onTap: () {
-                        if (isLocked) {
-                          widget.onBeanPaletteLockedTap(index);
-                        } else {
-                          scoreProvider.setBeanPalette(palette);
-                        }
-                      },
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: isSmallScreen ? 44 : 48,
-                            height: isSmallScreen ? 44 : 48,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isSelected
-                                  ? Colors.white.withValues(alpha: 0.15)
-                                  : Colors.white.withValues(alpha: 0.05),
-                              border: Border.all(
-                                color:
-                                    isSelected ? Colors.white : Colors.white10,
-                                width: isSelected ? 3 : 1,
-                              ),
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.2),
-                                          blurRadius: 10,
-                                          spreadRadius: 2)
-                                    ]
-                                  : null,
-                            ),
-                            child: Center(
-                              child: BeanWidget(
-                                size: isSmallScreen ? 18 : 20,
-                                beanType: palette.type,
-                                seed: index,
-                                useCache: false,
-                              ),
-                            ),
-                          ),
-                          if (isLocked)
-                            Positioned.fill(
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.black45,
-                                ),
-                                child: const Center(
-                                  child: Icon(Icons.lock,
-                                      color: Colors.white70, size: 20),
-                                ),
-                              ),
-                            ),
-                          if (timeLeft != null)
-                            Positioned(
-                              bottom: -4,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 4, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.black,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  timeLeft,
-                                  style: const TextStyle(
-                                    fontFamily: AppFonts.oswald,
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                        return GestureDetector(
+                          onTap: () {
+                            if (isLocked) {
+                              widget.onPaletteLockedTap(index);
+                            } else {
+                              scoreProvider.setPalette(palette);
+                            }
+                          },
+                          child: Center(
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: itemSize,
+                                  height: itemSize,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      colors: [
+                                        palette.headColors[0],
+                                        palette.headColors.last
+                                      ],
+                                    ),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.white10,
+                                      width: isSelected ? 3 : 1,
+                                    ),
+                                    boxShadow: isSelected
+                                        ? [
+                                            BoxShadow(
+                                                color: palette.headColors.first
+                                                    .withValues(alpha: 0.4),
+                                                blurRadius: 10,
+                                                spreadRadius: 2)
+                                          ]
+                                        : null,
                                   ),
                                 ),
-                              ),
+                                if (isLocked)
+                                  const Icon(Icons.lock,
+                                      color: Colors.white, size: 18),
+                                if (timeLeft != null)
+                                  Container(
+                                    decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.black45),
+                                    padding: const EdgeInsets.all(4),
+                                    child: Text(
+                                      timeLeft,
+                                      style: const TextStyle(
+                                        fontFamily: AppFonts.oswald,
+                                        fontSize: 10,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
-                        ],
-                      ),
+                          ),
+                        );
+                      },
                     );
-                  }).toList(),
+                  },
+                )
+              else
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    const crossAxisCount = 5;
+                    final spacing = isSmallScreen ? 12.0 : 16.0;
+                    final availableItemSize = (constraints.maxWidth -
+                            (spacing * (crossAxisCount - 1))) /
+                        crossAxisCount;
+                    final defaultItemSize = isSmallScreen ? 44.0 : 48.0;
+                    final itemSize = availableItemSize < defaultItemSize
+                        ? availableItemSize
+                        : defaultItemSize;
+                    final beanSize = itemSize * 0.42;
+
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: spacing,
+                        mainAxisSpacing: spacing,
+                        childAspectRatio: 1,
+                      ),
+                      itemCount: availableBeanPalettes.length,
+                      itemBuilder: (context, index) {
+                        final palette = availableBeanPalettes[index];
+                        final isSelected =
+                            scoreProvider.currentBeanPalette.name ==
+                                palette.name;
+                        final isLocked =
+                            !premiumProvider.isBeanPaletteUnlocked(index);
+                        final timeLeft = premiumProvider
+                            .getRemainingTime('bean_palette_$index');
+
+                        return GestureDetector(
+                          onTap: () {
+                            if (isLocked) {
+                              widget.onBeanPaletteLockedTap(index);
+                            } else {
+                              scoreProvider.setBeanPalette(palette);
+                            }
+                          },
+                          child: Center(
+                            child: Stack(
+                              alignment: Alignment.center,
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  width: itemSize,
+                                  height: itemSize,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isSelected
+                                        ? Colors.white.withValues(alpha: 0.15)
+                                        : Colors.white.withValues(alpha: 0.05),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.white10,
+                                      width: isSelected ? 3 : 1,
+                                    ),
+                                    boxShadow: isSelected
+                                        ? [
+                                            BoxShadow(
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.2),
+                                                blurRadius: 10,
+                                                spreadRadius: 2)
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Center(
+                                    child: BeanWidget(
+                                      size: beanSize,
+                                      beanType: palette.type,
+                                      seed: index,
+                                      useCache: false,
+                                    ),
+                                  ),
+                                ),
+                                if (isLocked)
+                                  Positioned.fill(
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.black45,
+                                      ),
+                                      child: const Center(
+                                        child: Icon(Icons.lock,
+                                            color: Colors.white70, size: 20),
+                                      ),
+                                    ),
+                                  ),
+                                if (timeLeft != null)
+                                  Positioned(
+                                    bottom: -4,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        timeLeft,
+                                        style: const TextStyle(
+                                          fontFamily: AppFonts.oswald,
+                                          fontSize: 10,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
             ],
           ),
