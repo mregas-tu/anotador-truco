@@ -34,7 +34,8 @@ class TrucoDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     // Buscamos el tema actual automáticamente vía Provider
     final scoreProvider = Provider.of<ScoreProvider>(context);
-    final borderColor = scoreProvider.appTheme.slate;
+    final borderColor = scoreProvider.appTheme.dialogBorderColor ??
+        scoreProvider.appTheme.slate;
     const double borderWidth = 1.0;
 
     final double effectiveWidth = marginHorizontal != null

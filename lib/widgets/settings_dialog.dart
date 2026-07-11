@@ -1,10 +1,7 @@
-import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:in_app_review/in_app_review.dart';
 import '../services/analytics_service.dart';
@@ -238,7 +235,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               inactiveTrackColor: Colors.white12,
             ),
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           _buildMenuActionItem(
             label: "VIBRACIÓN",
             iconAsset: 'assets/images/menu_icons/vibration.svg',
@@ -255,7 +252,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               inactiveTrackColor: Colors.white12,
             ),
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           _buildMenuActionItem(
             label: "MODO DE CONTROL",
             iconAsset: 'assets/images/menu_icons/control_mode_icon.svg',
@@ -290,7 +287,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               ),
             ),
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           _buildMenuNavigationItem(
             label: "MODO DE JUEGO",
             iconAsset: 'assets/images/menu_icons/game_mode_icon.svg',
@@ -303,7 +300,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           _buildMenuNavigationItem(
             label: "DISEÑO",
             iconAsset: 'assets/images/menu_icons/design_icon.svg',
@@ -314,7 +311,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           _buildMenuNavigationItem(
             label: "BRINDIS",
             iconAsset: 'assets/images/menu_icons/cheers_icon.svg',
@@ -324,7 +321,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           _buildMenuNavigationItem(
             label: "AYUDA Y SOPORTE",
             iconAsset: 'assets/images/menu_icons/support_icon.svg',
@@ -334,7 +331,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           if (!premiumProvider.isPremium) ...[
             _buildMenuNavigationItem(
               label: "HACERME PREMIUM",
@@ -346,7 +343,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               scoreProvider: scoreProvider,
               isSmallScreen: isSmallScreen,
             ),
-            Divider(color: scoreProvider.appTheme.slate, height: 1),
+            Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           ],
 
           const SizedBox(height: 24),
@@ -841,7 +838,8 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           if (scoreProvider.currentGameMode.totalPoints >= 30) ...[
             const SizedBox(height: 20),
             Divider(
-                color: scoreProvider.appTheme.slate.withValues(alpha: 0.2),
+                color: scoreProvider.appTheme.dialogSeparator
+                    .withValues(alpha: 0.6),
                 height: 1),
             const SizedBox(height: 12),
 
@@ -865,8 +863,8 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         border: Border.all(
                           color: scoreProvider.picaPicaEnabled
                               ? scoreProvider.appTheme.cream
-                              : scoreProvider.appTheme.slate
-                                  .withValues(alpha: 0.3),
+                              : scoreProvider.appTheme.dialogSeparator
+                                  .withValues(alpha: 0.85),
                           width: 2,
                         ),
                       ),
@@ -900,8 +898,8 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         fontWeight: FontWeight.bold,
                         color: scoreProvider.picaPicaEnabled
                             ? scoreProvider.appTheme.cream
-                            : scoreProvider.appTheme.slate
-                                .withValues(alpha: 0.5),
+                            : scoreProvider.appTheme.dialogSeparator
+                                .withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -913,7 +911,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
 
             // Range Slider with labels
             Opacity(
-              opacity: scoreProvider.picaPicaEnabled ? 1.0 : 0.3,
+              opacity: scoreProvider.picaPicaEnabled ? 1.0 : 0.45,
               child: Column(
                 children: [
                   Padding(
@@ -1003,7 +1001,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           // --- PANE 3: HELP & SUPPORT ---
           _buildMenuNavigationItem(
             label: "REPETIR TUTORIAL",
@@ -1015,7 +1013,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           _buildMenuNavigationItem(
             label: "ESCRIBINOS",
             onTap: () {
@@ -1025,7 +1023,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           _buildMenuNavigationItem(
             label: "VALORAR APP",
             onTap: () {
@@ -1034,7 +1032,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           if (!premiumProvider.isPremium) ...[
             _buildMenuNavigationItem(
               label: "RESTAURAR COMPRAS",
@@ -1044,7 +1042,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               scoreProvider: scoreProvider,
               isSmallScreen: isSmallScreen,
             ),
-            Divider(color: scoreProvider.appTheme.slate, height: 1),
+            Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           ],
           _buildMenuNavigationItem(
             label: "ACERCA DE",
@@ -1054,7 +1052,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
-          Divider(color: scoreProvider.appTheme.slate, height: 1),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
         ] else if (currentPane == 4) ...[
           // --- PANE 4: ABOUT ---
           Padding(

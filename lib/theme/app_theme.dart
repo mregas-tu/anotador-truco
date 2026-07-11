@@ -73,7 +73,10 @@ class TrucoTheme {
   final MatchstickBoxType matchstickBoxType;
   final double matchstickBoxOpacity;
   final Color? teamNameColorOverride;
+  final Color? dialogBorderColor;
+  final Color? dialogSeparatorColor;
   Color get teamNameColor => teamNameColorOverride ?? slate;
+  Color get dialogSeparator => dialogSeparatorColor ?? slate;
 
   const TrucoTheme({
     required this.name,
@@ -123,6 +126,8 @@ class TrucoTheme {
     required this.matchstickBoxType,
     this.matchstickBoxOpacity = 1.0,
     this.teamNameColorOverride,
+    this.dialogBorderColor,
+    this.dialogSeparatorColor,
     required this.classicButtonColor,
     required this.classicButtonShadowColor,
     this.highlightOpacity = 0.1,
@@ -319,6 +324,8 @@ class TrucoTheme {
     matchstickBoxType: MatchstickBoxType.classic,
     matchstickBoxOpacity: 0.1,
     teamNameColorOverride: Color(0xFF5A91C5),
+    dialogBorderColor: Color(0xFF7FAED8),
+    dialogSeparatorColor: Color(0x997FAED8),
     highlightOpacity: 0.1,
   );
 
@@ -362,6 +369,8 @@ class TrucoTheme {
     matchstickBoxType: MatchstickBoxType.classic,
     matchstickBoxOpacity: 0.1,
     teamNameColorOverride: Color(0xFFE2D2B4),
+    dialogBorderColor: Color(0xFFD8C59A),
+    dialogSeparatorColor: Color(0x99D8C59A),
     highlightOpacity: 0.1,
   );
 
