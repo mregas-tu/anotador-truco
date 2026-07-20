@@ -32,10 +32,15 @@ abstract class GameDialogs {
         ? scoreProvider.nosotrosName
         : scoreProvider.ellosName;
 
+    final isPremium =
+        Provider.of<PremiumProvider>(context, listen: false).isPremium;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!silenceAd &&
-          !Provider.of<PremiumProvider>(context, listen: false).isPremium) {
-        AdService.showInterstitial();
+      if (!silenceAd) {
+        AdService.showInterstitial(
+          isPremium: isPremium,
+          source: 'game_finished',
+        );
       }
     });
 

@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'analytics_service.dart';
 
 class AdService {
   /// Inicializa el SDK y configura los dispositivos de prueba para seguridad.
   static Future<void> initialize() async {
     await MobileAds.instance.initialize();
-    
+
     // Esto te protege de baneos en tu celular al testear con IDs reales
     RequestConfiguration configuration = RequestConfiguration(
       testDeviceIds: [
@@ -24,7 +25,7 @@ class AdService {
     if (Platform.isAndroid) {
       return 'ca-app-pub-4972895390762601/2722330473';
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-4972895390762601/2722330473'; 
+      return 'ca-app-pub-4972895390762601/2722330473';
     }
     return '';
   }
@@ -58,16 +59,6 @@ class AdService {
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _interstitialAd = ad;
-          _interstitialAd?.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              loadInterstitial();
-            },
-            onAdFailedToShowFullScreenContent: (ad, error) {
-              ad.dispose();
-              loadInterstitial();
-            },
-          );
         },
         onAdFailedToLoad: (LoadAdError error) {
           _interstitialAd = null;
@@ -99,24 +90,76 @@ class AdService {
   static void maybeShowInterstitialOnNewGame({
     required int nosotros,
     required int ellos,
+    required bool isPremium,
+    required String source,
   }) {
-    if (nosotros == 0 && ellos == 0) return;
-    if (DateTime.now().difference(_appStartedAt) < _appStartGracePeriod) return;
-    showInterstitial();
+    if (isPremium) {
+      AnalyticsService.logInterstitialAdSkipped(
+        source: source,
+        reason: 'premium',
+      );
+      return;
+    }
+    if (nosotros == 0 && ellos == 0) {
+      AnalyticsService.logInterstitialAdSkipped(
+        source: source,
+        reason: 'empty_score',
+      );
+      return;
+    }
+    if (DateTime.now().difference(_appStartedAt) < _appStartGracePeriod) {
+      AnalyticsService.logInterstitialAdSkipped(
+        source: source,
+        reason: 'app_start_grace_period',
+      );
+      return;
+    }
+    showInterstitial(isPremium: isPremium, source: source);
   }
 
-  static void showInterstitial() {
+  static void showInterstitial({
+    required bool isPremium,
+    required String source,
+  }) {
+    if (isPremium) {
+      AnalyticsService.logInterstitialAdSkipped(
+        source: source,
+        reason: 'premium',
+      );
+      return;
+    }
+
     final now = DateTime.now();
     if (_lastInterstitialShownAt != null &&
         now.difference(_lastInterstitialShownAt!) < _interstitialCooldown) {
+      AnalyticsService.logInterstitialAdSkipped(
+        source: source,
+        reason: 'cooldown',
+      );
       return;
     }
     final ad = _interstitialAd;
     _interstitialAd = null;
     if (ad != null) {
+      ad.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          loadInterstitial();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          AnalyticsService.logInterstitialAdFailedToShow(
+            source: source,
+            error: error.toString(),
+          );
+          ad.dispose();
+          loadInterstitial();
+        },
+      );
       _lastInterstitialShownAt = now;
+      AnalyticsService.logInterstitialAdShown(source: source);
       ad.show();
     } else {
+      AnalyticsService.logInterstitialAdNotReady(source: source);
       loadInterstitial();
     }
   }

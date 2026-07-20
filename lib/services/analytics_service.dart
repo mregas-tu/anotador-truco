@@ -29,7 +29,8 @@ class AnalyticsService {
     }
   }
 
-  static Future<void> _track(String name, [Map<String, Object>? parameters]) async {
+  static Future<void> _track(String name,
+      [Map<String, Object>? parameters]) async {
     if (parameters != null) {
       final Map<String, dynamic> props = Map<String, dynamic>.from(parameters);
       _mixpanel?.track(name, properties: props);
@@ -178,6 +179,40 @@ class AnalyticsService {
   static Future<void> logVasoAdNotReady({required bool isPremium}) async {
     await _track('vaso_ad_not_ready', {
       'is_premium': isPremium ? 'yes' : 'no',
+    });
+  }
+
+  static Future<void> logInterstitialAdShown({required String source}) async {
+    await _track('interstitial_ad_shown', {
+      'source': source,
+    });
+  }
+
+  static Future<void> logInterstitialAdNotReady({
+    required String source,
+  }) async {
+    await _track('interstitial_ad_not_ready', {
+      'source': source,
+    });
+  }
+
+  static Future<void> logInterstitialAdSkipped({
+    required String source,
+    required String reason,
+  }) async {
+    await _track('interstitial_ad_skipped', {
+      'source': source,
+      'reason': reason,
+    });
+  }
+
+  static Future<void> logInterstitialAdFailedToShow({
+    required String source,
+    required String error,
+  }) async {
+    await _track('interstitial_ad_failed_to_show', {
+      'source': source,
+      'error': error,
     });
   }
 

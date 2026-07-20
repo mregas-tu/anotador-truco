@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/billing_service.dart';
 import '../services/analytics_service.dart';
 import '../services/world_cup_event.dart';
 
 class PremiumProvider with ChangeNotifier {
+  static const bool _debugForceNonPremium =
+      kDebugMode && bool.fromEnvironment('DEBUG_FORCE_NON_PREMIUM');
   static const String _keyIsPremium = '33_de_mano_unlocked';
   static const String _keyTempUnlocks = 'temp_unlocks';
   static const String _keyGlobalTempUntil = 'global_temp_unlock_until';
@@ -19,7 +21,7 @@ class PremiumProvider with ChangeNotifier {
   SharedPreferences? _prefs;
   late BillingService _billingService;
 
-  bool get isPremium => _isPremium;
+  bool get isPremium => _debugForceNonPremium ? false : _isPremium;
 
   bool get hasGlobalTempUnlock {
     final until = _globalTempUnlockUntil;
@@ -81,8 +83,15 @@ class PremiumProvider with ChangeNotifier {
       }
     }
     AnalyticsService.setSuperProperties(analyticsSuperProperties);
-    AnalyticsService.setPeopleProperties({'is_premium': _isPremium});
+    AnalyticsService.setPeopleProperties({'is_premium': isPremium});
     notifyListeners();
+
+    if (_debugForceNonPremium) {
+      debugPrint(
+        '[PremiumProvider] DEBUG_FORCE_NON_PREMIUM activo: se omite sync con la tienda.',
+      );
+      return;
+    }
 
     _syncPremiumStatusWithStore();
   }
@@ -110,14 +119,14 @@ class PremiumProvider with ChangeNotifier {
   }
 
   Map<String, dynamic> get analyticsSuperProperties => {
-        'is_premium': _isPremium,
+        'is_premium': isPremium,
       };
 
   Future<void> setPremium(bool value) async {
     _isPremium = value;
     await _prefs?.setBool(_keyIsPremium, value);
     AnalyticsService.setSuperProperties(analyticsSuperProperties);
-    AnalyticsService.setPeopleProperties({'is_premium': value});
+    AnalyticsService.setPeopleProperties({'is_premium': isPremium});
     notifyListeners();
   }
 
@@ -194,7 +203,7 @@ class PremiumProvider with ChangeNotifier {
   }
 
   bool isUnlocked(String id) {
-    if (_isPremium) return true;
+    if (isPremium) return true;
     if (hasGlobalTempUnlock) return true;
     if (_tempUnlocks.containsKey(id)) {
       if (_tempUnlocks[id]!.isAfter(DateTime.now())) return true;
@@ -203,7 +212,7 @@ class PremiumProvider with ChangeNotifier {
   }
 
   String? getRemainingTime(String id) {
-    if (_isPremium) return null;
+    if (isPremium) return null;
     if (_tempUnlocks.containsKey(id)) {
       final expiry = _tempUnlocks[id]!;
       final diff = expiry.difference(DateTime.now());

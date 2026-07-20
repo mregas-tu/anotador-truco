@@ -633,9 +633,13 @@ class _MainScreenState extends State<MainScreen>
                 child: PrimaryButton(
                   text: "COMENZAR",
                   onPressed: () {
+                    final premiumProvider =
+                        Provider.of<PremiumProvider>(context, listen: false);
                     AdService.maybeShowInterstitialOnNewGame(
                       nosotros: scoreProvider.nosotros,
                       ellos: scoreProvider.ellos,
+                      isPremium: premiumProvider.isPremium,
+                      source: 'new_game',
                     );
                     scoreProvider.triggerReset();
                     AnalyticsService.logNewGameStarted();
