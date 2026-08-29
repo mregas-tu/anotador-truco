@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /live_matches/{matchId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasOnly([
+        'nosotrosName',
+        'ellosName',
+        'nosotrosScore',
+        'ellosScore',
+        'targetScore',
+        'hasBuenas',
+        'gameModeLabel',
+        'winner',
+        'finished',
+        'createdAt',
+        'updatedAt',
+      ]);
+    }
+  }
+}

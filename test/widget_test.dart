@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:truco_pro/models/match_record.dart';
+import 'package:truco_pro/services/live_match_service.dart';
 import 'package:truco_pro/services/persistence_service.dart';
 import 'package:truco_pro/widgets/victory_share_card.dart';
 
@@ -46,6 +47,20 @@ void main() {
     expect(decoded.finishedAt, original.finishedAt);
     expect(decoded.winnerName, 'NOSOTROS');
     expect(decoded.formattedScore(decoded.ellosScore), '9 BUENAS');
+  });
+
+  test('lee el id de partida desde QR web, deep link o id directo', () {
+    expect(
+      LiveMatchService.parseMatchId('https://purotruco.app/live/abc_123-XYZ'),
+      'abc_123-XYZ',
+    );
+    expect(
+      LiveMatchService.parseMatchId('purotruco://live/abc_123-XYZ'),
+      'abc_123-XYZ',
+    );
+    expect(LiveMatchService.parseMatchId('abc_123-XYZ'), 'abc_123-XYZ');
+    expect(
+        LiveMatchService.parseMatchId('https://purotruco.app/foo/bar'), isNull);
   });
 
   test('deshacer una finalización revierte el contador sin bajar de cero',

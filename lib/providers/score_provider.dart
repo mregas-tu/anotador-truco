@@ -8,6 +8,8 @@ import '../theme/app_theme.dart';
 import '../services/bean_image_manager.dart';
 import 'premium_provider.dart';
 import '../models/match_record.dart';
+import '../models/live_match_state.dart';
+import '../services/live_match_service.dart';
 
 class ScoreEvent {
   final String team;
@@ -215,6 +217,9 @@ class ScoreProvider with ChangeNotifier {
   final List<ScoreEvent> _scoreHistory = [];
   String _matchId = DateTime.now().microsecondsSinceEpoch.toString();
   DateTime _matchStartedAt = DateTime.now();
+  bool _isLiveHosting = false;
+  bool _isPublishingLive = false;
+  bool _hasPendingLivePublish = false;
   List<ScoreEvent> get scoreHistory => List.unmodifiable(_scoreHistory);
 
   GameMode get currentGameMode => _currentGameMode;
@@ -252,6 +257,10 @@ class ScoreProvider with ChangeNotifier {
   String? get flyOutTeam => _flyOutTeam;
   bool get isFlyingOut => _isFlyingOut;
   PointType get pointType => _pointType;
+  String get matchId => _matchId;
+  bool get isLiveHosting => _isLiveHosting;
+  String? get liveShareValue =>
+      _isLiveHosting ? LiveMatchService.buildShareValue(_matchId) : null;
 
   void _recordEvent(String team, int delta) {
     _scoreHistory.add(ScoreEvent(
@@ -293,6 +302,55 @@ class ScoreProvider with ChangeNotifier {
               ))
           .toList(),
     ));
+  }
+
+  LiveMatchState _buildLiveState() {
+    final now = DateTime.now();
+    return LiveMatchState(
+      id: _matchId,
+      nosotrosName: _nosotrosName,
+      ellosName: _ellosName,
+      nosotrosScore: _nosotros,
+      ellosScore: _ellos,
+      targetScore: _currentGameMode.totalPoints,
+      hasBuenas: _currentGameMode.hasBuenas,
+      gameModeLabel: _currentGameMode.label,
+      winner: _winner,
+      finished: _winner != null,
+      createdAt: _matchStartedAt,
+      updatedAt: now,
+    );
+  }
+
+  Future<void> startLiveHosting() async {
+    await LiveMatchService.createMatch(_buildLiveState());
+    _isLiveHosting = true;
+    notifyListeners();
+  }
+
+  void stopLiveHosting() {
+    _isLiveHosting = false;
+    notifyListeners();
+  }
+
+  void _publishLiveState() {
+    if (!_isLiveHosting) return;
+    if (_isPublishingLive) {
+      _hasPendingLivePublish = true;
+      return;
+    }
+    _isPublishingLive = true;
+    LiveMatchService.updateMatch(_buildLiveState())
+        .catchError((_) {})
+        .whenComplete(
+      () {
+        _isPublishingLive = false;
+        if (_hasPendingLivePublish) {
+          _hasPendingLivePublish = false;
+          _publishLiveState();
+        }
+      },
+    );
   }
 
   void updateLastStickPos(String team, Offset pos) {
@@ -429,6 +487,7 @@ class ScoreProvider with ChangeNotifier {
       _checkPicaPicaCross();
       notifyListeners();
       _saveCurrentState();
+      _publishLiveState();
     }
   }
 
@@ -451,6 +510,7 @@ class ScoreProvider with ChangeNotifier {
       _vibrate();
       notifyListeners();
       _saveCurrentState();
+      _publishLiveState();
     }
   }
 
@@ -479,6 +539,7 @@ class ScoreProvider with ChangeNotifier {
       _checkPicaPicaCross();
       notifyListeners();
       _saveCurrentState();
+      _publishLiveState();
     }
   }
 
@@ -500,6 +561,7 @@ class ScoreProvider with ChangeNotifier {
       _vibrate();
       notifyListeners();
       _saveCurrentState();
+      _publishLiveState();
     }
   }
 
@@ -511,6 +573,7 @@ class ScoreProvider with ChangeNotifier {
     }
     notifyListeners();
     _saveCurrentState();
+    _publishLiveState();
     _pushAnalyticsContext();
   }
 
@@ -537,6 +600,7 @@ class ScoreProvider with ChangeNotifier {
     _scoreHistory.clear();
     _matchId = DateTime.now().microsecondsSinceEpoch.toString();
     _matchStartedAt = DateTime.now();
+    _isLiveHosting = false;
     _isResetting = false;
     notifyListeners();
     PersistenceService.clearGameState();

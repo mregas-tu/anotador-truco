@@ -26,6 +26,8 @@
 		<true/>
 		<key>GADApplicationIdentifier</key>
 		<string>ca-app-pub-4972895390762601~4933560847</string>
+		<key>NSCameraUsageDescription</key>
+		<string>Necesitamos la cámara para escanear el QR de una partida en vivo.</string>
 		<key>SKAdNetworkItems</key>
 		<array>
 			<dict>

@@ -11,6 +11,7 @@ import '../providers/score_provider.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
 import '../services/world_cup_event.dart';
+import '../screens/live_match_screen.dart';
 import 'truco_buttons.dart';
 import 'bean_widget.dart';
 import 'game_dialogs.dart';
@@ -366,12 +367,14 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           const SizedBox(height: 24),
 
           SecondaryButton(
-            text: "Compartir app",
+            text: "Partida en vivo",
             width: double.infinity,
             iconAsset: 'assets/images/share_icon.svg',
             onPressed: () {
-              SupportService.shareApp();
               AnalyticsService.logShareMenu();
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const LiveMatchScreen()),
+              );
             },
           ),
         ] else if (currentPane == 1) ...[
