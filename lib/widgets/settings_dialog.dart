@@ -16,6 +16,7 @@ import 'bean_widget.dart';
 import 'game_dialogs.dart';
 import 'theme_background.dart';
 import 'package:confetti/confetti.dart';
+import 'match_history_content.dart';
 
 class SettingsDialogContent extends StatefulWidget {
   final Function(String) onThemeLockedTap;
@@ -43,6 +44,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   final ScrollController _gameModeScrollController = ScrollController();
   String _appVersion = "1.1.4"; // Initial fallback
   VoidCallback? _activeCleanup;
+  VoidCallback? _historyBackAction;
 
   @override
   void initState() {
@@ -166,6 +168,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     if (currentPane == 4) title = "ACERCA DE";
     if (currentPane == 5) title = "VALORES Y SEÑAS";
     if (currentPane == 6) title = "BRINDIS";
+    if (currentPane == 7) title = "HISTORIAL DE PARTIDAS";
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -180,6 +183,11 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                 left: 0,
                 child: IconButton(
                   onPressed: () {
+                    if (currentPane == 7 && _historyBackAction != null) {
+                      _historyBackAction!();
+                      _historyBackAction = null;
+                      return;
+                    }
                     setState(() {
                       if (currentPane == 4 || currentPane == 5) {
                         currentPane = 3;
@@ -187,6 +195,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         currentPane = 0;
                       }
                     });
+                    _historyBackAction = null;
                   },
                   icon: Icon(Icons.arrow_back,
                       color: scoreProvider.appTheme.cream),
@@ -308,6 +317,14 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               AnalyticsService.logDesignMenu();
               setState(() => currentPane = 1);
             },
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+          ),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
+          _buildMenuNavigationItem(
+            label: "HISTORIAL DE PARTIDAS",
+            iconData: Icons.emoji_events_outlined,
+            onTap: () => setState(() => currentPane = 7),
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
@@ -1177,6 +1194,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
         ] else if (currentPane == 6) ...[
           // --- PANE 6: BRINDIS ---
           GameDialogs.buildVasoBody(context),
+        ] else if (currentPane == 7) ...[
+          MatchHistoryContent(
+            onBackActionChanged: (action) => _historyBackAction = action,
+          ),
         ],
       ],
     );

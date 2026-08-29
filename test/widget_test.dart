@@ -1,30 +1,95 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:truco_pro/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:truco_pro/models/match_record.dart';
+import 'package:truco_pro/services/persistence_service.dart';
+import 'package:truco_pro/widgets/victory_share_card.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const TrucoProApp());
+  MatchRecord record({required int target, required bool hasBuenas}) {
+    return MatchRecord(
+      id: 'partida-1',
+      startedAt: DateTime(2026, 7, 20, 20),
+      finishedAt: DateTime(2026, 7, 20, 21),
+      nosotrosName: 'NOSOTROS',
+      ellosName: 'ELLOS',
+      nosotrosScore: target,
+      ellosScore: hasBuenas ? 24 : 8,
+      targetScore: target,
+      hasBuenas: hasBuenas,
+      winner: 'nosotros',
+      events: const [],
+    );
+  }
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  test('expresa el resultado en malas y buenas', () {
+    final match = record(target: 30, hasBuenas: true);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    expect(match.formattedScore(30), '15 BUENAS');
+    expect(match.formattedScore(24), '9 BUENAS');
+    expect(match.formattedScore(12), '12 MALAS');
+    expect(match.formattedScore(15), '0 BUENAS');
+  });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('las modalidades sin buenas se muestran como malas', () {
+    final match = record(target: 15, hasBuenas: false);
+
+    expect(match.formattedScore(15), '15 MALAS');
+    expect(match.formattedScore(8), '8 MALAS');
+  });
+
+  test('se serializa y recupera sin perder datos', () {
+    final original = record(target: 30, hasBuenas: true);
+    final decoded = MatchRecord.decode(original.encode());
+
+    expect(decoded.id, original.id);
+    expect(decoded.finishedAt, original.finishedAt);
+    expect(decoded.winnerName, 'NOSOTROS');
+    expect(decoded.formattedScore(decoded.ellosScore), '9 BUENAS');
+  });
+
+  test('deshacer una finalización revierte el contador sin bajar de cero',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+
+    await PersistenceService.decrementMatchesCompletedCount();
+    expect(await PersistenceService.getMatchesCompletedCount(), 0);
+
+    await PersistenceService.incrementMatchesCompletedCount();
+    await PersistenceService.incrementMatchesCompletedCount();
+    await PersistenceService.decrementMatchesCompletedCount();
+    expect(await PersistenceService.getMatchesCompletedCount(), 1);
+  });
+
+  testWidgets('la tarjeta compartible no desborda con nombres largos',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: VictoryShareCard(
+              winnerName: 'NOSOTROS CON UN NOMBRE MUY LARGO',
+              nosotrosName: 'NOSOTROS CON UN NOMBRE MUY LARGO',
+              ellosName: 'ELLOS CON OTRO NOMBRE EXTENSO',
+              nosotrosResult: '15 BUENAS',
+              ellosResult: '14 BUENAS',
+              tagline: 'No apto para cardíacos',
+              dateLabel: '20/07/2026 · 13:31',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('15'), findsOneWidget);
+    expect(find.text('14'), findsOneWidget);
+
+    final ellos = tester.getCenter(find.byKey(const ValueKey('ellos-result')));
+    final nosotros =
+        tester.getCenter(find.byKey(const ValueKey('nosotros-result')));
+    expect(ellos.dx, lessThan(nosotros.dx));
+    expect(ellos.dy, closeTo(nosotros.dy, 1));
   });
 }

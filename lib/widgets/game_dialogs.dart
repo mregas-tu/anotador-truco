@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:confetti/confetti.dart';
 
 import '../providers/premium_provider.dart';
@@ -9,17 +7,12 @@ import '../providers/score_provider.dart';
 import '../services/ad_service.dart';
 import '../theme/app_theme.dart';
 import '../services/analytics_service.dart';
-import '../services/support_service.dart';
 import 'truco_buttons.dart';
 import 'truco_dialog.dart';
 import 'fernet_glass_widget.dart';
 import '../services/persistence_service.dart';
 import 'dart:async';
-import 'victory_share_card.dart';
-import 'dart:io';
-import 'dart:typed_data';
-import 'package:path_provider/path_provider.dart';
-import 'package:screenshot/screenshot.dart';
+import '../services/result_share_service.dart';
 
 abstract class GameDialogs {
   static void showWinner(
@@ -74,23 +67,44 @@ abstract class GameDialogs {
                   style: TextStyle(
                     fontFamily: AppFonts.oswald,
                     fontSize: 38,
-                    color: scoreProvider.appTheme.slate,
+                    color: _winnerNameColor(scoreProvider.appTheme),
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0,
                   ),
                 ),
               ),
               const SizedBox(height: 20),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  "${scoreProvider.nosotros.toString().padLeft(2, '0')} - ${scoreProvider.ellos.toString().padLeft(2, '0')}",
-                  style: TextStyle(
-                    fontFamily: AppFonts.caminito,
-                    fontSize: 52,
-                    color: scoreProvider.appTheme.cream,
+              Row(
+                children: [
+                  Expanded(
+                    child: _FinalScore(
+                      points: scoreProvider.getDisplayPoints('nosotros'),
+                      stage: scoreProvider.getLabel('nosotros'),
+                      color: scoreProvider.appTheme.cream,
+                      stageColor: scoreProvider.isBuenas('nosotros')
+                          ? scoreProvider.appTheme.buenas
+                          : scoreProvider.appTheme.malas,
+                    ),
                   ),
-                ),
+                  Text(
+                    '–',
+                    style: TextStyle(
+                      fontFamily: AppFonts.caminito,
+                      fontSize: 38,
+                      color: scoreProvider.appTheme.cream,
+                    ),
+                  ),
+                  Expanded(
+                    child: _FinalScore(
+                      points: scoreProvider.getDisplayPoints('ellos'),
+                      stage: scoreProvider.getLabel('ellos'),
+                      color: scoreProvider.appTheme.cream,
+                      stageColor: scoreProvider.isBuenas('ellos')
+                          ? scoreProvider.appTheme.buenas
+                          : scoreProvider.appTheme.malas,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -134,36 +148,16 @@ abstract class GameDialogs {
                         toUpperCase: false,
                         iconAsset: 'assets/images/share_icon.svg',
                         onPressed: () async {
-                          final screenshotController = ScreenshotController();
-
-                          // Capturar el widget estilizado en memoria (sin mostrarlo en pantalla)
-                          final Uint8List? imageBytes =
-                              await screenshotController.captureFromWidget(
-                            VictoryShareCard(
-                              winnerName: winnerName,
-                              scoreNosotros: scoreProvider.nosotros,
-                              scoreEllos: scoreProvider.ellos,
-                            ),
-                            delay: const Duration(milliseconds: 100),
+                          await ResultShareService.shareCurrent(
+                            winnerName: winnerName,
+                            nosotrosName: scoreProvider.nosotrosName,
+                            ellosName: scoreProvider.ellosName,
+                            nosotrosScore: scoreProvider.nosotros,
+                            ellosScore: scoreProvider.ellos,
+                            targetScore:
+                                scoreProvider.currentGameMode.totalPoints,
+                            hasBuenas: scoreProvider.currentGameMode.hasBuenas,
                           );
-
-                          if (imageBytes != null) {
-                            // Guardar en un archivo temporal
-                            final directory = await getTemporaryDirectory();
-                            final String path =
-                                '${directory.path}/resultado_truco.png';
-                            final File file = File(path);
-                            await file.writeAsBytes(imageBytes);
-
-                            // Compartir el archivo generado
-                            final message =
-                                "#AnotadorDeTruco\n${SupportService.appUrl}";
-                            await Share.shareXFiles(
-                              [XFile(path)],
-                              text: message,
-                            );
-                            AnalyticsService.logShareGameResult();
-                          }
                         },
                       ),
                     ),
@@ -911,6 +905,68 @@ class _StaticVasoIconPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _StaticVasoIconPainter old) =>
       old.outline != outline;
+}
+
+Color _winnerNameColor(TrucoTheme theme) {
+  final candidates = [theme.teamNameColor, theme.accentColor, theme.cream];
+  return candidates.firstWhere(
+    (color) => _contrastRatio(color, theme.navy) >= 4.5,
+    orElse: () => theme.cream,
+  );
+}
+
+double _contrastRatio(Color first, Color second) {
+  final firstLuminance = first.computeLuminance();
+  final secondLuminance = second.computeLuminance();
+  final lighter =
+      firstLuminance > secondLuminance ? firstLuminance : secondLuminance;
+  final darker =
+      firstLuminance < secondLuminance ? firstLuminance : secondLuminance;
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+class _FinalScore extends StatelessWidget {
+  final int points;
+  final String stage;
+  final Color color;
+  final Color stageColor;
+
+  const _FinalScore({
+    required this.points,
+    required this.stage,
+    required this.color,
+    required this.stageColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            '$points',
+            style: TextStyle(
+              fontFamily: AppFonts.caminito,
+              fontSize: 52,
+              height: 0.95,
+              color: color,
+            ),
+          ),
+        ),
+        Text(
+          stage,
+          style: TextStyle(
+            fontFamily: AppFonts.oswald,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: stageColor,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _WorldCupPopup extends StatefulWidget {

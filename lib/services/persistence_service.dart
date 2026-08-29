@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/match_record.dart';
 
 class PersistenceService {
   static const String keyNosotrosScore = 'nosotros_score';
@@ -34,6 +35,9 @@ class PersistenceService {
   static const String keyVasoBrindados = 'vaso_brindados';
   static const String keyWorldCupPopupShown = 'world_cup_2026_popup_shown';
   static const String keyScoreHistory = 'score_history';
+  static const String keyMatchHistory = 'match_history_v1';
+  static const String keyCurrentMatchId = 'current_match_id';
+  static const String keyCurrentMatchStartedAt = 'current_match_started_at';
 
   static Future<bool> getWorldCupPopupShown() async {
     final prefs = await _getPrefs();
@@ -81,6 +85,15 @@ class PersistenceService {
     final prefs = await _getPrefs();
     final current = prefs.getInt(keyMatchesCompletedCount) ?? 0;
     await prefs.setInt(keyMatchesCompletedCount, current + 1);
+  }
+
+  static Future<void> decrementMatchesCompletedCount() async {
+    final prefs = await _getPrefs();
+    final current = prefs.getInt(keyMatchesCompletedCount) ?? 0;
+    await prefs.setInt(
+      keyMatchesCompletedCount,
+      current > 0 ? current - 1 : 0,
+    );
   }
 
   static Future<bool> getHasRatedApp() async {
@@ -167,6 +180,8 @@ class PersistenceService {
     required String ellosName,
     required bool finishedMalasNosotros,
     required bool finishedMalasEllos,
+    required String matchId,
+    required DateTime matchStartedAt,
   }) async {
     final prefs = await _getPrefs();
     await prefs.setInt(keyNosotrosScore, nosotros);
@@ -175,6 +190,48 @@ class PersistenceService {
     await prefs.setString(keyEllosName, ellosName);
     await prefs.setBool(keyFinishedMalasNosotros, finishedMalasNosotros);
     await prefs.setBool(keyFinishedMalasEllos, finishedMalasEllos);
+    await prefs.setString(keyCurrentMatchId, matchId);
+    await prefs.setString(
+        keyCurrentMatchStartedAt, matchStartedAt.toIso8601String());
+  }
+
+  static Future<List<MatchRecord>> loadMatchHistory() async {
+    final prefs = await _getPrefs();
+    final serialized = prefs.getStringList(keyMatchHistory) ?? const [];
+    final records = <MatchRecord>[];
+    for (final value in serialized) {
+      try {
+        records.add(MatchRecord.decode(value));
+      } catch (_) {
+        // Ignorar registros dañados sin perder el resto del historial.
+      }
+    }
+    records.sort((a, b) => b.finishedAt.compareTo(a.finishedAt));
+    return records;
+  }
+
+  static Future<void> saveCompletedMatch(MatchRecord record) async {
+    final prefs = await _getPrefs();
+    final records = await loadMatchHistory();
+    records.removeWhere((item) => item.id == record.id);
+    records.insert(0, record);
+    await prefs.setStringList(
+      keyMatchHistory,
+      records.take(100).map((item) => item.encode()).toList(),
+    );
+  }
+
+  static Future<void> deleteCompletedMatch(String id) async {
+    final prefs = await _getPrefs();
+    final records = await loadMatchHistory();
+    records.removeWhere((item) => item.id == id);
+    await prefs.setStringList(
+        keyMatchHistory, records.map((item) => item.encode()).toList());
+  }
+
+  static Future<void> clearMatchHistory() async {
+    final prefs = await _getPrefs();
+    await prefs.remove(keyMatchHistory);
   }
 
   static Future<void> saveScoreHistory(List<String> serialized) async {
@@ -194,6 +251,8 @@ class PersistenceService {
     await prefs.remove(keyFinishedMalasNosotros);
     await prefs.remove(keyFinishedMalasEllos);
     await prefs.remove(keyScoreHistory);
+    await prefs.remove(keyCurrentMatchId);
+    await prefs.remove(keyCurrentMatchStartedAt);
     // Names and settings persist
   }
 
@@ -244,6 +303,8 @@ class PersistenceService {
       keyPicaPicaStart: prefs.getInt(keyPicaPicaStart),
       keyPicaPicaEnd: prefs.getInt(keyPicaPicaEnd),
       keyVibrationEnabled: prefs.getBool(keyVibrationEnabled),
+      keyCurrentMatchId: prefs.getString(keyCurrentMatchId),
+      keyCurrentMatchStartedAt: prefs.getString(keyCurrentMatchStartedAt),
     };
   }
 }

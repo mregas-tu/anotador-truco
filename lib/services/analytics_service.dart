@@ -232,6 +232,54 @@ class AnalyticsService {
     await _track('share_game_result');
   }
 
+  static Future<void> logMatchHistoryOpened({
+    required int savedMatches,
+  }) async {
+    await _track('match_history_opened', {
+      'saved_matches': savedMatches,
+    });
+  }
+
+  static Future<void> logMatchHistoryDetailOpened({
+    required int daysSinceMatch,
+    required int targetScore,
+    required bool hasBuenas,
+  }) async {
+    await _track('match_history_detail_opened', {
+      'days_since_match': daysSinceMatch,
+      'target_score': targetScore,
+      'has_buenas': hasBuenas,
+    });
+  }
+
+  static Future<void> logMatchHistoryResultShared({
+    required int daysSinceMatch,
+    required int targetScore,
+    required bool hasBuenas,
+  }) async {
+    await _track('match_history_result_shared', {
+      'days_since_match': daysSinceMatch,
+      'target_score': targetScore,
+      'has_buenas': hasBuenas,
+    });
+  }
+
+  static Future<void> logMatchHistoryDeleteRequested({
+    required int daysSinceMatch,
+  }) async {
+    await _track('match_history_delete_requested', {
+      'days_since_match': daysSinceMatch,
+    });
+  }
+
+  static Future<void> logMatchHistoryMatchDeleted({
+    required int daysSinceMatch,
+  }) async {
+    await _track('match_history_match_deleted', {
+      'days_since_match': daysSinceMatch,
+    });
+  }
+
   static Future<void> logUndoFromSummary() async {
     await _track('undo_from_summary');
   }

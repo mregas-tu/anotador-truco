@@ -7,6 +7,7 @@ import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
 import '../services/bean_image_manager.dart';
 import 'premium_provider.dart';
+import '../models/match_record.dart';
 
 class ScoreEvent {
   final String team;
@@ -161,13 +162,15 @@ const List<GameMode> availableModes = [
 ];
 
 enum ScoringMode { drag, tap, classic }
+
 enum PointType { matches, beans }
 
 class ScoreProvider with ChangeNotifier {
   final AudioService audioService = AudioService();
   GameMode _currentGameMode = availableModes[4]; // Default to 30 pts (15/15)
   MatchstickPalette _currentPalette = availablePalettes[1]; // Default to BORDÓ
-  BeanPalette _currentBeanPalette = availableBeanPalettes[0]; // Default to ALUBIA
+  BeanPalette _currentBeanPalette =
+      availableBeanPalettes[0]; // Default to ALUBIA
   ScoringMode _scoringMode = ScoringMode.drag;
   TrucoTheme _appTheme = TrucoTheme.navyTheme;
   bool _isMuted = false;
@@ -198,7 +201,7 @@ class ScoreProvider with ChangeNotifier {
   Offset? _lastStickPosEllos;
   bool _isDraggingBackNosotros = false;
   bool _isDraggingBackEllos = false;
-  
+
   // Revert animation state
   Offset? _revertOffset;
   String? _revertTeam;
@@ -210,6 +213,8 @@ class ScoreProvider with ChangeNotifier {
   bool _isFlyingOut = false;
 
   final List<ScoreEvent> _scoreHistory = [];
+  String _matchId = DateTime.now().microsecondsSinceEpoch.toString();
+  DateTime _matchStartedAt = DateTime.now();
   List<ScoreEvent> get scoreHistory => List.unmodifiable(_scoreHistory);
 
   GameMode get currentGameMode => _currentGameMode;
@@ -234,7 +239,7 @@ class ScoreProvider with ChangeNotifier {
   bool get isResetting => _isResetting;
   bool get nosotrosShowMilestone => _isResetting;
   bool get ellosShowMilestone => _isResetting;
-  
+
   Offset? get lastStickPosNosotros => _lastStickPosNosotros;
   Offset? get lastStickPosEllos => _lastStickPosEllos;
   bool get isDraggingBackNosotros => _isDraggingBackNosotros;
@@ -257,10 +262,37 @@ class ScoreProvider with ChangeNotifier {
       ellosTotal: _ellos,
     ));
     PersistenceService.saveScoreHistory(
-      _scoreHistory.map((e) =>
-        '${e.team}:${e.delta}:${e.timestamp.millisecondsSinceEpoch}:${e.nosotrosTotal}:${e.ellosTotal}'
-      ).toList(),
+      _scoreHistory
+          .map((e) =>
+              '${e.team}:${e.delta}:${e.timestamp.millisecondsSinceEpoch}:${e.nosotrosTotal}:${e.ellosTotal}')
+          .toList(),
     );
+  }
+
+  Future<void> _archiveCompletedMatch() async {
+    final winner = _winner;
+    if (winner == null) return;
+    await PersistenceService.saveCompletedMatch(MatchRecord(
+      id: _matchId,
+      startedAt: _matchStartedAt,
+      finishedAt: DateTime.now(),
+      nosotrosName: _nosotrosName,
+      ellosName: _ellosName,
+      nosotrosScore: _nosotros,
+      ellosScore: _ellos,
+      targetScore: _currentGameMode.totalPoints,
+      hasBuenas: _currentGameMode.hasBuenas,
+      winner: winner,
+      events: _scoreHistory
+          .map((event) => MatchPointEvent(
+                team: event.team,
+                delta: event.delta,
+                timestamp: event.timestamp,
+                nosotrosTotal: event.nosotrosTotal,
+                ellosTotal: event.ellosTotal,
+              ))
+          .toList(),
+    ));
   }
 
   void updateLastStickPos(String team, Offset pos) {
@@ -319,38 +351,45 @@ class ScoreProvider with ChangeNotifier {
     _revertTeam = team;
     _revertOffset = fromOffset;
     _isReverting = true;
-    
-    if (team == "nosotros") _isDraggingBackNosotros = false;
-    else _isDraggingBackEllos = false;
-    
+
+    if (team == "nosotros")
+      _isDraggingBackNosotros = false;
+    else
+      _isDraggingBackEllos = false;
+
     notifyListeners();
-    
+
     // Wait for fly-back animation (400ms)
     await Future.delayed(const Duration(milliseconds: 400));
-    
+
     _isReverting = false;
     _revertTeam = null;
     _revertOffset = null;
-    
-    if (team == "nosotros") _isDraggingBackNosotros = false;
-    else _isDraggingBackEllos = false;
-    
+
+    if (team == "nosotros")
+      _isDraggingBackNosotros = false;
+    else
+      _isDraggingBackEllos = false;
+
     notifyListeners();
   }
 
   bool isBuenas(String team) {
     if (!_currentGameMode.hasBuenas) return false;
     final int score = team == "nosotros" ? _nosotros : _ellos;
-    final bool finishedMalas = team == "nosotros" ? _nosotrosFinishedMalas : _ellosFinishedMalas;
-    return score > _currentGameMode.milestone || (score == _currentGameMode.milestone && finishedMalas);
+    final bool finishedMalas =
+        team == "nosotros" ? _nosotrosFinishedMalas : _ellosFinishedMalas;
+    return score > _currentGameMode.milestone ||
+        (score == _currentGameMode.milestone && finishedMalas);
   }
 
   int getDisplayPoints(String team) {
     final int score = team == "nosotros" ? _nosotros : _ellos;
-    final bool finishedMalas = team == "nosotros" ? _nosotrosFinishedMalas : _ellosFinishedMalas;
-    
+    final bool finishedMalas =
+        team == "nosotros" ? _nosotrosFinishedMalas : _ellosFinishedMalas;
+
     if (score == 0) return 0;
-    
+
     if (!_currentGameMode.hasBuenas) return score;
 
     final int milestone = _currentGameMode.milestone;
@@ -365,19 +404,23 @@ class ScoreProvider with ChangeNotifier {
   }
 
   void addPointNosotros([Offset? dropOffset]) async {
-    if (_nosotros < _currentGameMode.totalPoints && _winner == null && _totalRemainingMatchsticks > 0) {
+    if (_nosotros < _currentGameMode.totalPoints &&
+        _winner == null &&
+        _totalRemainingMatchsticks > 0) {
       _nosotros++;
       _totalRemainingMatchsticks--;
       _lastDropOffset = dropOffset;
       _lastPointTeam = "nosotros";
       _recordEvent("nosotros", 1);
 
-      if (_currentGameMode.hasBuenas && _nosotros == _currentGameMode.milestone) {
+      if (_currentGameMode.hasBuenas &&
+          _nosotros == _currentGameMode.milestone) {
         if (!_isMuted) audioService.playBuenas();
         _nosotrosFinishedMalas = true;
       } else if (_nosotros == _currentGameMode.totalPoints) {
         _winner = "nosotros";
         PersistenceService.incrementMatchesCompletedCount();
+        await _archiveCompletedMatch();
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       } else {
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
@@ -389,14 +432,20 @@ class ScoreProvider with ChangeNotifier {
     }
   }
 
-  void removePointNosotros() {
+  void removePointNosotros() async {
     if (_nosotros > 0) {
-      if (_currentGameMode.hasBuenas && _nosotros == _currentGameMode.milestone) {
+      final wasWinner = _winner != null;
+      if (_currentGameMode.hasBuenas &&
+          _nosotros == _currentGameMode.milestone) {
         _nosotrosFinishedMalas = false;
       }
       if (!_isMuted) audioService.playPack(_pointType == PointType.beans);
       _nosotros--;
       _winner = null; // Clear winner if score decreased
+      if (wasWinner) {
+        await PersistenceService.deleteCompletedMatch(_matchId);
+        await PersistenceService.decrementMatchesCompletedCount();
+      }
       _totalRemainingMatchsticks++;
       _recordEvent("nosotros", -1);
       _vibrate();
@@ -406,7 +455,9 @@ class ScoreProvider with ChangeNotifier {
   }
 
   void addPointEllos([Offset? dropOffset]) async {
-    if (_ellos < _currentGameMode.totalPoints && _winner == null && _totalRemainingMatchsticks > 0) {
+    if (_ellos < _currentGameMode.totalPoints &&
+        _winner == null &&
+        _totalRemainingMatchsticks > 0) {
       _ellos++;
       _totalRemainingMatchsticks--;
       _lastDropOffset = dropOffset;
@@ -419,6 +470,7 @@ class ScoreProvider with ChangeNotifier {
       } else if (_ellos == _currentGameMode.totalPoints) {
         _winner = "ellos";
         PersistenceService.incrementMatchesCompletedCount();
+        await _archiveCompletedMatch();
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
       } else {
         if (!_isMuted) audioService.playMarker(_pointType == PointType.beans);
@@ -430,14 +482,19 @@ class ScoreProvider with ChangeNotifier {
     }
   }
 
-  void removePointEllos() {
+  void removePointEllos() async {
     if (_ellos > 0) {
+      final wasWinner = _winner != null;
       if (_currentGameMode.hasBuenas && _ellos == _currentGameMode.milestone) {
         _ellosFinishedMalas = false;
       }
       if (!_isMuted) audioService.playPack(_pointType == PointType.beans);
       _ellos--;
       _winner = null; // Clear winner if score decreased
+      if (wasWinner) {
+        await PersistenceService.deleteCompletedMatch(_matchId);
+        await PersistenceService.decrementMatchesCompletedCount();
+      }
       _totalRemainingMatchsticks++;
       _recordEvent("ellos", -1);
       _vibrate();
@@ -478,6 +535,8 @@ class ScoreProvider with ChangeNotifier {
     _lastDropOffset = null;
     _lastPointTeam = null;
     _scoreHistory.clear();
+    _matchId = DateTime.now().microsecondsSinceEpoch.toString();
+    _matchStartedAt = DateTime.now();
     _isResetting = false;
     notifyListeners();
     PersistenceService.clearGameState();
@@ -487,25 +546,25 @@ class ScoreProvider with ChangeNotifier {
     _flyOutTeam = team;
     _flyOutTarget = targetOffset;
     _isFlyingOut = true;
-    
+
     notifyListeners();
-    
+
     // Wait for fly-out animation (400ms) only in drag mode
     if (_scoringMode == ScoringMode.drag) {
       await Future.delayed(const Duration(milliseconds: 400));
     }
-    
+
     _isFlyingOut = false;
     _flyOutTeam = null;
     _flyOutTarget = null;
-    
+
     // Actually remove the point after animation (this will trigger playPack)
     if (team == "nosotros") {
       removePointNosotros();
     } else {
       removePointEllos();
     }
-    
+
     notifyListeners();
   }
 
@@ -523,7 +582,8 @@ class ScoreProvider with ChangeNotifier {
       _picaPicaEnd = _currentGameMode.totalPoints;
     }
     if (_picaPicaStart >= _picaPicaEnd) {
-      _picaPicaStart = (_picaPicaEnd - 5).clamp(0, _currentGameMode.totalPoints);
+      _picaPicaStart =
+          (_picaPicaEnd - 5).clamp(0, _currentGameMode.totalPoints);
     }
 
     triggerReset(keepNames: true);
@@ -578,6 +638,8 @@ class ScoreProvider with ChangeNotifier {
       ellosName: _ellosName,
       finishedMalasNosotros: _nosotrosFinishedMalas,
       finishedMalasEllos: _ellosFinishedMalas,
+      matchId: _matchId,
+      matchStartedAt: _matchStartedAt,
     );
   }
 
@@ -621,11 +683,19 @@ class ScoreProvider with ChangeNotifier {
     _ellos = data[PersistenceService.keyEllosScore] ?? 0;
     _nosotrosName = data[PersistenceService.keyNosotrosName] ?? "NOSOTROS";
     _ellosName = data[PersistenceService.keyEllosName] ?? "ELLOS";
-    _nosotrosFinishedMalas = data[PersistenceService.keyFinishedMalasNosotros] ?? false;
-    _ellosFinishedMalas = data[PersistenceService.keyFinishedMalasEllos] ?? false;
+    _nosotrosFinishedMalas =
+        data[PersistenceService.keyFinishedMalasNosotros] ?? false;
+    _ellosFinishedMalas =
+        data[PersistenceService.keyFinishedMalasEllos] ?? false;
+    _matchId = data[PersistenceService.keyCurrentMatchId] ??
+        DateTime.now().microsecondsSinceEpoch.toString();
+    _matchStartedAt = DateTime.tryParse(
+            data[PersistenceService.keyCurrentMatchStartedAt] ?? '') ??
+        DateTime.now();
 
     // Recalculate matchsticks based on scores
-    _totalRemainingMatchsticks = (_currentGameMode.totalPoints * 2) - _nosotros - _ellos;
+    _totalRemainingMatchsticks =
+        (_currentGameMode.totalPoints * 2) - _nosotros - _ellos;
 
     // Restore score history
     final serialized = await PersistenceService.loadScoreHistory();
@@ -649,9 +719,10 @@ class ScoreProvider with ChangeNotifier {
 
   Future<void> loadSettings() async {
     final data = await PersistenceService.loadAll();
-    
+
     if (data[PersistenceService.keyGameModeIndex] != null) {
-      _currentGameMode = availableModes[data[PersistenceService.keyGameModeIndex]];
+      _currentGameMode =
+          availableModes[data[PersistenceService.keyGameModeIndex]];
     }
     if (data[PersistenceService.keyThemeId] != null) {
       _appTheme = TrucoTheme.allThemes.firstWhere(
@@ -660,10 +731,12 @@ class ScoreProvider with ChangeNotifier {
       );
     }
     if (data[PersistenceService.keyPaletteIndex] != null) {
-      _currentPalette = availablePalettes[data[PersistenceService.keyPaletteIndex]];
+      _currentPalette =
+          availablePalettes[data[PersistenceService.keyPaletteIndex]];
     }
     if (data[PersistenceService.keyBeanPaletteIndex] != null) {
-      _currentBeanPalette = availableBeanPalettes[data[PersistenceService.keyBeanPaletteIndex]];
+      _currentBeanPalette =
+          availableBeanPalettes[data[PersistenceService.keyBeanPaletteIndex]];
     }
     if (data[PersistenceService.keyScoringMode] != null) {
       _scoringMode = ScoringMode.values.firstWhere(
@@ -682,7 +755,7 @@ class ScoreProvider with ChangeNotifier {
           ? PointType.beans
           : PointType.matches;
     }
-    
+
     // Always load names if they exist
     if (data[PersistenceService.keyNosotrosName] != null) {
       _nosotrosName = data[PersistenceService.keyNosotrosName];
@@ -711,7 +784,8 @@ class ScoreProvider with ChangeNotifier {
 
     int pIndex = availablePalettes.indexOf(_currentPalette);
     if (!premium.isPaletteUnlocked(pIndex)) {
-      _currentPalette = availablePalettes[1]; // default 1 based on what they have
+      _currentPalette =
+          availablePalettes[1]; // default 1 based on what they have
       changed = true;
     }
 

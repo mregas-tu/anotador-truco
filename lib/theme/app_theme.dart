@@ -252,8 +252,8 @@ class TrucoTheme {
     cream: Color(0xFFEFEBE2), // Fully opaque again
     white: Colors.white,
     navyAccent: Color(0xFF4E342E),
-    buenas: Color(0xFFADB199),
-    malas: Color(0xFFC8BDB8),
+    buenas: Color(0xFFC5B85B),
+    malas: Color(0xFFE07A6A),
     centerCircleColor: Colors.transparent,
     primaryBackgroundButton: Color(0xFFA48C83),
     primaryTextButton: Color(0xFFEFEBE2),
