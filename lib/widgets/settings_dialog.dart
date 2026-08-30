@@ -1,17 +1,22 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:in_app_review/in_app_review.dart';
 import '../services/analytics_service.dart';
 import '../services/support_service.dart';
 import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
 import '../services/persistence_service.dart';
+import '../services/live_match_service.dart';
 import '../theme/app_theme.dart';
 import '../services/world_cup_event.dart';
-import '../screens/live_match_screen.dart';
 import 'truco_buttons.dart';
 import 'bean_widget.dart';
 import 'game_dialogs.dart';
@@ -43,9 +48,13 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   int currentPane = 0; // 0: Main, 1: Customization, 2: Game Mode
   Timer? _timer;
   final ScrollController _gameModeScrollController = ScrollController();
+  final MobileScannerController _liveScannerController =
+      MobileScannerController();
   String _appVersion = "1.1.4"; // Initial fallback
   VoidCallback? _activeCleanup;
   VoidCallback? _historyBackAction;
+  bool _isStartingLiveHost = false;
+  bool _handledLiveScan = false;
 
   @override
   void initState() {
@@ -73,6 +82,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   void dispose() {
     _timer?.cancel();
     _gameModeScrollController.dispose();
+    _liveScannerController.dispose();
     // No limpiamos los papelitos: que sigan cayendo aunque el usuario
     // cierre el diálogo. Cada tanda se limpia sola por su Future.delayed.
     super.dispose();
@@ -170,6 +180,9 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     if (currentPane == 5) title = "VALORES Y SEÑAS";
     if (currentPane == 6) title = "BRINDIS";
     if (currentPane == 7) title = "HISTORIAL DE PARTIDAS";
+    if (currentPane == 8) title = "PARTIDA EN VIVO";
+    if (currentPane == 9) title = "ANFITRIÓN";
+    if (currentPane == 10) title = "ESCANEAR QR";
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -192,6 +205,11 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                     setState(() {
                       if (currentPane == 4 || currentPane == 5) {
                         currentPane = 3;
+                      } else if (currentPane == 9 || currentPane == 10) {
+                        if (currentPane == 10) {
+                          _liveScannerController.stop();
+                        }
+                        currentPane = 8;
                       } else {
                         currentPane = 0;
                       }
@@ -214,6 +232,17 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                 letterSpacing: 0,
               ),
             ),
+            if (currentPane == 8 || currentPane == 9 || currentPane == 10)
+              Positioned(
+                right: 40,
+                child: IconButton(
+                  onPressed: () => _showLiveHelp(scoreProvider),
+                  icon: Icon(Icons.help_outline,
+                      color: scoreProvider.appTheme.cream),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ),
             Positioned(
               right: 0,
               child: IconButton(
@@ -366,17 +395,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
 
           const SizedBox(height: 24),
 
-          SecondaryButton(
-            text: "Partida en vivo",
-            width: double.infinity,
-            iconAsset: 'assets/images/share_icon.svg',
-            onPressed: () {
-              AnalyticsService.logShareMenu();
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const LiveMatchScreen()),
-              );
-            },
-          ),
+          _buildLiveEntryButton(scoreProvider),
         ] else if (currentPane == 1) ...[
           // --- PANE 1: DESIGN (THEMES & PALETTES) ---
           Column(
@@ -1201,9 +1220,371 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           MatchHistoryContent(
             onBackActionChanged: (action) => _historyBackAction = action,
           ),
+        ] else if (currentPane == 8) ...[
+          _buildLiveMatchHome(scoreProvider, isSmallScreen),
+        ] else if (currentPane == 9) ...[
+          _buildLiveHostPane(scoreProvider, isSmallScreen),
+        ] else if (currentPane == 10) ...[
+          _buildLiveScannerPane(scoreProvider, isSmallScreen),
         ],
       ],
     );
+  }
+
+  Widget _buildLiveMatchHome(
+    ScoreProvider scoreProvider,
+    bool isSmallScreen,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildLiveBetaNotice(scoreProvider),
+        const SizedBox(height: 18),
+        _buildLiveRoleTile(
+          icon: Icons.qr_code_2,
+          title: 'SOY ANFITRIÓN',
+          subtitle: 'Genero el QR y comparto este tanteador.',
+          scoreProvider: scoreProvider,
+          isSmallScreen: isSmallScreen,
+          onTap: () => setState(() => currentPane = 9),
+        ),
+        Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
+        _buildLiveRoleTile(
+          icon: Icons.qr_code_scanner,
+          title: 'SOY ESPECTADOR',
+          subtitle: 'Escaneo un QR para seguir una partida.',
+          scoreProvider: scoreProvider,
+          isSmallScreen: isSmallScreen,
+          onTap: () {
+            _liveScannerController.start();
+            setState(() {
+              currentPane = 10;
+              _handledLiveScan = false;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLiveHostPane(
+    ScoreProvider scoreProvider,
+    bool isSmallScreen,
+  ) {
+    final shareValue = scoreProvider.liveShareValue;
+    if (shareValue == null) {
+      return PrimaryButton(
+        text: _isStartingLiveHost ? 'Creando...' : 'Generar QR',
+        width: double.infinity,
+        onPressed: () async {
+          if (_isStartingLiveHost) return;
+          setState(() => _isStartingLiveHost = true);
+          try {
+            await scoreProvider.startLiveHosting();
+          } catch (error) {
+            if (mounted) _showLiveMessage(_liveMatchErrorMessage(error));
+          } finally {
+            if (mounted) setState(() => _isStartingLiveHost = false);
+          }
+        },
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: QrImageView(
+              data: shareValue,
+              version: QrVersions.auto,
+              size: isSmallScreen ? 190 : 220,
+              backgroundColor: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        PrimaryButton(
+          text: 'Copiar link',
+          width: double.infinity,
+          onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: shareValue));
+            if (mounted) _showLiveMessage('Link copiado.');
+          },
+        ),
+        const SizedBox(height: 10),
+        SecondaryButton(
+          text: 'Detener vivo',
+          width: double.infinity,
+          onPressed: () async {
+            await scoreProvider.stopLiveHosting();
+            if (mounted) _showLiveMessage('Vivo detenido.');
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLiveScannerPane(
+    ScoreProvider scoreProvider,
+    bool isSmallScreen,
+  ) {
+    final scannerSize = isSmallScreen ? 240.0 : 300.0;
+    return Center(
+      child: SizedBox(
+        width: scannerSize,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                width: scannerSize,
+                height: scannerSize,
+                child: MobileScanner(
+                  controller: _liveScannerController,
+                  onDetect: _handleLiveBarcode,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLiveBetaNotice(ScoreProvider scoreProvider) {
+    final theme = scoreProvider.appTheme;
+    // theme.slate can end up identical to navyLight in some themes (e.g.
+    // MALVINAS, MATE), making this text invisible against the box below.
+    // theme.cream is chosen per-theme to contrast against the dark/navy
+    // colors, so it stays readable everywhere; dimmed here to read as
+    // secondary next to the full-opacity "acá" link.
+    final defaultStyle = TextStyle(
+      fontFamily: AppFonts.oswald,
+      color: theme.cream.withValues(alpha: 0.75),
+      fontSize: 14,
+      height: 1.2,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.dialogSeparator),
+        color: theme.navyLight.withValues(alpha: 0.35),
+      ),
+      child: RichText(
+        textAlign: TextAlign.center,
+        text: TextSpan(
+          style: defaultStyle,
+          children: [
+            const TextSpan(
+              text:
+                  'Esta función está en beta. Si algo no funciona como esperabas, escribinos desde ',
+            ),
+            TextSpan(
+              text: 'acá',
+              style: defaultStyle.copyWith(
+                color: theme.cream,
+                decoration: TextDecoration.underline,
+                decorationColor: theme.cream,
+              ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () => SupportService.sendFeedbackEmail(
+                      email: SupportService.betaFeedbackEmail,
+                      subject: 'Puro Truco - Partida en vivo beta',
+                    ),
+            ),
+            const TextSpan(text: '.'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLiveEntryButton(ScoreProvider scoreProvider) {
+    final theme = scoreProvider.appTheme;
+    return SizedBox(
+      width: double.infinity,
+      height: 40,
+      child: OutlinedButton(
+        onPressed: () {
+          AnalyticsService.logShareMenu();
+          setState(() => currentPane = 8);
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _maybeShowLiveMatchTutorial(scoreProvider),
+          );
+        },
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: theme.secondaryButtonBorder, width: 1.5),
+          foregroundColor: theme.secondaryButtonText,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.qr_code_2,
+                size: 18,
+                color: theme.secondaryButtonText,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Partida en vivo',
+                style: TextStyle(
+                  fontFamily: AppFonts.oswald,
+                  fontSize: 14,
+                  color: theme.secondaryButtonText,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLiveRoleTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required ScoreProvider scoreProvider,
+    required bool isSmallScreen,
+    required VoidCallback onTap,
+  }) {
+    final theme = scoreProvider.appTheme;
+    return ListTile(
+      dense: isSmallScreen,
+      visualDensity:
+          isSmallScreen ? VisualDensity.compact : VisualDensity.standard,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      leading: Icon(icon, color: theme.cream, size: 28),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontFamily: AppFonts.oswald,
+          color: theme.cream,
+          fontSize: 17,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontFamily: AppFonts.oswald,
+          // theme.slate can be identical to theme.navy (e.g. MALVINAS,
+          // MATE), making this invisible against the tile's background.
+          color: theme.cream.withValues(alpha: 0.75),
+          fontSize: 13,
+        ),
+      ),
+      trailing: Icon(Icons.chevron_right, color: theme.cream),
+      onTap: onTap,
+    );
+  }
+
+  void _handleLiveBarcode(BarcodeCapture capture) {
+    if (_handledLiveScan) return;
+    String? value;
+    for (final barcode in capture.barcodes) {
+      if (barcode.rawValue != null) {
+        value = barcode.rawValue;
+        break;
+      }
+    }
+
+    final matchId = value == null ? null : LiveMatchService.parseMatchId(value);
+    if (matchId == null) return;
+
+    _handledLiveScan = true;
+    _liveScannerController.stop();
+    Provider.of<ScoreProvider>(context, listen: false)
+        .startWatchingLiveMatch(matchId);
+    Navigator.pop(context);
+  }
+
+  Future<void> _maybeShowLiveMatchTutorial(ScoreProvider scoreProvider) async {
+    final alreadyShown = await PersistenceService.getLiveMatchTutorialShown();
+    if (alreadyShown) return;
+    await PersistenceService.setLiveMatchTutorialShown(true);
+    if (!mounted) return;
+    _showLiveHelp(scoreProvider);
+  }
+
+  void _showLiveHelp(ScoreProvider scoreProvider) {
+    final theme = scoreProvider.appTheme;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: theme.navy,
+        title: Text(
+          'PARTIDA EN VIVO',
+          style: TextStyle(
+            fontFamily: AppFonts.oswald,
+            color: theme.cream,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Olvidate de preguntarle al que anota cuántos puntos van: ahora '
+          'podés seguir la partida en vivo desde otro celular. El "anfitrión" '
+          'genera un QR, mientras que el "espectador" escanea ese QR para '
+          'mirar la partida en vivo.',
+          style: TextStyle(
+            fontFamily: AppFonts.oswald,
+            // theme.slate can be identical to theme.navy (e.g. MALVINAS,
+            // MATE), making this invisible against the dialog background.
+            color: theme.cream.withValues(alpha: 0.75),
+            height: 1.25,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'OK',
+              style: TextStyle(
+                fontFamily: AppFonts.oswald,
+                color: theme.cream,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLiveMessage(String message) {
+    final theme = Provider.of<ScoreProvider>(context, listen: false).appTheme;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: AppFonts.oswald),
+        ),
+        backgroundColor: theme.accentColor,
+      ),
+    );
+  }
+
+  String _liveMatchErrorMessage(Object error) {
+    debugPrint('[LiveMatch] Create failed: $error');
+    if (error is FirebaseException) {
+      return 'No se pudo crear la partida (${error.code}).';
+    }
+    if (error is TimeoutException) {
+      return 'No se pudo crear la partida: la base en vivo no respondió.';
+    }
+    return 'No se pudo crear la partida en vivo.';
   }
 
   Widget _buildMenuActionItem({

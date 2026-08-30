@@ -51,7 +51,9 @@ void main() {
 
   test('lee el id de partida desde QR web, deep link o id directo', () {
     expect(
-      LiveMatchService.parseMatchId('https://purotruco.app/live/abc_123-XYZ'),
+      LiveMatchService.parseMatchId(
+        'https://martostudio.com/purotruco/live/abc_123-XYZ',
+      ),
       'abc_123-XYZ',
     );
     expect(

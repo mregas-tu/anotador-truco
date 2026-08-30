@@ -11,6 +11,51 @@ import '../models/match_record.dart';
 import '../models/live_match_state.dart';
 import '../services/live_match_service.dart';
 
+/// Pure malas/buenas display rules, shared by the host scoreboard
+/// (via [ScoreProvider]) and the live spectator view, so both always
+/// agree on when a team switches from "malas" to "buenas" and what
+/// number/label to show.
+class ScorePhase {
+  static bool isBuenas({
+    required int score,
+    required int milestone,
+    required bool hasBuenas,
+    required bool finishedMalas,
+  }) {
+    if (!hasBuenas) return false;
+    return score > milestone || (score == milestone && finishedMalas);
+  }
+
+  static int displayPoints({
+    required int score,
+    required int milestone,
+    required bool hasBuenas,
+    required bool finishedMalas,
+  }) {
+    if (score == 0) return 0;
+    if (!hasBuenas) return score;
+    if (score < milestone) return score;
+    if (score == milestone) return finishedMalas ? 0 : milestone;
+    return score - milestone;
+  }
+
+  static String label({
+    required int score,
+    required int milestone,
+    required bool hasBuenas,
+    required bool finishedMalas,
+  }) {
+    return isBuenas(
+      score: score,
+      milestone: milestone,
+      hasBuenas: hasBuenas,
+      finishedMalas: finishedMalas,
+    )
+        ? 'BUENAS'
+        : 'MALAS';
+  }
+}
+
 class ScoreEvent {
   final String team;
   final int delta;
@@ -220,6 +265,8 @@ class ScoreProvider with ChangeNotifier {
   bool _isLiveHosting = false;
   bool _isPublishingLive = false;
   bool _hasPendingLivePublish = false;
+  int _publishedLiveEventCount = 0;
+  String? _watchingLiveMatchId;
   List<ScoreEvent> get scoreHistory => List.unmodifiable(_scoreHistory);
 
   GameMode get currentGameMode => _currentGameMode;
@@ -259,6 +306,7 @@ class ScoreProvider with ChangeNotifier {
   PointType get pointType => _pointType;
   String get matchId => _matchId;
   bool get isLiveHosting => _isLiveHosting;
+  String? get watchingLiveMatchId => _watchingLiveMatchId;
   String? get liveShareValue =>
       _isLiveHosting ? LiveMatchService.buildShareValue(_matchId) : null;
 
@@ -304,7 +352,7 @@ class ScoreProvider with ChangeNotifier {
     ));
   }
 
-  LiveMatchState _buildLiveState() {
+  LiveMatchState _buildLiveState({bool? isLiveOverride}) {
     final now = DateTime.now();
     return LiveMatchState(
       id: _matchId,
@@ -314,22 +362,46 @@ class ScoreProvider with ChangeNotifier {
       ellosScore: _ellos,
       targetScore: _currentGameMode.totalPoints,
       hasBuenas: _currentGameMode.hasBuenas,
+      nosotrosFinishedMalas: _nosotrosFinishedMalas,
+      ellosFinishedMalas: _ellosFinishedMalas,
+      themeName: _appTheme.name,
+      pointType: _pointType.name,
+      paletteName: _pointType == PointType.beans
+          ? _currentBeanPalette.name
+          : _currentPalette.name,
       gameModeLabel: _currentGameMode.label,
       winner: _winner,
       finished: _winner != null,
+      isLive: isLiveOverride ?? _isLiveHosting,
       createdAt: _matchStartedAt,
       updatedAt: now,
     );
   }
 
   Future<void> startLiveHosting() async {
-    await LiveMatchService.createMatch(_buildLiveState());
+    await LiveMatchService.createMatch(_buildLiveState(isLiveOverride: true));
     _isLiveHosting = true;
+    _publishedLiveEventCount = 0;
+    _publishPendingLiveEvents();
     notifyListeners();
   }
 
-  void stopLiveHosting() {
+  Future<void> stopLiveHosting() async {
+    if (_isLiveHosting) {
+      await LiveMatchService.updateMatch(_buildLiveState(isLiveOverride: false))
+          .catchError((_) {});
+    }
     _isLiveHosting = false;
+    notifyListeners();
+  }
+
+  void startWatchingLiveMatch(String matchId) {
+    _watchingLiveMatchId = matchId;
+    notifyListeners();
+  }
+
+  void stopWatchingLiveMatch() {
+    _watchingLiveMatchId = null;
     notifyListeners();
   }
 
@@ -349,8 +421,33 @@ class ScoreProvider with ChangeNotifier {
           _hasPendingLivePublish = false;
           _publishLiveState();
         }
+        _publishPendingLiveEvents();
       },
     );
+  }
+
+  void _publishPendingLiveEvents() {
+    if (!_isLiveHosting) return;
+    while (_publishedLiveEventCount < _scoreHistory.length) {
+      final index = _publishedLiveEventCount;
+      final event = _scoreHistory[index];
+      _publishedLiveEventCount++;
+      LiveMatchService.addEvent(
+        matchId: _matchId,
+        event: LiveMatchPointEvent(
+          index: index + 1,
+          team: event.team,
+          delta: event.delta,
+          timestamp: event.timestamp,
+          nosotrosTotal: event.nosotrosTotal,
+          ellosTotal: event.ellosTotal,
+        ),
+      ).catchError((_) {
+        if (_publishedLiveEventCount > index) {
+          _publishedLiveEventCount = index;
+        }
+      });
+    }
   }
 
   void updateLastStickPos(String team, Offset pos) {
@@ -433,28 +530,27 @@ class ScoreProvider with ChangeNotifier {
   }
 
   bool isBuenas(String team) {
-    if (!_currentGameMode.hasBuenas) return false;
     final int score = team == "nosotros" ? _nosotros : _ellos;
     final bool finishedMalas =
         team == "nosotros" ? _nosotrosFinishedMalas : _ellosFinishedMalas;
-    return score > _currentGameMode.milestone ||
-        (score == _currentGameMode.milestone && finishedMalas);
+    return ScorePhase.isBuenas(
+      score: score,
+      milestone: _currentGameMode.milestone,
+      hasBuenas: _currentGameMode.hasBuenas,
+      finishedMalas: finishedMalas,
+    );
   }
 
   int getDisplayPoints(String team) {
     final int score = team == "nosotros" ? _nosotros : _ellos;
     final bool finishedMalas =
         team == "nosotros" ? _nosotrosFinishedMalas : _ellosFinishedMalas;
-
-    if (score == 0) return 0;
-
-    if (!_currentGameMode.hasBuenas) return score;
-
-    final int milestone = _currentGameMode.milestone;
-    if (score < milestone) return score;
-    if (score == milestone) return finishedMalas ? 0 : milestone;
-    if (score == _currentGameMode.totalPoints) return milestone;
-    return score - milestone;
+    return ScorePhase.displayPoints(
+      score: score,
+      milestone: _currentGameMode.milestone,
+      hasBuenas: _currentGameMode.hasBuenas,
+      finishedMalas: finishedMalas,
+    );
   }
 
   String getLabel(String team) {
@@ -671,12 +767,14 @@ class ScoreProvider with ChangeNotifier {
     AnalyticsService.logThemeChanged(theme.name);
     notifyListeners();
     _saveCurrentSettings();
+    _publishLiveState();
   }
 
   void setPalette(MatchstickPalette palette) {
     _currentPalette = palette;
     notifyListeners();
     _saveCurrentSettings();
+    _publishLiveState();
   }
 
   void setBeanPalette(BeanPalette beanPalette) {
@@ -686,12 +784,14 @@ class ScoreProvider with ChangeNotifier {
       notifyListeners();
     });
     _saveCurrentSettings();
+    _publishLiveState();
   }
 
   void setPointType(PointType type) {
     _pointType = type;
     notifyListeners();
     _saveCurrentSettings();
+    _publishLiveState();
   }
 
   void _saveCurrentState() {

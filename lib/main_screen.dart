@@ -23,6 +23,7 @@ import 'widgets/theme_background.dart';
 import 'providers/premium_provider.dart';
 import 'widgets/pica_pica_widgets.dart';
 import 'services/world_cup_event.dart';
+import 'screens/live_match_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -204,6 +205,22 @@ class _MainScreenState extends State<MainScreen>
   Widget build(BuildContext context) {
     // Listen to theme changes separately (rare events)
     final theme = context.select<ScoreProvider, TrucoTheme>((p) => p.appTheme);
+    final watchingLiveMatchId =
+        context.select<ScoreProvider, String?>((p) => p.watchingLiveMatchId);
+
+    if (watchingLiveMatchId != null) {
+      return Scaffold(
+        resizeToAvoidBottomInset: false,
+        backgroundColor: theme.navy,
+        // No SafeArea here: _LiveScoreBoard already wraps its own content
+        // in one internally, same as the normal board, so the background
+        // can extend edge-to-edge behind the status bar like the original.
+        body: LiveMatchViewerContent(
+          matchId: watchingLiveMatchId,
+          onExit: () => context.read<ScoreProvider>().stopWatchingLiveMatch(),
+        ),
+      );
+    }
 
     return Scaffold(
       resizeToAvoidBottomInset: false,

@@ -1,17 +1,16 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/live_match_state.dart';
 
 class LiveMatchService {
-  static final FirebaseFirestore _db = FirebaseFirestore.instance;
-  static final CollectionReference<Map<String, dynamic>> _matches =
-      _db.collection('live_matches');
+  static final FirebaseDatabase _db = FirebaseDatabase.instance;
+  static final DatabaseReference _matches = _db.ref('live_matches');
 
-  static const String linkPrefix = 'https://purotruco.app/live/';
+  static const String linkPrefix = 'https://martostudio.com/purotruco/live/';
   static const String uriPrefix = 'purotruco://live/';
 
   static String buildShareValue(String matchId) => '$linkPrefix$matchId';
@@ -28,8 +27,10 @@ class LiveMatchService {
         return uri.pathSegments.first;
       }
       if ((uri.scheme == 'https' || uri.scheme == 'http') &&
-          uri.pathSegments.length >= 2 &&
-          uri.pathSegments[uri.pathSegments.length - 2] == 'live') {
+          uri.host == 'martostudio.com' &&
+          uri.pathSegments.length >= 3 &&
+          uri.pathSegments[0] == 'purotruco' &&
+          uri.pathSegments[1] == 'live') {
         return uri.pathSegments.last;
       }
     }
@@ -44,17 +45,11 @@ class LiveMatchService {
       '[LiveMatch] Creating match ${state.id} '
       'project=${app.options.projectId} app=${app.name}',
     );
-    final doc = _matches.doc(state.id);
-    await doc.get(const GetOptions(source: Source.server)).timeout(
-      const Duration(seconds: 8),
-      onTimeout: () {
-        throw TimeoutException('Firestore server read timed out');
-      },
-    );
-    await doc.set(state.toFirestore()).timeout(
+    final ref = _matches.child(state.id);
+    await ref.set(state.toRealtimeDatabase()).timeout(
       const Duration(seconds: 12),
       onTimeout: () {
-        throw TimeoutException('Firestore server write timed out');
+        throw TimeoutException('Realtime Database write timed out');
       },
     );
     debugPrint('[LiveMatch] Created match ${state.id}');
@@ -62,19 +57,29 @@ class LiveMatchService {
   }
 
   static Future<void> updateMatch(LiveMatchState state) async {
+    await _matches.child(state.id).update(state.toRealtimeDatabase()).timeout(
+          const Duration(seconds: 12),
+        );
+  }
+
+  static Future<void> addEvent({
+    required String matchId,
+    required LiveMatchPointEvent event,
+  }) async {
+    final key = event.index.toString().padLeft(6, '0');
     await _matches
-        .doc(state.id)
-        .set(
-          state.toFirestore(),
-          SetOptions(merge: true),
-        )
+        .child(matchId)
+        .child('events')
+        .child(key)
+        .set(event.toRealtimeDatabase())
         .timeout(const Duration(seconds: 12));
   }
 
   static Stream<LiveMatchState?> watchMatch(String matchId) {
-    return _matches.doc(matchId).snapshots().map((snapshot) {
-      if (!snapshot.exists) return null;
-      return LiveMatchState.fromFirestore(snapshot);
+    return _matches.child(matchId).onValue.map((event) {
+      final value = event.snapshot.value;
+      if (value is! Map) return null;
+      return LiveMatchState.fromRealtimeDatabase(matchId, value);
     });
   }
 }

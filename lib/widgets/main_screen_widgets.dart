@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/score_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/live_display_scope.dart';
 
 Widget _centerOrnament(String asset) {
   if (asset.toLowerCase().endsWith('.svg')) {
@@ -212,12 +213,14 @@ class CenterScoreCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context);
+    final theme = context.activeTheme(scoreProvider);
+    final totalPoints = context.activeTotalPoints(scoreProvider);
 
     return GestureDetector(
       onTap: onTap,
       child: Padding(
       padding: EdgeInsets.only(
-        top: scoreProvider.appTheme.centerSectionOffset,
+        top: theme.centerSectionOffset,
       ),
       child: Stack(
         alignment: Alignment.center,
@@ -225,18 +228,18 @@ class CenterScoreCircle extends StatelessWidget {
           Container(
             width: 56,
             height: 56,
-            decoration: scoreProvider.appTheme.centerCircleDecoration ??
+            decoration: theme.centerCircleDecoration ??
                 BoxDecoration(
                   shape: BoxShape.circle,
-                  color: scoreProvider.appTheme.centerCircleColor,
-                  border: scoreProvider.appTheme.hideCenterCircleBorder
+                  color: theme.centerCircleColor,
+                  border: theme.hideCenterCircleBorder
                       ? null
                       : Border.all(
-                          color: scoreProvider.appTheme.accentColor
+                          color: theme.accentColor
                               .withValues(alpha: 0.5),
                           width: 1.5,
                         ),
-                  boxShadow: !scoreProvider.appTheme.hideCenterCircleBorder
+                  boxShadow: !theme.hideCenterCircleBorder
                       ? [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.2),
@@ -247,62 +250,62 @@ class CenterScoreCircle extends StatelessWidget {
                       : null,
                 ),
           ),
-          if (scoreProvider.appTheme.centerOrnamentAsset != null)
+          if (theme.centerOrnamentAsset != null)
             Transform.scale(
-              scale: scoreProvider.appTheme.centerOrnamentScale,
+              scale: theme.centerOrnamentScale,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  if (scoreProvider.appTheme.centerOrnamentShadows != null)
-                    ...scoreProvider.appTheme.centerOrnamentShadows!
+                  if (theme.centerOrnamentShadows != null)
+                    ...theme.centerOrnamentShadows!
                         .map((s) => Transform.translate(
                               offset: s.offset,
                               child: ColorFiltered(
                                 colorFilter: ColorFilter.mode(
                                     s.color, BlendMode.srcIn),
                                 child: _centerOrnament(
-                                  scoreProvider.appTheme.centerOrnamentAsset!,
+                                  theme.centerOrnamentAsset!,
                                 ),
                               ),
                             )),
-                  _centerOrnament(scoreProvider.appTheme.centerOrnamentAsset!),
+                  _centerOrnament(theme.centerOrnamentAsset!),
                 ],
               ),
             ),
           Padding(
             padding: EdgeInsets.only(
-              top: scoreProvider.appTheme.scoreVerticalOffset > 0
-                  ? scoreProvider.appTheme.scoreVerticalOffset
+              top: theme.scoreVerticalOffset > 0
+                  ? theme.scoreVerticalOffset
                   : 0,
             ),
             child: Transform.translate(
               offset: Offset(
                 0,
-                scoreProvider.appTheme.scoreVerticalOffset < 0
-                    ? scoreProvider.appTheme.scoreVerticalOffset
+                theme.scoreVerticalOffset < 0
+                    ? theme.scoreVerticalOffset
                     : 0,
               ),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  if (scoreProvider.appTheme.belowScoreAsset != null)
+                  if (theme.belowScoreAsset != null)
                     Transform.translate(
                       offset: Offset(
-                          0, scoreProvider.appTheme.belowScoreAssetOffset),
+                          0, theme.belowScoreAssetOffset),
                       child: Image.asset(
-                        scoreProvider.appTheme.belowScoreAsset!,
-                        height: scoreProvider.appTheme.belowScoreAssetSize,
+                        theme.belowScoreAsset!,
+                        height: theme.belowScoreAssetSize,
                       ),
                     ),
                   Text(
                     key: limitScoreKey,
-                    "${scoreProvider.currentGameMode.totalPoints}",
+                    "$totalPoints",
                     style: TextStyle(
                       fontFamily: AppFonts.caminito,
-                      fontSize: scoreProvider.appTheme.scoreFontSize,
-                      color: scoreProvider.appTheme.scoreColor,
+                      fontSize: theme.scoreFontSize,
+                      color: theme.scoreColor,
                       fontWeight: FontWeight.bold,
-                      shadows: scoreProvider.appTheme.teamNameShadow,
+                      shadows: theme.teamNameShadow,
                     ),
                   ),
                 ],

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/score_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/live_display_scope.dart';
 
 class MatchstickPainter extends CustomPainter {
   final bool horizontal;
@@ -189,7 +190,11 @@ class MatchstickWidget extends StatelessWidget {
     }
 
     final isResetting = context.select<ScoreProvider, bool>((p) => p.isResetting);
-    final headColors = context.select<ScoreProvider, List<Color>>((p) => p.currentPalette.headColors);
+    // Not context.activeMatchstickPalette(...): that needs a full ScoreProvider
+    // instance, which would rebuild this on any provider change instead of
+    // just a palette change.
+    final headColors = LiveDisplayScope.maybeOf(context)?.matchstickPalette.headColors ??
+        context.select<ScoreProvider, List<Color>>((p) => p.currentPalette.headColors);
 
     return SizedBox(
       width: boxWidth,

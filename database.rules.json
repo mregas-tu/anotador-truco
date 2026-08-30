@@ -1,0 +1,88 @@
+{
+  "rules": {
+    "live_matches": {
+      "$matchId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['nosotrosName', 'ellosName', 'nosotrosScore', 'ellosScore', 'targetScore', 'hasBuenas', 'gameModeLabel', 'finished', 'isLive', 'createdAt', 'updatedAt'])",
+        "nosotrosName": {
+          ".validate": "newData.isString()"
+        },
+        "ellosName": {
+          ".validate": "newData.isString()"
+        },
+        "nosotrosScore": {
+          ".validate": "newData.isNumber()"
+        },
+        "ellosScore": {
+          ".validate": "newData.isNumber()"
+        },
+        "targetScore": {
+          ".validate": "newData.isNumber()"
+        },
+        "hasBuenas": {
+          ".validate": "newData.isBoolean()"
+        },
+        "nosotrosFinishedMalas": {
+          ".validate": "newData.isBoolean()"
+        },
+        "ellosFinishedMalas": {
+          ".validate": "newData.isBoolean()"
+        },
+        "themeName": {
+          ".validate": "newData.isString()"
+        },
+        "pointType": {
+          ".validate": "newData.isString()"
+        },
+        "paletteName": {
+          ".validate": "newData.isString()"
+        },
+        "gameModeLabel": {
+          ".validate": "newData.isString()"
+        },
+        "winner": {
+          ".validate": "newData.val() == null || newData.val() == 'nosotros' || newData.val() == 'ellos'"
+        },
+        "finished": {
+          ".validate": "newData.isBoolean()"
+        },
+        "isLive": {
+          ".validate": "newData.isBoolean()"
+        },
+        "createdAt": {
+          ".validate": "newData.isString()"
+        },
+        "updatedAt": {
+          ".validate": "newData.isString()"
+        },
+        "events": {
+          "$eventId": {
+            ".validate": "newData.hasChildren(['team', 'delta', 'timestamp', 'nosotrosTotal', 'ellosTotal'])",
+            "team": {
+              ".validate": "newData.val() == 'nosotros' || newData.val() == 'ellos'"
+            },
+            "delta": {
+              ".validate": "newData.isNumber()"
+            },
+            "timestamp": {
+              ".validate": "newData.isString()"
+            },
+            "nosotrosTotal": {
+              ".validate": "newData.isNumber()"
+            },
+            "ellosTotal": {
+              ".validate": "newData.isNumber()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}

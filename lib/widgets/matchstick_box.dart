@@ -6,28 +6,53 @@ import 'matchstick_widget.dart';
 import 'bean_widget.dart';
 import '../providers/score_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/live_display_scope.dart';
 
 class MatchstickBox extends StatelessWidget {
   final int count;
 
-  const MatchstickBox({super.key, required this.count});
+  const MatchstickBox({
+    super.key,
+    required this.count,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Consumer<ScoreProvider>(
       builder: (context, scoreProvider, child) {
-        final theme = scoreProvider.appTheme;
+        final theme = context.activeTheme(scoreProvider);
+        final pointType = context.activePointType(scoreProvider);
+        final beanPalette = context.activeBeanPalette(scoreProvider);
 
         switch (theme.matchstickBoxType) {
           case MatchstickBoxType.soccer:
-            return _MatchstickBoxSoccer(count: count, theme: theme);
+            return _MatchstickBoxSoccer(
+              count: count,
+              theme: theme,
+              pointType: pointType,
+              beanPalette: beanPalette,
+            );
           case MatchstickBoxType.classic:
-            return _MatchstickBoxClassic(count: count, theme: theme);
+            return _MatchstickBoxClassic(
+              count: count,
+              theme: theme,
+              pointType: pointType,
+              beanPalette: beanPalette,
+            );
           case MatchstickBoxType.wood:
-            if (scoreProvider.pointType == PointType.beans) {
-              return _MatchstickBoxPlate(count: count, theme: theme);
+            if (pointType == PointType.beans) {
+              return _MatchstickBoxPlate(
+                count: count,
+                theme: theme,
+                beanPalette: beanPalette,
+              );
             }
-            return _MatchstickBoxWood(count: count, theme: theme);
+            return _MatchstickBoxWood(
+              count: count,
+              theme: theme,
+              pointType: pointType,
+              beanPalette: beanPalette,
+            );
         }
       },
     );
@@ -37,8 +62,15 @@ class MatchstickBox extends StatelessWidget {
 class _MatchstickBoxClassic extends StatelessWidget {
   final int count;
   final TrucoTheme theme;
+  final PointType pointType;
+  final BeanPalette beanPalette;
 
-  const _MatchstickBoxClassic({required this.count, required this.theme});
+  const _MatchstickBoxClassic({
+    required this.count,
+    required this.theme,
+    required this.pointType,
+    required this.beanPalette,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +106,13 @@ class _MatchstickBoxClassic extends StatelessWidget {
             stops: const [0.0, 0.4, 1.0],
           ),
         ),
-        child: _MatchstickContainer(count: count, showHexNet: false),
+        child: _MatchstickContainer(
+          count: count,
+          showHexNet: false,
+          theme: theme,
+          pointType: pointType,
+          beanPalette: beanPalette,
+        ),
       ),
     );
   }
@@ -83,8 +121,15 @@ class _MatchstickBoxClassic extends StatelessWidget {
 class _MatchstickBoxSoccer extends StatelessWidget {
   final int count;
   final TrucoTheme theme;
+  final PointType pointType;
+  final BeanPalette beanPalette;
 
-  const _MatchstickBoxSoccer({required this.count, required this.theme});
+  const _MatchstickBoxSoccer({
+    required this.count,
+    required this.theme,
+    required this.pointType,
+    required this.beanPalette,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +141,13 @@ class _MatchstickBoxSoccer extends StatelessWidget {
       child: Stack(
         children: [
           // Background (Grass + Net)
-          _MatchstickContainer(count: count, showHexNet: true),
+          _MatchstickContainer(
+            count: count,
+            showHexNet: true,
+            theme: theme,
+            pointType: pointType,
+            beanPalette: beanPalette,
+          ),
 
           // The Frame (Overlaying the net)
           IgnorePointer(
@@ -117,12 +168,17 @@ class _MatchstickBoxSoccer extends StatelessWidget {
 
 class _MatchstickContainerWood extends StatelessWidget {
   final int count;
+  final PointType pointType;
+  final BeanPalette beanPalette;
 
-  const _MatchstickContainerWood({required this.count});
+  const _MatchstickContainerWood({
+    required this.count,
+    required this.pointType,
+    required this.beanPalette,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final scoreProvider = Provider.of<ScoreProvider>(context);
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -137,10 +193,10 @@ class _MatchstickContainerWood extends StatelessWidget {
             offset: Offset(offsetX, offsetY),
             child: Transform.rotate(
               angle: angle,
-              child: scoreProvider.pointType == PointType.beans
+              child: pointType == PointType.beans
                   ? BeanWidget(
                       size: 20,
-                      beanType: scoreProvider.currentBeanPalette.type,
+                      beanType: beanPalette.type,
                       animateOnReset: false)
                   : const MatchstickWidget(
                       height: 180,
@@ -159,14 +215,20 @@ class _MatchstickContainerWood extends StatelessWidget {
 class _MatchstickContainer extends StatelessWidget {
   final int count;
   final bool showHexNet;
+  final TrucoTheme theme;
+  final PointType pointType;
+  final BeanPalette beanPalette;
 
-  const _MatchstickContainer({required this.count, required this.showHexNet});
+  const _MatchstickContainer({
+    required this.count,
+    required this.showHexNet,
+    required this.theme,
+    required this.pointType,
+    required this.beanPalette,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final scoreProvider = Provider.of<ScoreProvider>(context);
-    final theme = scoreProvider.appTheme;
-
     return Container(
       width: 200,
       height: 120,
@@ -210,10 +272,10 @@ class _MatchstickContainer extends StatelessWidget {
                 offset: Offset(offsetX, offsetY),
                 child: Transform.rotate(
                   angle: angle,
-                  child: scoreProvider.pointType == PointType.beans
+                  child: pointType == PointType.beans
                       ? BeanWidget(
                           size: showHexNet ? 16 : 22,
-                          beanType: scoreProvider.currentBeanPalette.type,
+                          beanType: beanPalette.type,
                           animateOnReset: false,
                         )
                       : const MatchstickWidget(
@@ -276,8 +338,15 @@ class _HexNetPainter extends CustomPainter {
 class _MatchstickBoxWood extends StatelessWidget {
   final int count;
   final TrucoTheme theme;
+  final PointType pointType;
+  final BeanPalette beanPalette;
 
-  const _MatchstickBoxWood({required this.count, required this.theme});
+  const _MatchstickBoxWood({
+    required this.count,
+    required this.theme,
+    required this.pointType,
+    required this.beanPalette,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +370,11 @@ class _MatchstickBoxWood extends StatelessWidget {
             top: 15,
             bottom: 15,
             child: ClipRect(
-              child: _MatchstickContainerWood(count: count),
+              child: _MatchstickContainerWood(
+                count: count,
+                pointType: pointType,
+                beanPalette: beanPalette,
+              ),
             ),
           ),
         ],
@@ -313,8 +386,13 @@ class _MatchstickBoxWood extends StatelessWidget {
 class _MatchstickBoxPlate extends StatelessWidget {
   final int count;
   final TrucoTheme theme;
+  final BeanPalette beanPalette;
 
-  const _MatchstickBoxPlate({required this.count, required this.theme});
+  const _MatchstickBoxPlate({
+    required this.count,
+    required this.theme,
+    required this.beanPalette,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -340,7 +418,10 @@ class _MatchstickBoxPlate extends StatelessWidget {
           SizedBox(
             width: 260,
             height: 120,
-            child: _MatchstickContainerPlate(count: count),
+            child: _MatchstickContainerPlate(
+              count: count,
+              beanPalette: beanPalette,
+            ),
           ),
         ],
       ),
@@ -350,13 +431,15 @@ class _MatchstickBoxPlate extends StatelessWidget {
 
 class _MatchstickContainerPlate extends StatelessWidget {
   final int count;
+  final BeanPalette beanPalette;
 
-  const _MatchstickContainerPlate({required this.count});
+  const _MatchstickContainerPlate({
+    required this.count,
+    required this.beanPalette,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final scoreProvider = Provider.of<ScoreProvider>(context);
-
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.center,
@@ -377,7 +460,7 @@ class _MatchstickContainerPlate extends StatelessWidget {
               angle: angle,
               child: BeanWidget(
                 size: 24,
-                beanType: scoreProvider.currentBeanPalette.type,
+                beanType: beanPalette.type,
                 animateOnReset: false,
               ),
             ),

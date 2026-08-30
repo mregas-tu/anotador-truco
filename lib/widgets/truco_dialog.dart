@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/live_display_scope.dart';
 import '../providers/score_provider.dart';
 import 'truco_banner_ad.dart';
 
@@ -32,10 +33,12 @@ class TrucoDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Buscamos el tema actual automáticamente vía Provider
+    // El tema activo viene de un LiveDisplayScope ancestro si lo hay (p. ej.
+    // el del anfitrión, en un diálogo de espectador); si no, del Provider
+    // ambiental, como siempre.
     final scoreProvider = Provider.of<ScoreProvider>(context);
-    final borderColor = scoreProvider.appTheme.dialogBorderColor ??
-        scoreProvider.appTheme.slate;
+    final theme = context.activeTheme(scoreProvider);
+    final borderColor = theme.dialogBorderColor ?? theme.slate;
     const double borderWidth = 1.0;
 
     final double effectiveWidth = marginHorizontal != null
@@ -54,7 +57,7 @@ class TrucoDialog extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(vertical: 60),
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: scoreProvider.appTheme.navy,
+                  color: theme.navy,
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
                     color: borderColor,

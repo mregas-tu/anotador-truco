@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_theme.dart';
+import '../theme/live_display_scope.dart';
 import '../providers/score_provider.dart';
 
 class PrimaryButton extends StatelessWidget {
@@ -24,7 +25,7 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Provider.of<ScoreProvider>(context).appTheme;
+    final theme = context.activeTheme(Provider.of<ScoreProvider>(context));
     return SizedBox(
       width: width,
       height: height,
@@ -91,7 +92,7 @@ class SecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Provider.of<ScoreProvider>(context).appTheme;
+    final theme = context.activeTheme(Provider.of<ScoreProvider>(context));
 
     // Determine colors based on type
     final Color borderColor = type == SecondaryButtonType.secondary

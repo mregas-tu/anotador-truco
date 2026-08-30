@@ -16,6 +16,8 @@ class PersistenceService {
   static const String keyTutorialDone = 'tutorial_done';
   static const String keyScoreHistoryTutorialShown =
       'score_history_tutorial_shown';
+  static const String keyLiveMatchTutorialShown =
+      'live_match_tutorial_shown';
   static const String keyPointType = 'point_type';
   static const String keyPicaPicaEnabled = 'pica_pica_enabled';
   static const String keyPicaPicaStart = 'pica_pica_start';
@@ -74,6 +76,16 @@ class PersistenceService {
   static Future<void> setScoreHistoryTutorialShown(bool shown) async {
     final prefs = await _getPrefs();
     await prefs.setBool(keyScoreHistoryTutorialShown, shown);
+  }
+
+  static Future<bool> getLiveMatchTutorialShown() async {
+    final prefs = await _getPrefs();
+    return prefs.getBool(keyLiveMatchTutorialShown) ?? false;
+  }
+
+  static Future<void> setLiveMatchTutorialShown(bool shown) async {
+    final prefs = await _getPrefs();
+    await prefs.setBool(keyLiveMatchTutorialShown, shown);
   }
 
   static Future<int> getMatchesCompletedCount() async {
