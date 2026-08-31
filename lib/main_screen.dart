@@ -22,7 +22,6 @@ import 'widgets/main_screen_widgets.dart';
 import 'widgets/theme_background.dart';
 import 'providers/premium_provider.dart';
 import 'widgets/pica_pica_widgets.dart';
-import 'services/world_cup_event.dart';
 import 'screens/live_match_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -128,10 +127,7 @@ class _MainScreenState extends State<MainScreen>
       }
 
       if (!blockingDialogShown && mounted) {
-        final shownWorldCup = await _maybeShowWorldCupPopup(context);
-        if (!shownWorldCup && mounted) {
-          _maybeShowPremiumPrompt(context);
-        }
+        _maybeShowPremiumPrompt(context);
       }
     });
 
@@ -673,19 +669,6 @@ class _MainScreenState extends State<MainScreen>
 
   static const int _premiumPromptMinMatches = 3;
   static const int _premiumPromptMinDays = 7;
-
-  Future<bool> _maybeShowWorldCupPopup(BuildContext context) async {
-    if (!WorldCupEvent.isActive) return false;
-    final premiumProvider =
-        Provider.of<PremiumProvider>(context, listen: false);
-    if (premiumProvider.isPremium) return false;
-    final alreadyShown = await PersistenceService.getWorldCupPopupShown();
-    if (alreadyShown) return false;
-    if (!mounted) return false;
-    await PersistenceService.setWorldCupPopupShown(true);
-    GameDialogs.showWorldCupThemeAvailable(context);
-    return true;
-  }
 
   Future<void> _maybeShowPremiumPrompt(BuildContext context) async {
     final premiumProvider =

@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/billing_service.dart';
 import '../services/analytics_service.dart';
-import '../services/world_cup_event.dart';
 
 class PremiumProvider with ChangeNotifier {
   static const bool _debugForceNonPremium =
@@ -228,10 +227,6 @@ class PremiumProvider with ChangeNotifier {
   // Helper getters for specific logic
   bool isThemeUnlocked(String themeName) {
     if (themeName == "NAVY PROFUNDO") return true;
-    if (WorldCupEvent.isActive &&
-        WorldCupEvent.unlockedThemes.contains(themeName)) {
-      return true;
-    }
     return isUnlocked('theme_$themeName');
   }
 

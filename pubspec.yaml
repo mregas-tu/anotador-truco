@@ -55,7 +55,6 @@ dependencies:
   path_provider: ^2.1.2
   in_app_review: ^2.0.9
   wakelock_plus: ^1.2.8
-  confetti: ^0.8.0
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.4.0
   firebase_database: ^11.3.10
