@@ -52,8 +52,19 @@ class LiveMatchService {
         throw TimeoutException('Realtime Database write timed out');
       },
     );
+    // If the host's connection drops for any reason — the app gets killed,
+    // the phone dies, it never gets a chance to call stopHosting — the
+    // server notices on its own and marks the match not-live, same as a
+    // clean stop would. Registered only after the initial write: the
+    // validation rules require the full match document to already exist
+    // (hasChildren([...])), which isn't true yet before that first .set().
+    await ref.onDisconnect().update({'isLive': false});
     debugPrint('[LiveMatch] Created match ${state.id}');
     return state.id;
+  }
+
+  static Future<void> cancelHostPresence(String matchId) async {
+    await _matches.child(matchId).onDisconnect().cancel();
   }
 
   static Future<void> updateMatch(LiveMatchState state) async {
@@ -80,6 +91,35 @@ class LiveMatchService {
       final value = event.snapshot.value;
       if (value is! Map) return null;
       return LiveMatchState.fromRealtimeDatabase(matchId, value);
+    });
+  }
+
+  /// Random, unique per viewing session — not persisted or tied to identity.
+  static String generateViewerId() => _matches.push().key!;
+
+  static Future<void> joinAsViewer({
+    required String matchId,
+    required String viewerId,
+  }) async {
+    final ref = _matches.child(matchId).child('viewers').child(viewerId);
+    await ref.onDisconnect().remove();
+    await ref.set(true);
+  }
+
+  static Future<void> leaveAsViewer({
+    required String matchId,
+    required String viewerId,
+  }) async {
+    final ref = _matches.child(matchId).child('viewers').child(viewerId);
+    unawaited(ref.onDisconnect().cancel());
+    await ref.remove();
+  }
+
+  static Stream<int> watchViewerCount(String matchId) {
+    return _matches.child(matchId).child('viewers').onValue.map((event) {
+      final value = event.snapshot.value;
+      if (value is! Map) return 0;
+      return value.length;
     });
   }
 }

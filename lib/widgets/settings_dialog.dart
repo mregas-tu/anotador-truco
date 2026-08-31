@@ -55,6 +55,8 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   VoidCallback? _historyBackAction;
   bool _isStartingLiveHost = false;
   bool _handledLiveScan = false;
+  bool _linkCopied = false;
+  final ScrollController _linkScrollController = ScrollController();
 
   @override
   void initState() {
@@ -63,6 +65,47 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) setState(() {});
     });
+    _runLinkMarquee();
+  }
+
+  /// Scrolls the shared-link text right to its end, holds, scrolls back to
+  /// the start, holds, and repeats — for links wider than their row. Loops
+  /// for the lifetime of this dialog; harmlessly idles (checking every so
+  /// often) whenever the link row isn't the currently visible pane, or the
+  /// link fits without overflowing.
+  Future<void> _runLinkMarquee() async {
+    while (mounted) {
+      if (!_linkScrollController.hasClients) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        continue;
+      }
+      final maxExtent = _linkScrollController.position.maxScrollExtent;
+      if (maxExtent <= 0) {
+        await Future.delayed(const Duration(seconds: 1));
+        continue;
+      }
+      final scrollDuration = Duration(
+        milliseconds: (maxExtent * 25).clamp(900, 4000).round(),
+      );
+      try {
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted || !_linkScrollController.hasClients) continue;
+        await _linkScrollController.animateTo(
+          maxExtent,
+          duration: scrollDuration,
+          curve: Curves.easeInOut,
+        );
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted || !_linkScrollController.hasClients) continue;
+        await _linkScrollController.animateTo(
+          0,
+          duration: scrollDuration,
+          curve: Curves.easeInOut,
+        );
+      } catch (_) {
+        return;
+      }
+    }
   }
 
   Future<void> _loadVersion() async {
@@ -81,6 +124,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   @override
   void dispose() {
     _timer?.cancel();
+    _linkScrollController.dispose();
     _gameModeScrollController.dispose();
     _liveScannerController.dispose();
     // No limpiamos los papelitos: que sigan cayendo aunque el usuario
@@ -1308,15 +1352,38 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             ),
           ),
         ),
-        const SizedBox(height: 14),
-        PrimaryButton(
-          text: 'Copiar link',
-          width: double.infinity,
-          onPressed: () async {
-            await Clipboard.setData(ClipboardData(text: shareValue));
-            if (mounted) _showLiveMessage('Link copiado.');
-          },
+        const SizedBox(height: 10),
+        Center(
+          child: StreamBuilder<int>(
+            stream: LiveMatchService.watchViewerCount(scoreProvider.matchId),
+            initialData: 0,
+            builder: (context, snapshot) {
+              final count = snapshot.data ?? 0;
+              // theme.slate can be identical to theme.navy (e.g. MALVINAS,
+              // MATE), making this invisible against the dialog background.
+              final color = scoreProvider.appTheme.cream.withValues(alpha: 0.75);
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.visibility_outlined, size: 16, color: color),
+                  const SizedBox(width: 6),
+                  Text(
+                    count == 1
+                        ? '1 persona mirando'
+                        : '$count personas mirando',
+                    style: TextStyle(
+                      fontFamily: AppFonts.oswald,
+                      fontSize: 13,
+                      color: color,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
+        const SizedBox(height: 14),
+        _buildLiveLinkRow(scoreProvider, shareValue),
         const SizedBox(height: 10),
         SecondaryButton(
           text: 'Detener vivo',
@@ -1327,6 +1394,55 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildLiveLinkRow(ScoreProvider scoreProvider, String shareValue) {
+    final theme = scoreProvider.appTheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.secondaryButtonBorder, width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _linkScrollController,
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              child: Text(
+                shareValue,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontFamily: AppFonts.oswald,
+                  fontSize: 13,
+                  color: theme.secondaryButtonText,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: () async {
+              await Clipboard.setData(ClipboardData(text: shareValue));
+              if (!mounted) return;
+              setState(() => _linkCopied = true);
+            },
+            child: Text(
+              _linkCopied ? 'COPIADO' : 'COPIAR',
+              style: TextStyle(
+                fontFamily: AppFonts.oswald,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: theme.accentColor,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

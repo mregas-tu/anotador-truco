@@ -388,6 +388,7 @@ class ScoreProvider with ChangeNotifier {
 
   Future<void> stopLiveHosting() async {
     if (_isLiveHosting) {
+      await LiveMatchService.cancelHostPresence(_matchId).catchError((_) {});
       await LiveMatchService.updateMatch(_buildLiveState(isLiveOverride: false))
           .catchError((_) {});
     }

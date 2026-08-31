@@ -61,6 +61,26 @@ class LiveMatchViewerContent extends StatefulWidget {
 class _LiveMatchViewerContentState extends State<LiveMatchViewerContent> {
   bool _endedDialogShown = false;
   bool _finishedDialogShown = false;
+  late final String _viewerId;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewerId = LiveMatchService.generateViewerId();
+    LiveMatchService.joinAsViewer(
+      matchId: widget.matchId,
+      viewerId: _viewerId,
+    ).catchError((_) {});
+  }
+
+  @override
+  void dispose() {
+    LiveMatchService.leaveAsViewer(
+      matchId: widget.matchId,
+      viewerId: _viewerId,
+    ).catchError((_) {});
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,8 +133,8 @@ class _LiveMatchViewerContentState extends State<LiveMatchViewerContent> {
     );
   }
 
-  void _showEndedDialog(TrucoTheme theme) {
-    showDialog<void>(
+  Future<void> _showEndedDialog(TrucoTheme theme) async {
+    await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: theme.navy,
@@ -149,6 +169,8 @@ class _LiveMatchViewerContentState extends State<LiveMatchViewerContent> {
         ],
       ),
     );
+    if (!mounted) return;
+    widget.onExit();
   }
 
   void _showFinishedDialog(LiveMatchState state, TrucoTheme theme) {

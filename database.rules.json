@@ -79,6 +79,11 @@
             }
           }
         },
+        "viewers": {
+          "$viewerId": {
+            ".validate": "newData.val() == true"
+          }
+        },
         "$other": {
           ".validate": false
         }
