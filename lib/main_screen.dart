@@ -54,7 +54,6 @@ class _MainScreenState extends State<MainScreen>
   String? _lastWinnerShown;
   int _tutorialStep = 0;
   bool _isTutorialActive = false;
-  bool _isSingleStepTutorial = false;
   StreamSubscription<String>? _picaPicaSub;
   String? _footerIntDragSide;
 
@@ -100,26 +99,11 @@ class _MainScreenState extends State<MainScreen>
 
       // Ghost Hand Tutorial
       final isTutorialDone = await PersistenceService.getTutorialDone();
-      final scoreHistoryTutorialShown =
-          await PersistenceService.getScoreHistoryTutorialShown();
       if (!isTutorialDone && nosotros == 0 && ellos == 0) {
         if (mounted) {
           setState(() {
             _isTutorialActive = true;
             _tutorialStep = 0;
-            _isSingleStepTutorial = false;
-          });
-          _startGhostHandTutorial();
-          blockingDialogShown = true;
-        }
-      } else if (!blockingDialogShown &&
-          isTutorialDone &&
-          !scoreHistoryTutorialShown) {
-        if (mounted) {
-          setState(() {
-            _isTutorialActive = true;
-            _tutorialStep = 6;
-            _isSingleStepTutorial = true;
           });
           _startGhostHandTutorial();
           blockingDialogShown = true;
@@ -334,18 +318,8 @@ class _MainScreenState extends State<MainScreen>
           if (_isTutorialActive)
             TutorialOverlay(
               currentStep: _tutorialStep,
-              isFinalStep: _isSingleStepTutorial,
-              isStandalone: _isSingleStepTutorial,
-              titleOverride: _isSingleStepTutorial ? 'PUNTOS ANOTADOS' : null,
-              descriptionOverride: _isSingleStepTutorial
-                  ? 'Desde acá podés revisar los puntos que se anotaron en la partida.'
-                  : null,
               onSkip: _skipTutorial,
               onNext: () {
-                if (_isSingleStepTutorial) {
-                  _skipTutorial();
-                  return;
-                }
                 if (_tutorialStep < kTutorialSteps.length - 1) {
                   setState(() {
                     _tutorialStep++;
@@ -1228,7 +1202,6 @@ class _MainScreenState extends State<MainScreen>
           onRepeatTutorial: () {
             setState(() {
               _tutorialStep = 0;
-              _isSingleStepTutorial = false;
             });
             _startGhostHandTutorial();
           },
@@ -1614,15 +1587,13 @@ class _MainScreenState extends State<MainScreen>
 
   void _skipTutorial() async {
     AnalyticsService.logTutorialSkip(_tutorialStep);
-    final wasSingleStepTutorial = _isSingleStepTutorial;
     setState(() {
       _isTutorialActive = false;
       _showGhostHand = false;
-      _isSingleStepTutorial = false;
     });
     _handController.stop();
     await PersistenceService.setTutorialDone(true);
-    if (wasSingleStepTutorial || _tutorialStep >= 6) {
+    if (_tutorialStep >= 6) {
       await PersistenceService.setScoreHistoryTutorialShown(true);
     }
   }

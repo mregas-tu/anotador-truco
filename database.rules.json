@@ -50,6 +50,9 @@
         "isLive": {
           ".validate": "newData.isBoolean()"
         },
+        "stoppedByHost": {
+          ".validate": "newData.isBoolean()"
+        },
         "createdAt": {
           ".validate": "newData.isString()"
         },

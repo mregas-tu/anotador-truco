@@ -8,6 +8,7 @@ import '../models/match_record.dart';
 import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
 import '../services/ad_service.dart';
+import '../services/analytics_service.dart';
 import '../services/live_match_service.dart';
 import '../services/persistence_service.dart';
 import '../services/result_share_service.dart';
@@ -59,7 +60,7 @@ class LiveMatchViewerContent extends StatefulWidget {
 }
 
 class _LiveMatchViewerContentState extends State<LiveMatchViewerContent> {
-  bool _endedDialogShown = false;
+  bool _hostStoppedDialogShown = false;
   bool _finishedDialogShown = false;
   late final String _viewerId;
 
@@ -71,14 +72,17 @@ class _LiveMatchViewerContentState extends State<LiveMatchViewerContent> {
       matchId: widget.matchId,
       viewerId: _viewerId,
     ).catchError((_) {});
+    AnalyticsService.logLiveMatchViewerJoined();
   }
 
   @override
   void dispose() {
+    _LiveScoreBoard.dismissSpectatorHint();
     LiveMatchService.leaveAsViewer(
       matchId: widget.matchId,
       viewerId: _viewerId,
     ).catchError((_) {});
+    AnalyticsService.logLiveMatchViewerLeft();
     super.dispose();
   }
 
@@ -113,10 +117,8 @@ class _LiveMatchViewerContentState extends State<LiveMatchViewerContent> {
             if (!mounted) return;
             _showFinishedDialog(state, theme);
           });
-        } else if (!state.isLive &&
-            !_finishedDialogShown &&
-            !_endedDialogShown) {
-          _endedDialogShown = true;
+        } else if (state.stoppedByHost && !_hostStoppedDialogShown) {
+          _hostStoppedDialogShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             _showEndedDialog(theme);
@@ -176,6 +178,8 @@ class _LiveMatchViewerContentState extends State<LiveMatchViewerContent> {
   void _showFinishedDialog(LiveMatchState state, TrucoTheme theme) {
     final winnerName = state.winnerName;
     bool matchSaved = false;
+
+    AnalyticsService.logLiveMatchViewerSawFinish();
 
     final isPremium =
         Provider.of<PremiumProvider>(context, listen: false).isPremium;
@@ -383,6 +387,10 @@ class _LiveScoreBoard extends StatelessWidget {
   final TrucoTheme theme;
   final VoidCallback onExit;
   static final GlobalKey _historyKey = GlobalKey();
+  static OverlayEntry? _spectatorHintEntry;
+  static Timer? _spectatorHintTimer;
+  static DateTime? _spectatorHintDisabledUntil;
+  static const Duration _spectatorHintCooldown = Duration(seconds: 5);
 
   const _LiveScoreBoard({
     required this.matchId,
@@ -390,6 +398,14 @@ class _LiveScoreBoard extends StatelessWidget {
     required this.theme,
     required this.onExit,
   });
+
+  static void dismissSpectatorHint() {
+    _spectatorHintEntry?.remove();
+    _spectatorHintEntry = null;
+    _spectatorHintTimer?.cancel();
+    _spectatorHintTimer = null;
+    _spectatorHintDisabledUntil = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -511,7 +527,11 @@ class _LiveScoreBoard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 20),
                     child: Center(
-                      child: MatchstickBox(count: totalRemaining),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => _showSpectatorHint(context),
+                        child: MatchstickBox(count: totalRemaining),
+                      ),
                     ),
                   ),
                 ],
@@ -521,6 +541,41 @@ class _LiveScoreBoard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _showSpectatorHint(BuildContext context) {
+    final now = DateTime.now();
+    final disabledUntil = _spectatorHintDisabledUntil;
+    if (disabledUntil != null && now.isBefore(disabledUntil)) return;
+
+    dismissSpectatorHint();
+    _spectatorHintDisabledUntil = now.add(_spectatorHintCooldown);
+
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (ctx) => Positioned(
+        top: MediaQuery.of(ctx).padding.top + 16,
+        left: 24,
+        right: 24,
+        child: IgnorePointer(
+          child: _SpectatorHintToast(
+            message:
+                'Como espectador no podés anotar puntos. Tocá los puntos totales para ver el historial en detalle.',
+            background: theme.accentColor,
+            border: theme.cream,
+            textColor: theme.cream,
+          ),
+        ),
+      ),
+    );
+
+    _spectatorHintEntry = entry;
+    overlay.insert(entry);
+    _spectatorHintTimer = Timer(const Duration(seconds: 4), () {
+      _spectatorHintEntry?.remove();
+      _spectatorHintEntry = null;
+      _spectatorHintTimer = null;
+    });
   }
 
   void _confirmExit(BuildContext context) {
@@ -1092,6 +1147,131 @@ class _ViewerMessage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SpectatorHintToast extends StatefulWidget {
+  final String message;
+  final Color background;
+  final Color border;
+  final Color textColor;
+
+  const _SpectatorHintToast({
+    required this.message,
+    required this.background,
+    required this.border,
+    required this.textColor,
+  });
+
+  @override
+  State<_SpectatorHintToast> createState() => _SpectatorHintToastState();
+}
+
+class _SpectatorHintToastState extends State<_SpectatorHintToast>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+  late final Animation<Offset> _slide;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    );
+
+    _opacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 12),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 76),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 12),
+    ]).animate(_controller);
+
+    _slide = TweenSequence<Offset>([
+      TweenSequenceItem(
+        tween: Tween(begin: const Offset(0, -1.5), end: Offset.zero)
+            .chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 18,
+      ),
+      TweenSequenceItem(tween: ConstantTween(Offset.zero), weight: 68),
+      TweenSequenceItem(
+        tween: Tween(begin: Offset.zero, end: const Offset(0, -1.5))
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 14,
+      ),
+    ]).animate(_controller);
+
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.9, end: 1.03)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 12,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.03, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 8,
+      ),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 80),
+    ]).animate(_controller);
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _opacity.value,
+          child: FractionalTranslation(
+            translation: _slide.value,
+            child: Transform.scale(
+              scale: _scale.value,
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          decoration: BoxDecoration(
+            color: widget.background,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: widget.border, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Text(
+            widget.message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: AppFonts.oswald,
+              color: widget.textColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              height: 1.2,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
       ),
     );
   }

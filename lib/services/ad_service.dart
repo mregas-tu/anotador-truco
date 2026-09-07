@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -51,16 +52,28 @@ class AdService {
 
   static InterstitialAd? _interstitialAd;
   static RewardedAd? _rewardedAd;
+  static bool _isLoadingInterstitial = false;
+  static bool _isLoadingRewarded = false;
+  static Timer? _rewardedRetryTimer;
+  static int _rewardedRetryCount = 0;
+
+  static const int _maxRewardedRetryCount = 3;
+  static const Duration _rewardedRetryDelay = Duration(seconds: 30);
 
   static void loadInterstitial() {
+    if (_isLoadingInterstitial || _interstitialAd != null) return;
+    _isLoadingInterstitial = true;
     InterstitialAd.load(
       adUnitId: interstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
+          _isLoadingInterstitial = false;
+          _interstitialAd?.dispose();
           _interstitialAd = ad;
         },
         onAdFailedToLoad: (LoadAdError error) {
+          _isLoadingInterstitial = false;
           _interstitialAd = null;
         },
       ),
@@ -68,18 +81,39 @@ class AdService {
   }
 
   static void loadRewardedAd() {
+    if (_isLoadingRewarded || _rewardedAd != null) return;
+    _rewardedRetryTimer?.cancel();
+    _rewardedRetryTimer = null;
+    _isLoadingRewarded = true;
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
+          _isLoadingRewarded = false;
+          _rewardedRetryCount = 0;
+          _rewardedAd?.dispose();
           _rewardedAd = ad;
         },
         onAdFailedToLoad: (error) {
+          _isLoadingRewarded = false;
           _rewardedAd = null;
+          _scheduleRewardedRetry();
         },
       ),
     );
+  }
+
+  static void _scheduleRewardedRetry() {
+    if (_rewardedAd != null || _isLoadingRewarded) return;
+    if (_rewardedRetryTimer?.isActive ?? false) return;
+    if (_rewardedRetryCount >= _maxRewardedRetryCount) return;
+
+    _rewardedRetryCount += 1;
+    _rewardedRetryTimer = Timer(_rewardedRetryDelay, () {
+      _rewardedRetryTimer = null;
+      loadRewardedAd();
+    });
   }
 
   static const Duration _interstitialCooldown = Duration(minutes: 1);

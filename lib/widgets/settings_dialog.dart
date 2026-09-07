@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -52,8 +51,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   VoidCallback? _historyBackAction;
   bool _isStartingLiveHost = false;
   bool _handledLiveScan = false;
-  bool _linkCopied = false;
-  final ScrollController _linkScrollController = ScrollController();
 
   @override
   void initState() {
@@ -62,47 +59,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) setState(() {});
     });
-    _runLinkMarquee();
-  }
-
-  /// Scrolls the shared-link text right to its end, holds, scrolls back to
-  /// the start, holds, and repeats — for links wider than their row. Loops
-  /// for the lifetime of this dialog; harmlessly idles (checking every so
-  /// often) whenever the link row isn't the currently visible pane, or the
-  /// link fits without overflowing.
-  Future<void> _runLinkMarquee() async {
-    while (mounted) {
-      if (!_linkScrollController.hasClients) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        continue;
-      }
-      final maxExtent = _linkScrollController.position.maxScrollExtent;
-      if (maxExtent <= 0) {
-        await Future.delayed(const Duration(seconds: 1));
-        continue;
-      }
-      final scrollDuration = Duration(
-        milliseconds: (maxExtent * 25).clamp(900, 4000).round(),
-      );
-      try {
-        await Future.delayed(const Duration(seconds: 2));
-        if (!mounted || !_linkScrollController.hasClients) continue;
-        await _linkScrollController.animateTo(
-          maxExtent,
-          duration: scrollDuration,
-          curve: Curves.easeInOut,
-        );
-        await Future.delayed(const Duration(seconds: 2));
-        if (!mounted || !_linkScrollController.hasClients) continue;
-        await _linkScrollController.animateTo(
-          0,
-          duration: scrollDuration,
-          curve: Curves.easeInOut,
-        );
-      } catch (_) {
-        return;
-      }
-    }
   }
 
   Future<void> _loadVersion() async {
@@ -121,7 +77,6 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   @override
   void dispose() {
     _timer?.cancel();
-    _linkScrollController.dispose();
     _gameModeScrollController.dispose();
     _liveScannerController.dispose();
     super.dispose();
@@ -196,9 +151,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                       if (currentPane == 4 || currentPane == 5) {
                         currentPane = 3;
                       } else if (currentPane == 9 || currentPane == 10) {
-                        if (currentPane == 10) {
-                          _liveScannerController.stop();
-                        }
+                        if (currentPane == 10) _stopLiveScanner();
                         currentPane = 8;
                       } else {
                         currentPane = 0;
@@ -236,7 +189,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             Positioned(
               right: 0,
               child: IconButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  if (currentPane == 10) _stopLiveScanner();
+                  Navigator.pop(context);
+                },
                 icon: Icon(Icons.close, color: scoreProvider.appTheme.cream),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -1232,7 +1188,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           subtitle: 'Genero el QR y comparto este tanteador.',
           scoreProvider: scoreProvider,
           isSmallScreen: isSmallScreen,
-          onTap: () => setState(() => currentPane = 9),
+          onTap: () {
+            AnalyticsService.logLiveMatchRoleSelected('host');
+            setState(() => currentPane = 9);
+          },
         ),
         Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
         _buildLiveRoleTile(
@@ -1242,10 +1201,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           scoreProvider: scoreProvider,
           isSmallScreen: isSmallScreen,
           onTap: () {
-            _liveScannerController.start();
+            AnalyticsService.logLiveMatchRoleSelected('spectator');
             setState(() {
-              currentPane = 10;
               _handledLiveScan = false;
+              currentPane = 10;
             });
           },
         ),
@@ -1267,7 +1226,9 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           setState(() => _isStartingLiveHost = true);
           try {
             await scoreProvider.startLiveHosting();
+            AnalyticsService.logLiveMatchHostingStarted();
           } catch (error) {
+            AnalyticsService.logLiveMatchHostingFailed(error.toString());
             if (mounted) _showLiveMessage(_liveMatchErrorMessage(error));
           } finally {
             if (mounted) setState(() => _isStartingLiveHost = false);
@@ -1303,7 +1264,8 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               final count = snapshot.data ?? 0;
               // theme.slate can be identical to theme.navy (e.g. MALVINAS,
               // MATE), making this invisible against the dialog background.
-              final color = scoreProvider.appTheme.cream.withValues(alpha: 0.75);
+              final color =
+                  scoreProvider.appTheme.cream.withValues(alpha: 0.75);
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1325,66 +1287,16 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           ),
         ),
         const SizedBox(height: 14),
-        _buildLiveLinkRow(scoreProvider, shareValue),
-        const SizedBox(height: 10),
         SecondaryButton(
           text: 'Detener vivo',
           width: double.infinity,
           onPressed: () async {
             await scoreProvider.stopLiveHosting();
+            AnalyticsService.logLiveMatchHostingStopped();
             if (mounted) _showLiveMessage('Vivo detenido.');
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildLiveLinkRow(ScoreProvider scoreProvider, String shareValue) {
-    final theme = scoreProvider.appTheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.secondaryButtonBorder, width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              controller: _linkScrollController,
-              scrollDirection: Axis.horizontal,
-              physics: const NeverScrollableScrollPhysics(),
-              child: Text(
-                shareValue,
-                maxLines: 1,
-                softWrap: false,
-                style: TextStyle(
-                  fontFamily: AppFonts.oswald,
-                  fontSize: 13,
-                  color: theme.secondaryButtonText,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: () async {
-              await Clipboard.setData(ClipboardData(text: shareValue));
-              if (!mounted) return;
-              setState(() => _linkCopied = true);
-            },
-            child: Text(
-              _linkCopied ? 'COPIADO' : 'COPIAR',
-              style: TextStyle(
-                fontFamily: AppFonts.oswald,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: theme.accentColor,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1473,7 +1385,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
       height: 40,
       child: OutlinedButton(
         onPressed: () {
-          AnalyticsService.logShareMenu();
+          AnalyticsService.logLiveMatchMenuOpened();
           setState(() => currentPane = 8);
           WidgetsBinding.instance.addPostFrameCallback(
             (_) => _maybeShowLiveMatchTutorial(scoreProvider),
@@ -1564,10 +1476,18 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     if (matchId == null) return;
 
     _handledLiveScan = true;
-    _liveScannerController.stop();
+    _stopLiveScanner();
     Provider.of<ScoreProvider>(context, listen: false)
         .startWatchingLiveMatch(matchId);
     Navigator.pop(context);
+  }
+
+  Future<void> _stopLiveScanner() async {
+    try {
+      await _liveScannerController.stop();
+    } on MobileScannerException catch (error) {
+      debugPrint('Error stopping live scanner: $error');
+    }
   }
 
   Future<void> _maybeShowLiveMatchTutorial(ScoreProvider scoreProvider) async {

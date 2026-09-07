@@ -1,13 +1,9 @@
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'persistence_service.dart';
 
 class AnalyticsService {
-  static final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
-  static final FirebaseAnalyticsObserver observer =
-      FirebaseAnalyticsObserver(analytics: _analytics);
   static Mixpanel? _mixpanel;
 
   static Future<void> init() async {
@@ -21,10 +17,8 @@ class AnalyticsService {
 
     // Solo habilitamos en producción para no ensuciar datos en desarrollo
     if (kDebugMode) {
-      await _analytics.setAnalyticsCollectionEnabled(false);
       _mixpanel?.optOutTracking();
     } else {
-      await _analytics.setAnalyticsCollectionEnabled(true);
       _mixpanel?.optInTracking();
     }
   }
@@ -349,5 +343,39 @@ class AnalyticsService {
   static Future<void> logEvent(String name,
       {Map<String, Object>? parameters}) async {
     await _track(name, parameters);
+  }
+
+  // --- PARTIDA EN VIVO ---
+
+  static Future<void> logLiveMatchMenuOpened() async {
+    await _track('live_match_menu_opened');
+  }
+
+  static Future<void> logLiveMatchRoleSelected(String role) async {
+    await _track('live_match_role_selected', {'role': role});
+  }
+
+  static Future<void> logLiveMatchHostingStarted() async {
+    await _track('live_match_hosting_started');
+  }
+
+  static Future<void> logLiveMatchHostingFailed(String reason) async {
+    await _track('live_match_hosting_failed', {'reason': reason});
+  }
+
+  static Future<void> logLiveMatchHostingStopped() async {
+    await _track('live_match_hosting_stopped');
+  }
+
+  static Future<void> logLiveMatchViewerJoined() async {
+    await _track('live_match_viewer_joined');
+  }
+
+  static Future<void> logLiveMatchViewerLeft() async {
+    await _track('live_match_viewer_left');
+  }
+
+  static Future<void> logLiveMatchViewerSawFinish() async {
+    await _track('live_match_viewer_saw_finish');
   }
 }

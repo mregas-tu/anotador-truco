@@ -15,6 +15,7 @@ class LiveMatchState {
   final String? winner;
   final bool finished;
   final bool isLive;
+  final bool stoppedByHost;
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<LiveMatchPointEvent> events;
@@ -36,6 +37,7 @@ class LiveMatchState {
     required this.winner,
     required this.finished,
     required this.isLive,
+    this.stoppedByHost = false,
     required this.createdAt,
     required this.updatedAt,
     this.events = const [],
@@ -65,6 +67,7 @@ class LiveMatchState {
       winner: data['winner'] as String?,
       finished: data['finished'] as bool? ?? false,
       isLive: data['isLive'] as bool? ?? true,
+      stoppedByHost: data['stoppedByHost'] as bool? ?? false,
       createdAt: _readDate(data['createdAt']),
       updatedAt: _readDate(data['updatedAt']),
       events: _readEvents(data['events']),
@@ -88,6 +91,7 @@ class LiveMatchState {
       'winner': winner,
       'finished': finished,
       'isLive': isLive,
+      'stoppedByHost': stoppedByHost,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };

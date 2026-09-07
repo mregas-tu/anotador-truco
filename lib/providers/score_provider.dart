@@ -352,7 +352,10 @@ class ScoreProvider with ChangeNotifier {
     ));
   }
 
-  LiveMatchState _buildLiveState({bool? isLiveOverride}) {
+  LiveMatchState _buildLiveState({
+    bool? isLiveOverride,
+    bool stoppedByHost = false,
+  }) {
     final now = DateTime.now();
     return LiveMatchState(
       id: _matchId,
@@ -373,6 +376,7 @@ class ScoreProvider with ChangeNotifier {
       winner: _winner,
       finished: _winner != null,
       isLive: isLiveOverride ?? _isLiveHosting,
+      stoppedByHost: stoppedByHost,
       createdAt: _matchStartedAt,
       updatedAt: now,
     );
@@ -389,8 +393,10 @@ class ScoreProvider with ChangeNotifier {
   Future<void> stopLiveHosting() async {
     if (_isLiveHosting) {
       await LiveMatchService.cancelHostPresence(_matchId).catchError((_) {});
-      await LiveMatchService.updateMatch(_buildLiveState(isLiveOverride: false))
-          .catchError((_) {});
+      await LiveMatchService.updateMatch(_buildLiveState(
+        isLiveOverride: false,
+        stoppedByHost: true,
+      )).catchError((_) {});
     }
     _isLiveHosting = false;
     notifyListeners();
