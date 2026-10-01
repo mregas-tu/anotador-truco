@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -8,7 +11,9 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:in_app_review/in_app_review.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/analytics_service.dart';
+import '../services/audio_service.dart';
 import '../services/support_service.dart';
 import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
@@ -27,6 +32,7 @@ class SettingsDialogContent extends StatefulWidget {
   final Function(int) onBeanPaletteLockedTap;
   final VoidCallback onPremiumTap;
   final VoidCallback onRepeatTutorial;
+  final ValueChanged<bool> onMoreScorekeepersVisibilityChanged;
 
   const SettingsDialogContent({
     super.key,
@@ -35,6 +41,7 @@ class SettingsDialogContent extends StatefulWidget {
     required this.onBeanPaletteLockedTap,
     required this.onPremiumTap,
     required this.onRepeatTutorial,
+    required this.onMoreScorekeepersVisibilityChanged,
   });
 
   @override
@@ -42,6 +49,10 @@ class SettingsDialogContent extends StatefulWidget {
 }
 
 class _SettingsDialogContentState extends State<SettingsDialogContent> {
+  static final Uri _moreScorekeepersUrl = Uri.parse(
+    'https://raw.githubusercontent.com/martoregas/martostudio-web/refs/heads/main/promo/apps.json',
+  );
+
   int currentPane = 0; // 0: Main, 1: Customization, 2: Game Mode
   Timer? _timer;
   final ScrollController _gameModeScrollController = ScrollController();
@@ -51,10 +62,14 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   VoidCallback? _historyBackAction;
   bool _isStartingLiveHost = false;
   bool _handledLiveScan = false;
+  late final Future<PackageInfo> _packageInfoFuture;
+  late final Future<List<_MoreScorekeeperApp>> _moreScorekeepersFuture;
 
   @override
   void initState() {
     super.initState();
+    _packageInfoFuture = PackageInfo.fromPlatform();
+    _moreScorekeepersFuture = _loadMoreScorekeepers();
     _loadVersion();
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) setState(() {});
@@ -63,7 +78,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
 
   Future<void> _loadVersion() async {
     try {
-      final packageInfo = await PackageInfo.fromPlatform();
+      final packageInfo = await _packageInfoFuture;
       if (mounted) {
         setState(() {
           _appVersion = packageInfo.version;
@@ -128,6 +143,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     if (currentPane == 8) title = "PARTIDA EN VIVO";
     if (currentPane == 9) title = "ANFITRIÓN";
     if (currentPane == 10) title = "ESCANEAR QR";
+    if (currentPane == 11) title = "MÁS ANOTADORES";
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -137,7 +153,45 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
         Stack(
           alignment: Alignment.center,
           children: [
-            if (currentPane != 0)
+            if (currentPane == 0)
+              Positioned(
+                left: 0,
+                child: Row(
+                  children: [
+                    _buildHeaderToggle(
+                      tooltip: scoreProvider.isMuted
+                          ? 'Activar sonido'
+                          : 'Desactivar sonido',
+                      iconAsset: 'assets/images/menu_icons/sound_icon.svg',
+                      enabled: !scoreProvider.isMuted,
+                      color: scoreProvider.appTheme.cream,
+                      onTap: () {
+                        final wasMuted = scoreProvider.isMuted;
+                        scoreProvider.setMuted(!wasMuted);
+                        if (wasMuted) {
+                          AudioService().playMarker(
+                              scoreProvider.pointType == PointType.beans);
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildHeaderToggle(
+                      tooltip: scoreProvider.vibrationEnabled
+                          ? 'Desactivar vibración'
+                          : 'Activar vibración',
+                      iconAsset: 'assets/images/menu_icons/vibration.svg',
+                      enabled: scoreProvider.vibrationEnabled,
+                      color: scoreProvider.appTheme.cream,
+                      onTap: () {
+                        final enabling = !scoreProvider.vibrationEnabled;
+                        scoreProvider.setVibrationEnabled(enabling);
+                        if (enabling) HapticFeedback.lightImpact();
+                      },
+                    ),
+                  ],
+                ),
+              )
+            else
               Positioned(
                 left: 0,
                 child: IconButton(
@@ -147,6 +201,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                       _historyBackAction = null;
                       return;
                     }
+                    final leavingMoreScorekeepers = currentPane == 11;
                     setState(() {
                       if (currentPane == 4 || currentPane == 5) {
                         currentPane = 3;
@@ -157,6 +212,9 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         currentPane = 0;
                       }
                     });
+                    if (leavingMoreScorekeepers) {
+                      widget.onMoreScorekeepersVisibilityChanged(false);
+                    }
                     _historyBackAction = null;
                   },
                   icon: Icon(Icons.arrow_back,
@@ -205,72 +263,19 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
         if (currentPane == 0) ...[
           // --- PANE 0: MAIN SETTINGS ---
           _buildMenuActionItem(
-            label: "SONIDO",
-            iconAsset: 'assets/images/menu_icons/sound_icon.svg',
-            scoreProvider: scoreProvider,
-            isSmallScreen: isSmallScreen,
-            trailing: Switch(
-              value: !scoreProvider.isMuted,
-              onChanged: (val) {
-                scoreProvider.setMuted(!val);
-              },
-              activeColor: Colors.white,
-              activeTrackColor: scoreProvider.appTheme.accentColor,
-              inactiveThumbColor: Colors.white70,
-              inactiveTrackColor: Colors.white12,
-            ),
-          ),
-          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
-          _buildMenuActionItem(
-            label: "VIBRACIÓN",
-            iconAsset: 'assets/images/menu_icons/vibration.svg',
-            scoreProvider: scoreProvider,
-            isSmallScreen: isSmallScreen,
-            trailing: Switch(
-              value: scoreProvider.vibrationEnabled,
-              onChanged: (val) {
-                scoreProvider.setVibrationEnabled(val);
-              },
-              activeColor: Colors.white,
-              activeTrackColor: scoreProvider.appTheme.accentColor,
-              inactiveThumbColor: Colors.white70,
-              inactiveTrackColor: Colors.white12,
-            ),
-          ),
-          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
-          _buildMenuActionItem(
             label: "MODO DE CONTROL",
             iconAsset: 'assets/images/menu_icons/control_mode_icon.svg',
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
-            trailing: TextButton(
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                backgroundColor:
-                    scoreProvider.appTheme.slate.withValues(alpha: 0.1),
-              ),
-              onPressed: () {
-                final nextMode = scoreProvider.scoringMode == ScoringMode.drag
-                    ? ScoringMode.tap
-                    : scoreProvider.scoringMode == ScoringMode.tap
-                        ? ScoringMode.classic
-                        : ScoringMode.drag;
-                scoreProvider.setScoringMode(nextMode);
-              },
-              child: Text(
-                scoreProvider.scoringMode == ScoringMode.drag
-                    ? "ARRASTRE"
-                    : scoreProvider.scoringMode == ScoringMode.tap
-                        ? "TOQUE"
-                        : "CLÁSICO",
-                style: TextStyle(
-                  fontFamily: AppFonts.oswald,
-                  fontSize: 14,
-                  color: scoreProvider.appTheme.cream,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            onTap: () {
+              final nextMode = scoreProvider.scoringMode == ScoringMode.drag
+                  ? ScoringMode.tap
+                  : scoreProvider.scoringMode == ScoringMode.tap
+                      ? ScoringMode.classic
+                      : ScoringMode.drag;
+              scoreProvider.setScoringMode(nextMode);
+            },
+            trailing: _buildControlModeTrailing(context, scoreProvider),
           ),
           Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           _buildMenuNavigationItem(
@@ -338,6 +343,17 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             ),
             Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
           ],
+          _buildMenuNavigationItem(
+            label: "MÁS ANOTADORES",
+            iconData: Icons.apps_outlined,
+            onTap: () {
+              setState(() => currentPane = 11);
+              widget.onMoreScorekeepersVisibilityChanged(true);
+            },
+            scoreProvider: scoreProvider,
+            isSmallScreen: isSmallScreen,
+          ),
+          Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
 
           const SizedBox(height: 24),
 
@@ -1168,9 +1184,169 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           _buildLiveHostPane(scoreProvider, isSmallScreen),
         ] else if (currentPane == 10) ...[
           _buildLiveScannerPane(scoreProvider, isSmallScreen),
+        ] else if (currentPane == 11) ...[
+          _buildMoreScorekeepersPane(scoreProvider, isSmallScreen),
         ],
       ],
     );
+  }
+
+  Future<List<_MoreScorekeeperApp>> _loadMoreScorekeepers() async {
+    final packageInfo = await _packageInfoFuture;
+    final data = await NetworkAssetBundle(_moreScorekeepersUrl)
+        .loadString(_moreScorekeepersUrl.toString());
+    final decoded = jsonDecode(data) as Map<String, dynamic>;
+    final apps = decoded['apps'] as List<dynamic>? ?? [];
+    return apps
+        .whereType<Map<String, dynamic>>()
+        .map(_MoreScorekeeperApp.fromJson)
+        .where(
+          (app) =>
+              app.bannerUrl.isNotEmpty &&
+              !app.matchesPackage(packageInfo.packageName),
+        )
+        .toList(growable: false);
+  }
+
+  Widget _buildMoreScorekeepersPane(
+    ScoreProvider scoreProvider,
+    bool isSmallScreen,
+  ) {
+    final theme = scoreProvider.appTheme;
+    return FutureBuilder<List<_MoreScorekeeperApp>>(
+      future: _moreScorekeepersFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 28),
+            child: Center(
+              child: CircularProgressIndicator(color: theme.cream),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return _buildMoreScorekeepersMessage(
+            'No pudimos cargar los anotadores.',
+            scoreProvider,
+          );
+        }
+
+        final apps = snapshot.data ?? [];
+        if (apps.isEmpty) {
+          return _buildMoreScorekeepersMessage(
+            'No hay anotadores disponibles por ahora.',
+            scoreProvider,
+          );
+        }
+
+        final mediaQuery = MediaQuery.of(context);
+        final availableHeight =
+            mediaQuery.size.height - mediaQuery.padding.vertical - 144;
+
+        // Con más de 4 anotadores se muestran los íconos en 2 columnas,
+        // siempre que todos tengan ícono; si no, los banners en una columna.
+        final showIconGrid =
+            apps.length > 4 && apps.every((app) => app.hasIcon);
+
+        Widget buildItem(BuildContext context, int index) {
+          final app = apps[index];
+          final storeUrl = app.storeUrl;
+          return InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: storeUrl == null
+                ? null
+                : () => _openMoreScorekeeper(app, storeUrl),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: AspectRatio(
+                aspectRatio: showIconGrid ? 1 : 1024 / 500,
+                child: Container(
+                  color: theme.navyLight.withValues(alpha: 0.45),
+                  child: Image.network(
+                    showIconGrid ? app.iconUrl! : app.bannerUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      alignment: Alignment.center,
+                      child: Text(
+                        app.name,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: AppFonts.oswald,
+                          fontSize: isSmallScreen ? 16 : 18,
+                          color: theme.cream,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: availableHeight),
+          child: showIconGrid
+              ? GridView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: apps.length,
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                  ),
+                  itemBuilder: buildItem,
+                )
+              : ListView.separated(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: apps.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
+                  itemBuilder: buildItem,
+                ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMoreScorekeepersMessage(
+    String message,
+    ScoreProvider scoreProvider,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 8),
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontFamily: AppFonts.oswald,
+          fontSize: 16,
+          color: scoreProvider.appTheme.cream,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openMoreScorekeeper(
+    _MoreScorekeeperApp app,
+    Uri storeUrl,
+  ) async {
+    try {
+      final opened =
+          await launchUrl(storeUrl, mode: LaunchMode.externalApplication);
+      if (!opened && mounted) {
+        _showLiveMessage('No pudimos abrir la tienda.');
+      }
+    } catch (error) {
+      debugPrint('Error opening store for ${app.id}: $error');
+      if (mounted) {
+        _showLiveMessage('No pudimos abrir la tienda.');
+      }
+    }
   }
 
   Widget _buildLiveMatchHome(
@@ -1565,14 +1741,178 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     return 'No se pudo crear la partida en vivo.';
   }
 
+  Widget _buildHeaderToggle({
+    required String tooltip,
+    required String iconAsset,
+    required bool enabled,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Semantics(
+        button: true,
+        toggled: enabled,
+        label: tooltip,
+        child: InkResponse(
+          onTap: onTap,
+          radius: 20,
+          child: SizedBox.square(
+            dimension: 28,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SvgPicture.asset(
+                  iconAsset,
+                  width: 22,
+                  height: 22,
+                  colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                ),
+                if (!enabled)
+                  Transform.rotate(
+                    angle: -0.785398,
+                    child: Container(
+                      width: 27,
+                      height: 2,
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static const List<String> _controlModeLabels = [
+    "ARRASTRE",
+    "TOQUE",
+    "CLÁSICO"
+  ];
+
+  /// Widest of the three mode labels, measured in this exact style (and
+  /// respecting the device's text-scale setting) — used as a fixed width so
+  /// the label + dots never shift as the mode cycles between shorter and
+  /// longer words.
+  double _measureMaxControlModeWidth(BuildContext context, TextStyle style) {
+    double maxWidth = 0;
+    for (final label in _controlModeLabels) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: TextDirection.ltr,
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout();
+      if (painter.width > maxWidth) maxWidth = painter.width;
+    }
+    // Small safety margin: guards against sub-pixel rounding differences
+    // between this measurement pass and the actual Text's layout pass,
+    // which could otherwise wrap the text by a hair.
+    return maxWidth + 4;
+  }
+
+  Widget _buildControlModeTrailing(
+    BuildContext context,
+    ScoreProvider scoreProvider,
+  ) {
+    final style = TextStyle(
+      fontFamily: AppFonts.oswald,
+      fontSize: 14,
+      color: scoreProvider.appTheme.cream,
+      fontWeight: FontWeight.bold,
+    );
+    final width = _measureMaxControlModeWidth(context, style);
+    final label = scoreProvider.scoringMode == ScoringMode.drag
+        ? "ARRASTRE"
+        : scoreProvider.scoringMode == ScoringMode.tap
+            ? "TOQUE"
+            : "CLÁSICO";
+    final text = Text(
+      label,
+      style: style,
+      softWrap: false,
+      maxLines: 1,
+      overflow: TextOverflow.visible,
+    );
+    final dots = _buildControlModeDots(scoreProvider);
+
+    // Ask Flutter how tall this row *actually* is on this device/density,
+    // instead of guessing a pixel offset — the dots then sit at a fixed
+    // fraction of that real height, so they land in the same relative
+    // spot on every screen size, not just the ones we tested on.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (!constraints.hasBoundedHeight) {
+          // No definite row height to measure against here — fall back
+          // to floating a fixed distance below the text.
+          return SizedBox(
+            width: width,
+            child: Stack(
+              alignment: Alignment.topCenter,
+              clipBehavior: Clip.none,
+              children: [
+                text,
+                Positioned(top: 28, child: dots),
+              ],
+            ),
+          );
+        }
+        return SizedBox(
+          width: width,
+          height: constraints.maxHeight,
+          child: Stack(
+            children: [
+              Align(alignment: Alignment.center, child: text),
+              Align(alignment: const Alignment(0, 0.75), child: dots),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildControlModeDots(ScoreProvider scoreProvider) {
+    final activeIndex = scoreProvider.scoringMode == ScoringMode.drag
+        ? 0
+        : scoreProvider.scoringMode == ScoringMode.tap
+            ? 1
+            : 2;
+    final theme = scoreProvider.appTheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (index) {
+        final isActive = index == activeIndex;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            width: isActive ? 7 : 5,
+            height: isActive ? 7 : 5,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color:
+                  isActive ? theme.cream : theme.cream.withValues(alpha: 0.35),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
   Widget _buildMenuActionItem({
     required String label,
     String? iconAsset,
     required Widget trailing,
     required ScoreProvider scoreProvider,
     required bool isSmallScreen,
+    VoidCallback? onTap,
   }) {
     return ListTile(
+      onTap: onTap,
       dense: isSmallScreen,
       visualDensity:
           isSmallScreen ? VisualDensity.compact : VisualDensity.standard,
@@ -1683,6 +2023,54 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
         ),
       ),
     );
+  }
+}
+
+class _MoreScorekeeperApp {
+  final String id;
+  final String name;
+  final String bannerUrl;
+  final String? iconUrl;
+  final String? androidUrl;
+  final String? iosUrl;
+
+  const _MoreScorekeeperApp({
+    required this.id,
+    required this.name,
+    required this.bannerUrl,
+    required this.iconUrl,
+    required this.androidUrl,
+    required this.iosUrl,
+  });
+
+  factory _MoreScorekeeperApp.fromJson(Map<String, dynamic> json) {
+    return _MoreScorekeeperApp(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? 'Anotador',
+      bannerUrl: json['bannerUrl'] as String? ?? '',
+      iconUrl: json['icon'] as String?,
+      androidUrl: json['androidUrl'] as String?,
+      iosUrl: json['iosUrl'] as String?,
+    );
+  }
+
+  bool get hasIcon => iconUrl != null && iconUrl!.isNotEmpty;
+
+  bool matchesPackage(String packageName) {
+    return androidUrl == packageName || iosUrl == packageName;
+  }
+
+  Uri? get storeUrl {
+    final value =
+        defaultTargetPlatform == TargetPlatform.iOS ? iosUrl : androidUrl;
+    if (value == null || value.isEmpty) return null;
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return Uri.tryParse(value);
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return null;
+    }
+    return Uri.https('play.google.com', '/store/apps/details', {'id': value});
   }
 }
 

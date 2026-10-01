@@ -235,22 +235,10 @@ abstract class GameDialogs {
         actions: [
           Column(
             children: [
-              PrimaryButton(
-                text: "SER PREMIUM",
-                width: double.infinity,
-                onPressed: () {
-                  AnalyticsService.logPremiumPromptAccepted(
-                      'unlock_dialog_$type');
-                  premiumProvider.buyPremium(source: 'unlock_dialog_$type');
-                  Navigator.pop(context);
-                },
-              ),
               if (id != 'premium') ...[
-                const SizedBox(height: 16),
-                SecondaryButton(
+                PrimaryButton(
                   text: "VER VIDEO (24HS GRATIS)",
                   width: double.infinity,
-                  toUpperCase: true,
                   onPressed: () {
                     AdService.showRewardedAd(
                       onUserEarnedReward: () {
@@ -296,6 +284,29 @@ abstract class GameDialogs {
                         );
                       },
                     );
+                    Navigator.pop(context);
+                  },
+                ),
+                const SizedBox(height: 16),
+                SecondaryButton(
+                  text: "SER PREMIUM",
+                  width: double.infinity,
+                  toUpperCase: true,
+                  onPressed: () {
+                    AnalyticsService.logPremiumPromptAccepted(
+                        'unlock_dialog_$type');
+                    premiumProvider.buyPremium(source: 'unlock_dialog_$type');
+                    Navigator.pop(context);
+                  },
+                ),
+              ] else ...[
+                PrimaryButton(
+                  text: "SER PREMIUM",
+                  width: double.infinity,
+                  onPressed: () {
+                    AnalyticsService.logPremiumPromptAccepted(
+                        'unlock_dialog_$type');
+                    premiumProvider.buyPremium(source: 'unlock_dialog_$type');
                     Navigator.pop(context);
                   },
                 ),
@@ -960,4 +971,3 @@ class _FinalScore extends StatelessWidget {
     );
   }
 }
-

@@ -1188,23 +1188,32 @@ class _MainScreenState extends State<MainScreen>
   }
 
   void _showSettingsDialog() {
+    var showBanner = true;
     showDialog(
       context: context,
-      builder: (context) => TrucoDialog(
-        content: SettingsDialogContent(
-          onThemeLockedTap: (themeName) =>
-              _showUnlockDialog(context, 'theme_$themeName', 'tema'),
-          onPaletteLockedTap: (index) =>
-              _showUnlockDialog(context, 'palette_$index', 'fósforo'),
-          onBeanPaletteLockedTap: (index) =>
-              _showUnlockDialog(context, 'bean_palette_$index', 'poroto'),
-          onPremiumTap: () => _showUnlockDialog(context, 'premium', 'premium'),
-          onRepeatTutorial: () {
-            setState(() {
-              _tutorialStep = 0;
-            });
-            _startGhostHandTutorial();
-          },
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => TrucoDialog(
+          marginVertical: 24,
+          showBanner: showBanner,
+          content: SettingsDialogContent(
+            onThemeLockedTap: (themeName) =>
+                _showUnlockDialog(context, 'theme_$themeName', 'tema'),
+            onPaletteLockedTap: (index) =>
+                _showUnlockDialog(context, 'palette_$index', 'fósforo'),
+            onBeanPaletteLockedTap: (index) =>
+                _showUnlockDialog(context, 'bean_palette_$index', 'poroto'),
+            onPremiumTap: () =>
+                _showUnlockDialog(context, 'premium', 'premium'),
+            onRepeatTutorial: () {
+              setState(() {
+                _tutorialStep = 0;
+              });
+              _startGhostHandTutorial();
+            },
+            onMoreScorekeepersVisibilityChanged: (isVisible) {
+              setDialogState(() => showBanner = !isVisible);
+            },
+          ),
         ),
       ),
     );
@@ -1340,10 +1349,24 @@ class _MainScreenState extends State<MainScreen>
                                 count: scoreProvider.totalRemainingMatchsticks,
                               ),
                             )
-                          : MatchstickBox(
-                              key: _boxKey,
-                              count: scoreProvider.totalRemainingMatchsticks,
-                            )
+                          : scoreProvider.scoringMode == ScoringMode.tap
+                              ? GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: _isTutorialActive
+                                      ? null
+                                      : () => _showPicaPicaToast(
+                                          "Tocá un lado de la mesa para poner un punto. Mantené para sacarlo."),
+                                  child: MatchstickBox(
+                                    key: _boxKey,
+                                    count:
+                                        scoreProvider.totalRemainingMatchsticks,
+                                  ),
+                                )
+                              : MatchstickBox(
+                                  key: _boxKey,
+                                  count:
+                                      scoreProvider.totalRemainingMatchsticks,
+                                )
                     else
                       MatchstickBox(key: _boxKey, count: 0),
 

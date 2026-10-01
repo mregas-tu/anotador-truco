@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/live_display_scope.dart';
+import '../providers/premium_provider.dart';
 import '../providers/score_provider.dart';
 import 'truco_banner_ad.dart';
 
@@ -15,6 +16,7 @@ class TrucoDialog extends StatelessWidget {
   final double titleFontSize;
   final Color? titleColor;
   final double? marginHorizontal;
+  final double marginVertical;
   final bool showBanner;
 
   const TrucoDialog({
@@ -28,6 +30,7 @@ class TrucoDialog extends StatelessWidget {
     this.titleFontSize = 20,
     this.titleColor,
     this.marginHorizontal,
+    this.marginVertical = 60,
     this.showBanner = true,
   });
 
@@ -40,6 +43,13 @@ class TrucoDialog extends StatelessWidget {
     final theme = context.activeTheme(scoreProvider);
     final borderColor = theme.dialogBorderColor ?? theme.slate;
     const double borderWidth = 1.0;
+    final isPremium = Provider.of<PremiumProvider>(context).isPremium;
+    // The banner floats over the whole screen, independent of this dialog's
+    // own scroll view — without shrinking the space available to it here,
+    // a tall dialog's last bit of content can end up hidden behind the
+    // banner even after scrolling all the way down. A short dialog just
+    // ends up centered in a very slightly shorter box; no visible change.
+    final bannerReserve = (showBanner && !isPremium) ? 100.0 : 0.0;
 
     final double effectiveWidth = marginHorizontal != null
         ? MediaQuery.of(context).size.width - (marginHorizontal! * 2)
@@ -52,9 +62,10 @@ class TrucoDialog extends StatelessWidget {
         children: [
           Center(
             child: SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: bannerReserve),
               child: Container(
                 width: effectiveWidth,
-                margin: const EdgeInsets.symmetric(vertical: 60),
+                margin: EdgeInsets.symmetric(vertical: marginVertical),
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: theme.navy,
