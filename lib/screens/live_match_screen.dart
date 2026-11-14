@@ -381,11 +381,54 @@ class _LiveMatchViewerContentState extends State<LiveMatchViewerContent> {
   }
 }
 
+/// Renders a theme locally without changing the match or connecting to live play.
+class ThemePreview extends StatelessWidget {
+  const ThemePreview({super.key, required this.theme});
+
+  final TrucoTheme theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final score = context.read<ScoreProvider>();
+    final now = DateTime.now();
+    return Scaffold(
+      backgroundColor: theme.navy,
+      body: _LiveScoreBoard(
+        matchId: 'preview',
+        theme: theme,
+        preview: true,
+        onExit: () {},
+        state: LiveMatchState(
+          id: 'preview',
+          nosotrosName: score.nosotrosName,
+          ellosName: score.ellosName,
+          nosotrosScore: score.nosotros,
+          ellosScore: score.ellos,
+          targetScore: score.currentGameMode.totalPoints,
+          hasBuenas: score.currentGameMode.hasBuenas,
+          themeName: theme.name,
+          pointType: score.pointType.name,
+          paletteName: score.pointType == PointType.beans
+              ? score.currentBeanPalette.name
+              : score.currentPalette.name,
+          gameModeLabel: score.currentGameMode.label,
+          winner: null,
+          finished: false,
+          isLive: false,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ),
+    );
+  }
+}
+
 class _LiveScoreBoard extends StatelessWidget {
   final String matchId;
   final LiveMatchState state;
   final TrucoTheme theme;
   final VoidCallback onExit;
+  final bool preview;
   static final GlobalKey _historyKey = GlobalKey();
   static OverlayEntry? _spectatorHintEntry;
   static Timer? _spectatorHintTimer;
@@ -393,6 +436,7 @@ class _LiveScoreBoard extends StatelessWidget {
   static const Duration _spectatorHintCooldown = Duration(seconds: 5);
 
   const _LiveScoreBoard({
+    this.preview = false,
     required this.matchId,
     required this.state,
     required this.theme,
@@ -430,10 +474,18 @@ class _LiveScoreBoard extends StatelessWidget {
             child: Column(
               children: [
                 const SizedBox(height: 20),
-                _LiveHeader(
-                  theme: theme,
-                  onExit: () => _confirmExit(context),
-                ),
+                if (preview)
+                  MainHeader(
+                    restartKey: GlobalKey(),
+                    settingsKey: GlobalKey(),
+                    onRestart: () {},
+                    onSettings: () {},
+                  )
+                else
+                  _LiveHeader(
+                    theme: theme,
+                    onExit: () => _confirmExit(context),
+                  ),
                 const SizedBox(height: 10),
                 Expanded(
                   child: Stack(

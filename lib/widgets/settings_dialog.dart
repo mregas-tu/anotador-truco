@@ -53,7 +53,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     'https://raw.githubusercontent.com/martoregas/martostudio-web/refs/heads/main/promo/apps.json',
   );
 
-  int currentPane = 0; // 0: Main, 1: Customization, 2: Game Mode
+  final List<({int pane, VoidCallback? onExit})> _paneStack = [
+    (pane: 0, onExit: null),
+  ];
+  int get currentPane => _paneStack.last.pane;
   Timer? _timer;
   final ScrollController _gameModeScrollController = ScrollController();
   final MobileScannerController _liveScannerController =
@@ -63,13 +66,12 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   bool _isStartingLiveHost = false;
   bool _handledLiveScan = false;
   late final Future<PackageInfo> _packageInfoFuture;
-  late final Future<List<_MoreScorekeeperApp>> _moreScorekeepersFuture;
+  Future<List<_MoreScorekeeperApp>>? _moreScorekeepersFuture;
 
   @override
   void initState() {
     super.initState();
     _packageInfoFuture = PackageInfo.fromPlatform();
-    _moreScorekeepersFuture = _loadMoreScorekeepers();
     _loadVersion();
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) setState(() {});
@@ -114,6 +116,22 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     }
   }
 
+  void _openPane(int pane, {VoidCallback? onExit}) {
+    setState(() => _paneStack.add((pane: pane, onExit: onExit)));
+  }
+
+  void _goBack() {
+    if (_historyBackAction != null) {
+      _historyBackAction!();
+      _historyBackAction = null;
+      return;
+    }
+    if (_paneStack.length == 1) return;
+    final previous = _paneStack.last;
+    setState(() => _paneStack.removeLast());
+    previous.onExit?.call();
+  }
+
   Future<void> _rateApp() async {
     final InAppReview inAppReview = InAppReview.instance;
     try {
@@ -128,9 +146,23 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
 
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      canPop: _paneStack.length == 1,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _goBack();
+      },
+      child: _buildContent(context),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     final premiumProvider = Provider.of<PremiumProvider>(context);
     final scoreProvider = Provider.of<ScoreProvider>(context);
     final bool isSmallScreen = MediaQuery.of(context).size.height < 700;
+    final designTitleColor = scoreProvider.appTheme == TrucoTheme.mateTheme ||
+            scoreProvider.appTheme == TrucoTheme.malvinasTheme
+        ? scoreProvider.appTheme.dialogSeparator.withValues(alpha: 0.9)
+        : scoreProvider.appTheme.slate;
 
     String title = "AJUSTES";
     if (currentPane == 1) title = "DISEÑO";
@@ -195,28 +227,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
               Positioned(
                 left: 0,
                 child: IconButton(
-                  onPressed: () {
-                    if (currentPane == 7 && _historyBackAction != null) {
-                      _historyBackAction!();
-                      _historyBackAction = null;
-                      return;
-                    }
-                    final leavingMoreScorekeepers = currentPane == 11;
-                    setState(() {
-                      if (currentPane == 4 || currentPane == 5) {
-                        currentPane = 3;
-                      } else if (currentPane == 9 || currentPane == 10) {
-                        if (currentPane == 10) _stopLiveScanner();
-                        currentPane = 8;
-                      } else {
-                        currentPane = 0;
-                      }
-                    });
-                    if (leavingMoreScorekeepers) {
-                      widget.onMoreScorekeepersVisibilityChanged(false);
-                    }
-                    _historyBackAction = null;
-                  },
+                  onPressed: _goBack,
                   icon: Icon(Icons.arrow_back,
                       color: scoreProvider.appTheme.cream),
                   padding: EdgeInsets.zero,
@@ -282,7 +293,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             label: "MODO DE JUEGO",
             iconAsset: 'assets/images/menu_icons/game_mode_icon.svg',
             onTap: () {
-              setState(() => currentPane = 2);
+              _openPane(2);
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _scrollToSelectedMode(scoreProvider);
               });
@@ -296,7 +307,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             iconAsset: 'assets/images/menu_icons/design_icon.svg',
             onTap: () {
               AnalyticsService.logDesignMenu();
-              setState(() => currentPane = 1);
+              _openPane(1);
             },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
@@ -305,7 +316,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           _buildMenuNavigationItem(
             label: "HISTORIAL DE PARTIDAS",
             iconData: Icons.emoji_events_outlined,
-            onTap: () => setState(() => currentPane = 7),
+            onTap: () => _openPane(7),
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
           ),
@@ -314,7 +325,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             label: "BRINDIS",
             iconAsset: 'assets/images/menu_icons/cheers_icon.svg',
             onTap: () {
-              setState(() => currentPane = 6);
+              _openPane(6);
             },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
@@ -324,7 +335,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             label: "AYUDA Y SOPORTE",
             iconAsset: 'assets/images/menu_icons/support_icon.svg',
             onTap: () {
-              setState(() => currentPane = 3);
+              _openPane(3);
             },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
@@ -347,7 +358,10 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             label: "MÁS ANOTADORES",
             iconData: Icons.apps_outlined,
             onTap: () {
-              setState(() => currentPane = 11);
+              AnalyticsService.logMoreScorekeepersOpened();
+              _openPane(11, onExit: () {
+                widget.onMoreScorekeepersVisibilityChanged(false);
+              });
               widget.onMoreScorekeepersVisibilityChanged(true);
             },
             scoreProvider: scoreProvider,
@@ -370,7 +384,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         fontFamily: AppFonts.oswald,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: scoreProvider.appTheme.slate,
+                        color: designTitleColor,
                         letterSpacing: 0)),
               ),
               GridView.builder(
@@ -474,7 +488,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         fontFamily: AppFonts.oswald,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: scoreProvider.appTheme.slate,
+                        color: designTitleColor,
                         letterSpacing: 0)),
               ),
               Row(
@@ -559,7 +573,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                         fontFamily: AppFonts.oswald,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: scoreProvider.appTheme.slate,
+                        color: designTitleColor,
                         letterSpacing: 0)),
               ),
               if (scoreProvider.pointType == PointType.matches)
@@ -993,7 +1007,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
             label: "VALORES Y SEÑAS",
             onTap: () {
               AnalyticsService.logViewRules();
-              setState(() => currentPane = 5);
+              _openPane(5);
             },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
@@ -1044,7 +1058,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           _buildMenuNavigationItem(
             label: "ACERCA DE",
             onTap: () {
-              setState(() => currentPane = 4);
+              _openPane(4);
             },
             scoreProvider: scoreProvider,
             isSmallScreen: isSmallScreen,
@@ -1192,20 +1206,26 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   }
 
   Future<List<_MoreScorekeeperApp>> _loadMoreScorekeepers() async {
-    final packageInfo = await _packageInfoFuture;
-    final data = await NetworkAssetBundle(_moreScorekeepersUrl)
-        .loadString(_moreScorekeepersUrl.toString());
-    final decoded = jsonDecode(data) as Map<String, dynamic>;
-    final apps = decoded['apps'] as List<dynamic>? ?? [];
-    return apps
-        .whereType<Map<String, dynamic>>()
-        .map(_MoreScorekeeperApp.fromJson)
-        .where(
-          (app) =>
-              app.bannerUrl.isNotEmpty &&
-              !app.matchesPackage(packageInfo.packageName),
-        )
-        .toList(growable: false);
+    try {
+      final packageInfo = await _packageInfoFuture;
+      final data = await NetworkAssetBundle(_moreScorekeepersUrl)
+          .loadString(_moreScorekeepersUrl.toString())
+          .timeout(const Duration(seconds: 5));
+      final decoded = jsonDecode(data) as Map<String, dynamic>;
+      final apps = decoded['apps'] as List<dynamic>? ?? [];
+      return apps
+          .whereType<Map<String, dynamic>>()
+          .map(_MoreScorekeeperApp.fromJson)
+          .where(
+            (app) =>
+                app.bannerUrl.isNotEmpty &&
+                !app.matchesPackage(packageInfo.packageName),
+          )
+          .toList(growable: false);
+    } catch (e) {
+      debugPrint('Error loading more scorekeepers: $e');
+      throw Exception('more_scorekeepers_load_failed');
+    }
   }
 
   Widget _buildMoreScorekeepersPane(
@@ -1214,7 +1234,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   ) {
     final theme = scoreProvider.appTheme;
     return FutureBuilder<List<_MoreScorekeeperApp>>(
-      future: _moreScorekeepersFuture,
+      future: _moreScorekeepersFuture ??= _loadMoreScorekeepers(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return Padding(
@@ -1227,7 +1247,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
 
         if (snapshot.hasError) {
           return _buildMoreScorekeepersMessage(
-            'No pudimos cargar los anotadores.',
+            'No pudimos cargar los anotadores. Revisá tu conexión e intentá de nuevo.',
             scoreProvider,
           );
         }
@@ -1292,8 +1312,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
                   shrinkWrap: true,
                   padding: EdgeInsets.zero,
                   itemCount: apps.length,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
@@ -1319,13 +1338,17 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 8),
-      child: Text(
-        message,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontFamily: AppFonts.oswald,
-          fontSize: 16,
-          color: scoreProvider.appTheme.cream,
+      child: SizedBox(
+        width: double.infinity,
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          softWrap: true,
+          style: TextStyle(
+            fontFamily: AppFonts.oswald,
+            fontSize: 16,
+            color: scoreProvider.appTheme.cream,
+          ),
         ),
       ),
     );
@@ -1335,6 +1358,11 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
     _MoreScorekeeperApp app,
     Uri storeUrl,
   ) async {
+    AnalyticsService.logMoreScorekeeperTapped(
+      appId: app.id,
+      appName: app.name,
+      storeUrl: storeUrl.toString(),
+    );
     try {
       final opened =
           await launchUrl(storeUrl, mode: LaunchMode.externalApplication);
@@ -1366,7 +1394,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           isSmallScreen: isSmallScreen,
           onTap: () {
             AnalyticsService.logLiveMatchRoleSelected('host');
-            setState(() => currentPane = 9);
+            _openPane(9);
           },
         ),
         Divider(color: scoreProvider.appTheme.dialogSeparator, height: 1),
@@ -1378,10 +1406,8 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
           isSmallScreen: isSmallScreen,
           onTap: () {
             AnalyticsService.logLiveMatchRoleSelected('spectator');
-            setState(() {
-              _handledLiveScan = false;
-              currentPane = 10;
-            });
+            _handledLiveScan = false;
+            _openPane(10, onExit: () => _stopLiveScanner());
           },
         ),
       ],
@@ -1562,7 +1588,7 @@ class _SettingsDialogContentState extends State<SettingsDialogContent> {
       child: OutlinedButton(
         onPressed: () {
           AnalyticsService.logLiveMatchMenuOpened();
-          setState(() => currentPane = 8);
+          _openPane(8);
           WidgetsBinding.instance.addPostFrameCallback(
             (_) => _maybeShowLiveMatchTutorial(scoreProvider),
           );

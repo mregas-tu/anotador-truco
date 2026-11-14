@@ -339,6 +339,22 @@ class AnalyticsService {
     });
   }
 
+  static Future<void> logMoreScorekeepersOpened() async {
+    await _track('more_scorekeepers_opened');
+  }
+
+  static Future<void> logMoreScorekeeperTapped({
+    required String appId,
+    required String appName,
+    required String storeUrl,
+  }) async {
+    await _track('more_scorekeeper_tapped', {
+      'app_id': appId,
+      'app_name': appName,
+      'store_url': storeUrl,
+    });
+  }
+
   // Evento genérico por si necesitamos trackear algo rápido
   static Future<void> logEvent(String name,
       {Map<String, Object>? parameters}) async {

@@ -24,12 +24,15 @@ void main() async {
 
   await Firebase.initializeApp();
 
-  // Crashlytics: Capturar errores de Flutter
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  // Crashlytics: Capturar errores de Flutter sin marcarlos todos como crash.
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    FirebaseCrashlytics.instance.recordFlutterError(details, fatal: false);
+  };
 
-  // Crashlytics: Capturar errores fuera de Flutter (errores asíncronos nativos)
+  // Crashlytics: Capturar errores asíncronos sin clasificarlos como fatales.
   PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
     return true;
   };
 
@@ -89,4 +92,3 @@ class TrucoProApp extends StatelessWidget {
     );
   }
 }
-

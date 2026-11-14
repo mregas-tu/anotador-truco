@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/premium_provider.dart';
+import '../screens/live_match_screen.dart';
 import '../providers/score_provider.dart';
 import '../services/ad_service.dart';
 import '../theme/app_theme.dart';
@@ -235,6 +236,36 @@ abstract class GameDialogs {
         actions: [
           Column(
             children: [
+              if (id.startsWith('theme_')) ...[
+                SecondaryButton(
+                  text: 'Vista previa',
+                  width: double.infinity,
+                  onPressed: () {
+                    final theme = TrucoTheme.allThemes.firstWhere(
+                      (theme) => theme.name == id.substring('theme_'.length),
+                    );
+                    showGeneralDialog<void>(
+                      context: context,
+                      transitionDuration: Duration.zero,
+                      pageBuilder:
+                          (previewContext, animation, secondaryAnimation) =>
+                              Semantics(
+                        label:
+                            'Vista previa de ${theme.name}. Tocá para cerrar.',
+                        button: true,
+                        child: GestureDetector(
+                          key: const Key('themePreview'),
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => Navigator.of(previewContext).pop(),
+                          child:
+                              AbsorbPointer(child: ThemePreview(theme: theme)),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
               if (id != 'premium') ...[
                 PrimaryButton(
                   text: "VER VIDEO (24HS GRATIS)",

@@ -71,21 +71,22 @@ class MainHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scoreProvider = Provider.of<ScoreProvider>(context, listen: false);
+    final theme = context.activeTheme(scoreProvider);
 
     return Stack(
       alignment: Alignment.center,
       children: [
-        if (scoreProvider.appTheme.headerAsset != null)
+        if (theme.headerAsset != null)
           assetWithShadows(
-            asset: scoreProvider.appTheme.headerAsset!,
+            asset: theme.headerAsset!,
             height: 45,
-            colorFilter: scoreProvider.appTheme.tintHeader
+            colorFilter: theme.tintHeader
                 ? ColorFilter.mode(
                     Colors.white.withValues(alpha: 0.8),
                     BlendMode.srcIn,
                   )
                 : null,
-            shadows: scoreProvider.appTheme.headerShadows,
+            shadows: theme.headerShadows,
           ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -96,7 +97,7 @@ class MainHeader extends StatelessWidget {
                 key: restartKey,
                 icon: Stack(
                   children: [
-                    if (scoreProvider.appTheme.teamNameShadow != null)
+                    if (theme.teamNameShadow != null)
                       Positioned(
                         left: 1,
                         top: 1,
@@ -111,7 +112,7 @@ class MainHeader extends StatelessWidget {
                       'assets/images/restart.svg',
                       height: 24,
                       colorFilter: ColorFilter.mode(
-                        scoreProvider.appTheme.topIconColor ??
+                        theme.topIconColor ??
                             Colors.white.withValues(alpha: 0.7),
                         BlendMode.srcIn,
                       ),
@@ -124,7 +125,7 @@ class MainHeader extends StatelessWidget {
                 key: settingsKey,
                 icon: Stack(
                   children: [
-                    if (scoreProvider.appTheme.teamNameShadow != null)
+                    if (theme.teamNameShadow != null)
                       Positioned(
                         left: 1,
                         top: 1,
@@ -139,7 +140,7 @@ class MainHeader extends StatelessWidget {
                       'assets/images/settings.svg',
                       height: 24,
                       colorFilter: ColorFilter.mode(
-                        scoreProvider.appTheme.topIconColor ??
+                        theme.topIconColor ??
                             Colors.white.withValues(alpha: 0.7),
                         BlendMode.srcIn,
                       ),
